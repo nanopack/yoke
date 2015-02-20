@@ -11,8 +11,8 @@ func main() {
 	config.Name = "hay dude3"
 	config.Events = EventThing{0}
 	config.Conflict = EventThing{0}
-	config.BindPort = port
-	config.AdvertisePort = port
+	config.BindPort = conf.ClusterPort
+	config.AdvertisePort = conf.ClusterPort
 	fmt.Printf("%+v\n\n", config)
 	list, err := memberlist.Create(config)
 	if err != nil {
@@ -21,7 +21,7 @@ func main() {
 
 	fmt.Printf("%+v\n\n", list)
 
-	n, err := list.Join([]string{pool})
+	n, err := list.Join([]string{})
 	if err != nil {
 	    panic("Failed to join cluster: " + err.Error())
 	}

@@ -19,6 +19,7 @@ func (e EventThing) NotifyJoin(n *memberlist.Node) {
 func (e EventThing) NotifyLeave(n *memberlist.Node) {
 	fmt.Printf("NotifyLeave:%+v", n)
 }
+
 func (e EventThing) NotifyConflict(existing, other *memberlist.Node) {
 	fmt.Println("there is a conflict", existing, other)
 }
