@@ -1,46 +1,62 @@
 package main
 
-import "github.com/vaughan0/go-ini"
-import "flag"
-import "strconv"
-import "strings"
-
+import (
+	"fmt"
+	"github.com/vaughan0/go-ini"
+	"os"
+	"strconv"
+	"strings"
+)
 
 type Config struct {
-	Role string
+	Role        string
 	ClusterPort int
-	Peers []string
+	Peers       []string
 }
 
 var conf Config
 
 func init() {
 	conf = Config{
-		Role: "Monitor",
+		Role:        "Monitor",
 		ClusterPort: 1234,
+		Peers: []string{},
 	}
 
-	var c = flag.String("config", "", "Config file")
-	flag.Parse()
-	file, err := ini.LoadFile(*c)	
+	if len(os.Args) < 2 {
+		panic("where is my config file bro?")
+	}
+
+	file, err := ini.LoadFile(os.Args[1])
 	if err != nil {
 		panic("failed to load config file: " + err.Error())
 	}
+
+	// no conversion required for strings.
 	if role, ok := file.Get("config", "role"); ok {
-		if role != "monitor" || role != "primary" || role != "secondary" {
+		fmt.Print(role)
+		if role != "monitor" && role != "primary" && role != "secondary" {
 			panic("That Role is NOT OK!")
 		}
 		conf.Role = role
 	}
-	if port, ok := file.Get("config", "cluster_port"); ok {
+
+	parseInt(&conf.ClusterPort, file, "config", "cluster_port")
+	parseArr(&conf.Peers, file, "config", "peers")
+}
+
+func parseInt(val *int, file ini.File, section, name string) {
+	if port, ok := file.Get(section, name); ok {
 		i, err := strconv.ParseInt(port, 10, 64)
 		if err != nil {
-			panic("cluster_port is not an ip")
+			panic(name + " is not an int")
 		}
-		conf.ClusterPort = int(i)
+		*val = int(i)
 	}
-	if peers, ok := file.Get("config", "peers"); ok {
-		conf.Peers = strings.Split(peers, ",")
-	}
+}
 
+func parseArr(val *[]string, file ini.File, section, name string) {
+	if peers, ok := file.Get(section, name); ok {
+		*val = strings.Split(peers, ",")
+	}
 }
