@@ -19,6 +19,7 @@ var actions chan string
 var conf Config
 
 func init() {
+	advice = make(chan string)
 	actions = make(chan string)
 	conf = Config{
 		Role:        "Monitor",
