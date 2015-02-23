@@ -104,7 +104,7 @@ func startType(def string) string {
 		}
 		// if the other guy detected i came back online and is already
 		// switching to master
-		if other.DBRole == "master" && other.UpdatedAt > self.UpdatedAt {
+		if other.DBRole == "master" && other.UpdatedAt.After(self.UpdatedAt) {
 			return "slave"
 		}
 		return "master"
