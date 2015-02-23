@@ -2,10 +2,12 @@ package main
 
 import (
 	"fmt"
-	"github.com/vaughan0/go-ini"
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/jcelliott/lumber"
+	"github.com/vaughan0/go-ini"
 )
 
 type Config struct {
@@ -14,13 +16,22 @@ type Config struct {
 	Peers       []string
 }
 
-var advice chan string
-var actions chan string
-var conf Config
+var (
+	advice chan string
+	actions chan string
+	conf Config
+	log  *lumber.ConsoleLogger
+)
 
+//
 func init() {
 	advice = make(chan string)
 	actions = make(chan string)
+
+	//
+	log = lumber.NewConsoleLogger(lumber.DEBUG)
+
+	//
 	conf = Config{
 		Role:        "Monitor",
 		ClusterPort: 1234,
@@ -49,6 +60,7 @@ func init() {
 	parseArr(&conf.Peers, file, "config", "peers")
 }
 
+//
 func parseInt(val *int, file ini.File, section, name string) {
 	if port, ok := file.Get(section, name); ok {
 		i, err := strconv.ParseInt(port, 10, 64)
@@ -59,6 +71,7 @@ func parseInt(val *int, file ini.File, section, name string) {
 	}
 }
 
+//
 func parseArr(val *[]string, file ini.File, section, name string) {
 	if peers, ok := file.Get(section, name); ok {
 		*val = strings.Split(peers, ",")

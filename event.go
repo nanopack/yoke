@@ -2,8 +2,9 @@ package main
 
 import (
 	"fmt"
-	"github.com/hashicorp/memberlist"
 	"os"
+
+	"github.com/hashicorp/memberlist"
 )
 
 type EventHandler struct {
@@ -32,6 +33,7 @@ func (e EventHandler) NotifyUpdate(n *memberlist.Node) {
 	advice <- "update"+n.Name
 }
 
+//
 func (e EventHandler) NotifyConflict(existing, other *memberlist.Node) {
 	defer func() {
 		recover()

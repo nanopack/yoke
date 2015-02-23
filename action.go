@@ -3,8 +3,8 @@ package main
 import (
 	"time"
 )
-// this part performs the action based on the decision
 
+//
 func ActionStart() error {
 	for {
 		select {
@@ -16,6 +16,7 @@ func ActionStart() error {
 	return nil
 }
 
+//
 func doAction(act string) {
 	switch act {
 	case "kill":

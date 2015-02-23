@@ -6,6 +6,7 @@ import (
 
 var list *memberlist.Memberlist
 
+//
 func ClusterStart() error {
 	config := memberlist.DefaultLANConfig()
 	config.Name = conf.Role

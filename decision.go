@@ -7,6 +7,7 @@ import (
 
 var lastKnownCluster *[]Status
 
+//
 func DecisionStart() error {
 	// wait for the cluster to come online
 	waitForClusterFull()
@@ -33,7 +34,7 @@ func DecisionStart() error {
 		// if you notice a problem perform an action
 		for {
 			select {
-			
+
 
 		  case result := <- advice:
 		    fmt.Print(result)
@@ -84,6 +85,7 @@ func startDB() {
 	}
 }
 
+//
 func startType(def string) string {
 	self, err := WhoAmI()
 	switch self.DBRole {
@@ -113,6 +115,7 @@ func startType(def string) string {
 	return def
 }
 
+//
 func clusterChanges() bool {
 	if len(lastKnownCluster) != len(Cluster()) {
 		lastKnownCluster = Cluster()
@@ -127,6 +130,7 @@ func clusterChanges() bool {
 	return false
 }
 
+//
 func performAction() {
 	self, err := WhoAmI()
 	other, err := WhoIs(otherRole(self))
@@ -143,6 +147,7 @@ func performAction() {
 	}
 }
 
+//
 func performActionFromSingle(self, other *Status) {
 	if other != nil {
 		// i was in single but the other node came back online
@@ -152,6 +157,7 @@ func performActionFromSingle(self, other *Status) {
 	}
 }
 
+//
 func performActionFromMaste(self, other *Status) {
 	if other != nil && other.DBRole == "slave" {
 		// i lost the monitor
@@ -179,6 +185,7 @@ func performActionFromMaste(self, other *Status) {
 	}
 }
 
+//
 func performActionFromSlave(self, other *Status) {
 	if other != nil && other.DBRole == "master" {
 		// i probably lost the monitor
@@ -207,6 +214,7 @@ func performActionFromSlave(self, other *Status) {
 	}
 }
 
+//
 func performActionFromDead(self, other *Status) {
 	if other != nil && len(Cluster()) == 3 {
 		switch self.DBRole {
@@ -224,11 +232,13 @@ func performActionFromDead(self, other *Status) {
 	}
 }
 
+//
 func updateStatusRole(r string) {
 	status.UpdateRole(r)
 	lastKnownCluster = Cluster()
 }
 
+//
 func otherRole(st *Status) string {
 	if st.CRole == "primary" {
 		return "secondary"
