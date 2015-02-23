@@ -48,7 +48,7 @@ func StatusStart() error {
 	rpc.Register(s)
 
 	// RPC SERVER
-	l, err := net.Listen("tcp", port)
+	l, err := net.Listen("tcp", ":"+port)
 	if err != nil {
 		return err
 	}

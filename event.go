@@ -8,7 +8,7 @@ import (
 )
 
 type EventHandler struct {
-	Count int
+	Active bool
 }
 
 // NotifyJoin is invoked when a node is detected to have joined.

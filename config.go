@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -49,7 +48,6 @@ func init() {
 
 	// no conversion required for strings.
 	if role, ok := file.Get("config", "role"); ok {
-		fmt.Print(role)
 		if role != "monitor" && role != "primary" && role != "secondary" {
 			panic("That Role is NOT OK!")
 		}

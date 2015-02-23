@@ -13,14 +13,14 @@ func DecisionStart() error {
 	waitForClusterFull()
 	// start the database and perform actions on that database
 	go func() {
-		self, err := Whoami()
+		self, _ := Whoami()
 		if self.CRole == "monitor" {
 			fmt.Println("im a monitor.. i dont make decisions")
 			return
 		}
 		// start the database up
 		startDB()
-		lastKnownCluster, err = Cluster()
+		lastKnownCluster, _ = Cluster()
 		// start a timer that will trigger a cluster check
 		timer := make(chan bool)
 		go func() {
@@ -87,7 +87,7 @@ func startDB() {
 
 //
 func startType(def string) string {
-	self, err := Whoami()
+	self, _ := Whoami()
 	switch self.DBRole {
 	case "initialized":
 		return def
@@ -97,7 +97,7 @@ func startType(def string) string {
 		// check the other node and see if it is single
 		// if not i stay master
 		// if so i go secondary
-		other, err := Whois(otherRole(self))
+		other, _ := Whois(otherRole(self))
 		// if the other guy has transitioned to single
 		if other.DBRole == "single" {
 			return "slave"
@@ -134,8 +134,8 @@ func clusterChanges() bool {
 
 //
 func performAction() {
-	self, err := Whoami()
-	other, err := Whois(otherRole(self))
+	self, _ := Whoami()
+	other, _ := Whois(otherRole(self))
 
 	switch self.DBRole {
 	case "single":
@@ -173,7 +173,7 @@ func performActionFromMaste(self, other *Status) {
 	}
 	// see if im the odd man out or if it is the other guy
 	time.Sleep(10 * time.Second)
-	mon, err := Whois("monitor")
+	mon, _ := Whois("monitor")
 	if mon != nil {
 		// the other member died but i can still talk to the monitor
 		// i can safely become a single
@@ -202,7 +202,7 @@ func performActionFromSlave(self, other *Status) {
 
 	// see if im the odd man out or if it is the other guy
 	time.Sleep(10 * time.Second)
-	mon, err := Whois("monitor")
+	mon, _ := Whois("monitor")
 	if mon != nil {
 		// the other member died but i can still talk to the monitor
 		// i can safely become a single
