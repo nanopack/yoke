@@ -151,6 +151,7 @@ func Cluster() ([]*Status, error) {
 //
 func Demote() error {
 	advice <- "demote"
+	return nil
 }
 
 // RPC methods
