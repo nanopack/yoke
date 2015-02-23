@@ -77,13 +77,13 @@ func StatusStart() error {
 // 'public' methods
 
 //
-func (s *Status) SetCRole(role string) {
-	s.CRole = role
-	if err := save(s); err != nil {
-		log.Fatal("BONK!", err)
-		panic("Unable to set set cluster role! " + err.Error())
-	}
-}
+// func (s *Status) SetCRole(role string) {
+// 	s.CRole = role
+// 	if err := save(s); err != nil {
+// 		log.Fatal("BONK!", err)
+// 		panic("Unable to set set cluster role! " + err.Error())
+// 	}
+// }
 
 //
 func (s *Status) SetDBRole(role string) {
