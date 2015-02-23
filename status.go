@@ -2,17 +2,6 @@ package main
 
 import (
 	"fmt"
-<<<<<<< HEAD
-	"github.com/hashicorp/memberlist"
-	"net"
-	"net/rpc"
-	"strconv"
-)
-
-type Status struct {
-	Role  string
-	State string
-=======
 	"net"
 	"net/rpc"
 	"strconv"
@@ -83,15 +72,10 @@ func StatusStart() error {
 	}
 
 	return nil
->>>>>>> working on rpc server and client
 }
 
 // 'public' methods
 
-<<<<<<< HEAD
-func (self *Status) save() {
-
-=======
 //
 func (s *Status) SetCRole(role string) {
 	s.CRole = role
@@ -99,7 +83,6 @@ func (s *Status) SetCRole(role string) {
 		log.Fatal("BONK!", err)
 		panic("Unable to set set cluster role! " + err.Error())
 	}
->>>>>>> working on rpc server and client
 }
 
 //
@@ -120,13 +103,6 @@ func (s *Status) SetState(state string) {
 	}
 }
 
-<<<<<<< HEAD
-func (self *Status) Get(who string, reply *Status) error {
-	fmt.Println("whos asking: " + who)
-	self.retrieve()
-	reply = self
-	return nil
-=======
 // 'public' (RPC mapped) function
 
 //
@@ -151,7 +127,6 @@ func Whois(role string) (*Status, error) {
 	}
 
 	return s, nil
->>>>>>> working on rpc server and client
 }
 
 //
@@ -226,28 +201,6 @@ func (s *Status) demote() (error) {
 	return nil
 }
 
-<<<<<<< HEAD
-var status *Status
-
-func RpcStart() error {
-	status = new(Status)
-	rpc.Register(status)
-	listener, err := net.Listen("tcp", ":"+strconv.FormatInt(int64(conf.ClusterPort+1), 10))
-	if err != nil {
-		return err
-	}
-
-	go func(listener net.Listener) {
-		for {
-			if conn, err := listener.Accept(); err != nil {
-				fmt.Println("accept error: " + err.Error())
-			} else {
-				fmt.Printf("new connection established\n")
-				go rpc.ServeConn(conn)
-			}
-		}
-	}(listener)
-=======
 // 'private' functions
 
 //
@@ -267,6 +220,5 @@ func save(v interface{}) error {
 		return err
 	}
 
->>>>>>> working on rpc server and client
 	return nil
 }

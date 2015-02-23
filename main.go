@@ -1,17 +1,11 @@
 package main
 
-<<<<<<< HEAD
-import "fmt"
-import "os"
-
-=======
 import(
 	"fmt"
 	"os"
 )
 
 //
->>>>>>> working on rpc server and client
 func main() {
 	handle(ClusterStart())
 	handle(StatusStart())
