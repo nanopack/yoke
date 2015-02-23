@@ -22,23 +22,27 @@ type (
 	}
 )
 
-var store *scribble.Driver
+var(
+	status *Status
+	store *scribble.Driver
+)
+
 
 //
 func StatusStart() error {
 
 	//
-	s := &Status{CRole: conf.Role, State: "booting"}
+	status = &Status{CRole: conf.Role, State: "booting"}
 
 	//
 	store = scribble.New("./status", log)
-	t := scribble.Transaction{Operation: "write", Collection: "cluster", RecordID: "node", Container: s}
+	t := scribble.Transaction{Operation: "write", Collection: "cluster", RecordID: status.CRole, Container: status}
 	if err := store.Transact(t); err != nil {
 		return err
 	}
 
 	//
-	rpc.Register(s)
+	rpc.Register(status)
 
 	// RPC SERVER
 	l, err := net.Listen("tcp", ":" + strconv.FormatInt(int64(conf.ClusterPort+1), 10))
@@ -132,13 +136,13 @@ func Cluster() ([]*Status, error) {
 	for _, m := range list.Members() {
 
 		//
-		status, err := Whois(m.Name)
+		s, err := Whois(m.Name)
 		if err != nil {
 			return nil, err
 		}
 
 		//
-		members = append(members, status)
+		members = append(members, s)
 	}
 
 	return members, nil
@@ -169,8 +173,8 @@ func (s *Status) Ping(role string, status *Status) error {
 // 'private' functions
 
 //
-func get(role string, v interface{}) error {
-	t := scribble.Transaction{Operation: "read", Collection: "cluster", RecordID: role, Container: &v}
+func get(role string, status *Status) error {
+	t := scribble.Transaction{Operation: "read", Collection: "cluster", RecordID: role, Container: &status}
 	if err := store.Transact(t); err != nil {
 		return err
 	}
@@ -179,8 +183,8 @@ func get(role string, v interface{}) error {
 }
 
 //
-func save(v interface{}) error {
-	t := scribble.Transaction{Operation: "write", Collection: "cluster", RecordID: "node", Container: &v}
+func save(status *Status) error {
+	t := scribble.Transaction{Operation: "write", Collection: "cluster", RecordID: status.CRole, Container: &status}
 	if err := store.Transact(t); err != nil {
 		return err
 	}
