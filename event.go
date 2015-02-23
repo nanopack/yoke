@@ -14,12 +14,14 @@ type EventThing struct {
 // The Node argument must not be modified.
 func (e EventThing) NotifyJoin(n *memberlist.Node) {
 	fmt.Printf("NotifyJoin:%+v", n)
+	advice <- "join"+n.Name
 }
 
 // NotifyLeave is invoked when a node is detected to have left.
 // The Node argument must not be modified.
 func (e EventThing) NotifyLeave(n *memberlist.Node) {
 	fmt.Printf("NotifyLeave:%+v", n)
+	advice <- "leave"+n.Name
 }
 
 // NotifyUpdate is invoked when a node is detected to have
@@ -27,6 +29,7 @@ func (e EventThing) NotifyLeave(n *memberlist.Node) {
 // must not be modified.
 func (e EventThing) NotifyUpdate(n *memberlist.Node) {
 	fmt.Printf("NotifyUpdate:%+v", n)
+	advice <- "update"+n.Name
 }
 
 func (e EventThing) NotifyConflict(existing, other *memberlist.Node) {

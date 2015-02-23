@@ -12,20 +12,20 @@ func DecisionStart() error {
 	waitForClusterFull()
 	// start the database and perform actions on that database
 	go func() {
-		self := WhoAmI()
+		self, err := WhoAmI()
 		if self.CRole == "monitor" {
 			fmt.Println("im a monitor.. i dont make decisions")
 			return
 		}
 		// start the database up
 		startDB()
-		lastKnownCluster = Cluster()
+		lastKnownCluster, err = Cluster()
 		// start a timer that will trigger a cluster check
-		timer = make(chan float64)
+		timer = make(chan bool)
 		go func() {
 			for {
 				time.Sleep(time.Second * 10)
-				timer <- float64(t)
+				timer <- true
 			}
 		}()
 
@@ -33,13 +33,19 @@ func DecisionStart() error {
 		// if you notice a problem perform an action
 		for {
 			select {
-			// im no good at advice yet
+			
 
-		  // case result := <- advice :
-		    // fmt.Print(result)
-				// if clusterChanges() {
-				// 	performAction()
-				// }
+		  case result := <- advice:
+		    fmt.Print(result)
+		    if result == "demote" && self.DBRole == "master" {
+					updateStatusRole("dead(master)")
+					actions <- "kill"
+		    } else {
+			    // what do i do with other advice?
+					// if clusterChanges() {
+					// 	performAction()
+					// }
+		    }
 			case <-timer:
 				fmt.Println("timer ran out: checking cluster")
 				if clusterChanges() {
@@ -90,7 +96,13 @@ func startType(def string) string {
 		// if not i stay master
 		// if so i go secondary
 		other, err := WhoIs(otherRole(self))
+		// if the other guy has transitioned to single
 		if other.DBRole == "single" {
+			return "slave"
+		}
+		// if the other guy detected i came back online and is already
+		// switching to master
+		if other.DBRole == "master" && other.UpdatedAt > self.UpdatedAt {
 			return "slave"
 		}
 		return "master"
@@ -102,6 +114,10 @@ func startType(def string) string {
 }
 
 func clusterChanges() bool {
+	if len(lastKnownCluster) != len(Cluster()) {
+		lastKnownCluster = Cluster()
+		return true
+	}
 	for _, member := range lastKnownCluster {
 		if member.DBRole != WhoIs(member.CRole).DBRole {
 			lastKnownCluster = Cluster()
@@ -127,7 +143,7 @@ func performAction() {
 	}
 }
 
-func performActionFromSingle(self, other Status) {
+func performActionFromSingle(self, other *Status) {
 	if other != nil {
 		// i was in single but the other node came back online
 		// I should be safe to assume master
@@ -136,11 +152,16 @@ func performActionFromSingle(self, other Status) {
 	}
 }
 
-func performActionFromMaste(self, other Status) {
-	if other != nil {
+func performActionFromMaste(self, other *Status) {
+	if other != nil && other.DBRole == "slave" {
 		// i lost the monitor
 		// shouldnt hurt anything
 		return
+	}
+	if other != nil && other.DBRole == "dead(slave)" {
+		// my slave has died and i need to transition into single mode
+		updateStatusRole("single")
+		actions <- "single"
 	}
 	// see if im the odd man out or if it is the other guy
 	time.Sleep(10 * time.Second)
@@ -158,12 +179,18 @@ func performActionFromMaste(self, other Status) {
 	}
 }
 
-func performActionFromSlave(self, other Status) {
-	if other != nil {
+func performActionFromSlave(self, other *Status) {
+	if other != nil && other.DBRole == "master" {
 		// i probably lost the monitor
 		// shouldnt hurt anything
 		return
 	}
+	if other != nil && other.DBRole == "dead(master)" {
+		// my master has died and i need to transition into single mode
+		updateStatusRole("single")
+		actions <- "single"
+	}
+
 	// see if im the odd man out or if it is the other guy
 	time.Sleep(10 * time.Second)
 	mon, err := WhoIs("monitor")
@@ -180,7 +207,7 @@ func performActionFromSlave(self, other Status) {
 	}
 }
 
-func performActionFromDead(self, other Status) {
+func performActionFromDead(self, other *Status) {
 	if other != nil && len(Cluster()) == 3 {
 		switch self.DBRole {
 		case "dead(master)":
@@ -202,11 +229,9 @@ func updateStatusRole(r string) {
 	lastKnownCluster = Cluster()
 }
 
-func otherRole(st Status) string {
+func otherRole(st *Status) string {
 	if st.CRole == "primary" {
 		return "secondary"
-	} else {
-		return "primary"
 	}
-	return ""
+	return "primary"
 }
