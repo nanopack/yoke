@@ -8,13 +8,19 @@ import (
 var lastKnownCluster *[]Status
 
 func DecisionStart() error {
+	// wait for the cluster to come online
 	waitForClusterFull()
+	// start the database and perform actions on that database
 	go func() {
 		self := WhoAmI()
 		if self.CRole == "monitor" {
 			fmt.Println("im a monitor.. i dont make decisions")
 			return
 		}
+		// start the database up
+		startDB()
+		lastKnownCluster = Cluster()
+		// start a timer that will trigger a cluster check
 		timer = make(chan float64)
 		go func() {
 			for {
@@ -23,18 +29,17 @@ func DecisionStart() error {
 			}
 		}()
 
-		// figure out what to start as.
-		startDb()
-		lastKnownCluster = Cluster()
+		// check server on timer and listen for advice
+		// if you notice a problem perform an action
 		for {
 			select {
 			// im no good at advice yet
 
-			//   case result := <- advice :
-			//   	fmt.Print(result)
-			// if clusterChanges() {
-			// 	performAction()
-			// }
+		  // case result := <- advice :
+		    // fmt.Print(result)
+				// if clusterChanges() {
+				// 	performAction()
+				// }
 			case <-timer:
 				fmt.Println("timer ran out: checking cluster")
 				if clusterChanges() {
@@ -59,7 +64,7 @@ func waitForClusterFull() {
 }
 
 // figure out what to start as.
-func startDb() {
+func startDB() {
 	self := WhoAmI()
 	switch self.CRole {
 	case "primary":
@@ -74,7 +79,7 @@ func startDb() {
 }
 
 func startType(def string) string {
-	self := WhoAmI()
+	self, err := WhoAmI()
 	switch self.DBRole {
 	case "initialized":
 		return def
