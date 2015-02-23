@@ -148,12 +148,6 @@ func Cluster() ([]*Status, error) {
 	return members, nil
 }
 
-//
-func Demote() error {
-	advice <- "demote"
-	return nil
-}
-
 // RPC methods
 
 //
@@ -167,6 +161,13 @@ func (s *Status) Ping(role string, status *Status) error {
 			}
 		}
 	}
+
+	return nil
+}
+
+//
+func (s *Status) Demote(source string, status *Status) error {
+	advice <- "demote"
 
 	return nil
 }
