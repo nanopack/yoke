@@ -36,11 +36,11 @@ func DecisionStart() error {
 			select {
 
 			case result := <-advice:
-				fmt.Print(result)
 				if result == "demote" && self.DBRole == "master" {
 					updateStatusRole("dead(master)")
 					actions <- "kill"
 				} else {
+					log.Info("got a result i am not doing anything with:" +result)
 					// what do i do with other advice?
 					// if clusterChanges() {
 					// 	performAction()
@@ -77,11 +77,13 @@ func startDB() {
 	self := myself()
 	switch self.CRole {
 	case "primary":
-		updateStatusRole("master")
-		actions <- startType("master")
+		r := startType("master")
+		updateStatusRole(r)
+		actions <- r
 	case "secondary":
-		updateStatusRole("master")
-		actions <- startType("slave")
+		r := startType("slave")
+		updateStatusRole(r)
+		actions <- r
 	default:
 		fmt.Println("Monitors dont do anything.")
 	}
