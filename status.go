@@ -1,22 +1,22 @@
 package main
- 
+
 import (
- "net"
- "net/rpc"
- "strconv"
- "fmt"
- "github.com/hashicorp/memberlist"
+	"fmt"
+	"github.com/hashicorp/memberlist"
+	"net"
+	"net/rpc"
+	"strconv"
 )
 
 type Status struct {
-	Role string
+	Role  string
 	State string
 }
 
 type Statuses []Status
 
 func (self *Status) save() {
-	
+
 }
 
 func (self *Status) retrieve() {
@@ -31,10 +31,10 @@ func (self *Status) updateState(state string) {
 }
 
 func (self *Status) Get(who string, reply *Status) error {
-  fmt.Println("whos asking: " + who)
-  self.retrieve()
-  reply = self
-  return nil
+	fmt.Println("whos asking: " + who)
+	self.retrieve()
+	reply = self
+	return nil
 }
 
 func (self *Status) Cluster(who string, reply *Statuses) error {
@@ -54,20 +54,22 @@ func GetNodeStatus(node *memberlist.Node) Status {
 var status *Status
 
 func RpcStart() error {
-  status = new(Status)
-  rpc.Register(status)
-  listener, err := net.Listen("tcp", ":"+ strconv.FormatInt(int64(conf.ClusterPort + 1), 10))
-  if err != nil { return err }
+	status = new(Status)
+	rpc.Register(status)
+	listener, err := net.Listen("tcp", ":"+strconv.FormatInt(int64(conf.ClusterPort+1), 10))
+	if err != nil {
+		return err
+	}
 
-  go func(listener net.Listener) {
-	  for {
-	    if conn, err := listener.Accept(); err != nil {
-	      fmt.Println("accept error: " + err.Error())
-	    } else {
-	      fmt.Printf("new connection established\n")
-	      go rpc.ServeConn(conn)
-	    }
-	  }
-  }(listener)
-  return nil
+	go func(listener net.Listener) {
+		for {
+			if conn, err := listener.Accept(); err != nil {
+				fmt.Println("accept error: " + err.Error())
+			} else {
+				fmt.Printf("new connection established\n")
+				go rpc.ServeConn(conn)
+			}
+		}
+	}(listener)
+	return nil
 }

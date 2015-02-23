@@ -14,7 +14,8 @@ type Config struct {
 	Peers       []string
 }
 
-var	actions chan string
+var advice chan string
+var actions chan string
 var conf Config
 
 func init() {
@@ -22,7 +23,7 @@ func init() {
 	conf = Config{
 		Role:        "Monitor",
 		ClusterPort: 1234,
-		Peers: []string{},
+		Peers:       []string{},
 	}
 
 	if len(os.Args) < 2 {

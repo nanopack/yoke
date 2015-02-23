@@ -3,7 +3,6 @@ package main
 import "fmt"
 import "os"
 
-
 func main() {
 	handle(ClusterStart())
 	handle(StatusStart())

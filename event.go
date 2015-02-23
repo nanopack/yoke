@@ -30,11 +30,11 @@ func (e EventThing) NotifyUpdate(n *memberlist.Node) {
 }
 
 func (e EventThing) NotifyConflict(existing, other *memberlist.Node) {
-  defer func() {
-    recover()
-    fmt.Println("I cannot join that cluster")
-    os.Exit(1)
-    }()
+	defer func() {
+		recover()
+		fmt.Println("I cannot join that cluster")
+		os.Exit(1)
+	}()
 	fmt.Println(len(list.Members()))
 	fmt.Printf("someone tried joing us:\n %+v\n\n%+v", existing, other)
 }
