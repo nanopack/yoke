@@ -15,10 +15,10 @@ type (
 
 	//
 	Status struct {
-		CRole    string
-		DBRole   string
-		State    string
-		UpdateAt time.Time
+		CRole    	string
+		DBRole   	string
+		State    	string
+		UpdatedAt time.Time
 	}
 )
 
