@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-var lastKnownCluster *[]Status
+var lastKnownCluster []*Status
 
 //
 func DecisionStart() error {
@@ -13,7 +13,7 @@ func DecisionStart() error {
 	waitForClusterFull()
 	// start the database and perform actions on that database
 	go func() {
-		self, err := WhoAmI()
+		self, err := Whoami()
 		if self.CRole == "monitor" {
 			fmt.Println("im a monitor.. i dont make decisions")
 			return
@@ -22,7 +22,7 @@ func DecisionStart() error {
 		startDB()
 		lastKnownCluster, err = Cluster()
 		// start a timer that will trigger a cluster check
-		timer = make(chan bool)
+		timer := make(chan bool)
 		go func() {
 			for {
 				time.Sleep(time.Second * 10)
@@ -61,7 +61,8 @@ func DecisionStart() error {
 // appropriate number of members
 func waitForClusterFull() {
 	for {
-		if len(Cluster()) == 3 {
+		c, _ := Cluster()
+		if len(c) == 3 {
 			fmt.Println("members are all online!")
 			return
 		}
@@ -71,7 +72,7 @@ func waitForClusterFull() {
 
 // figure out what to start as.
 func startDB() {
-	self := WhoAmI()
+	self, _ := Whoami()
 	switch self.CRole {
 	case "primary":
 		updateStatusRole("master")
@@ -86,7 +87,7 @@ func startDB() {
 
 //
 func startType(def string) string {
-	self, err := WhoAmI()
+	self, err := Whoami()
 	switch self.DBRole {
 	case "initialized":
 		return def
@@ -96,7 +97,7 @@ func startType(def string) string {
 		// check the other node and see if it is single
 		// if not i stay master
 		// if so i go secondary
-		other, err := WhoIs(otherRole(self))
+		other, err := Whois(otherRole(self))
 		// if the other guy has transitioned to single
 		if other.DBRole == "single" {
 			return "slave"
@@ -116,13 +117,15 @@ func startType(def string) string {
 
 //
 func clusterChanges() bool {
-	if len(lastKnownCluster) != len(Cluster()) {
-		lastKnownCluster = Cluster()
+	c, _ := Cluster()
+	if len(lastKnownCluster) != len(c) {
+		lastKnownCluster, _ = Cluster()
 		return true
 	}
 	for _, member := range lastKnownCluster {
-		if member.DBRole != WhoIs(member.CRole).DBRole {
-			lastKnownCluster = Cluster()
+		other, _ := Whois(member.CRole)
+		if member.DBRole != other.DBRole {
+			lastKnownCluster, _ = Cluster()
 			return true
 		}
 	}
@@ -131,8 +134,8 @@ func clusterChanges() bool {
 
 //
 func performAction() {
-	self, err := WhoAmI()
-	other, err := WhoIs(otherRole(self))
+	self, err := Whoami()
+	other, err := Whois(otherRole(self))
 
 	switch self.DBRole {
 	case "single":
@@ -170,7 +173,7 @@ func performActionFromMaste(self, other *Status) {
 	}
 	// see if im the odd man out or if it is the other guy
 	time.Sleep(10 * time.Second)
-	mon, err := WhoIs("monitor")
+	mon, err := Whois("monitor")
 	if mon != nil {
 		// the other member died but i can still talk to the monitor
 		// i can safely become a single
@@ -199,7 +202,7 @@ func performActionFromSlave(self, other *Status) {
 
 	// see if im the odd man out or if it is the other guy
 	time.Sleep(10 * time.Second)
-	mon, err := WhoIs("monitor")
+	mon, err := Whois("monitor")
 	if mon != nil {
 		// the other member died but i can still talk to the monitor
 		// i can safely become a single
@@ -215,7 +218,8 @@ func performActionFromSlave(self, other *Status) {
 
 //
 func performActionFromDead(self, other *Status) {
-	if other != nil && len(Cluster()) == 3 {
+	c, _ := Cluster()
+	if other != nil && len(c) == 3 {
 		switch self.DBRole {
 		case "dead(master)":
 			newRole := startType("master")
@@ -233,8 +237,8 @@ func performActionFromDead(self, other *Status) {
 
 //
 func updateStatusRole(r string) {
-	status.UpdateRole(r)
-	lastKnownCluster = Cluster()
+	status.SetDBRole(r)
+	lastKnownCluster, _ = Cluster()
 }
 
 //
