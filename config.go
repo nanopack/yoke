@@ -14,9 +14,11 @@ type Config struct {
 	Peers       []string
 }
 
+var	actions chan string
 var conf Config
 
 func init() {
+	actions = make(chan string)
 	conf = Config{
 		Role:        "Monitor",
 		ClusterPort: 1234,

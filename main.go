@@ -6,7 +6,7 @@ import "os"
 
 func main() {
 	handle(ClusterStart())
-	handle(RpcStart())
+	handle(StatusStart())
 	handle(DecisionStart())
 	handle(ActionStart())
 	// do some sleep thing
