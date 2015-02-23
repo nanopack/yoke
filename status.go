@@ -11,18 +11,18 @@ import (
 )
 
 //
-type(
+type (
 
 	//
 	Status struct {
 		CRole    string
 		DBRole   string
-		State  	 string
+		State    string
 		UpdateAt time.Time
 	}
 )
 
-var(
+var (
 	client *rpc.Client
 	status *Status
 	store  *scribble.Driver
@@ -67,7 +67,7 @@ func StatusStart() error {
 
 	// RPC CLIENT
 	client, err = rpc.Dial("tcp", port)
- 	if err != nil {
+	if err != nil {
 		return err
 	}
 
@@ -197,7 +197,7 @@ func (s *Status) cluster(v []*Status) error {
 }
 
 //
-func (s *Status) demote() (error) {
+func (s *Status) demote() error {
 	return nil
 }
 

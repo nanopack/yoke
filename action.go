@@ -8,7 +8,7 @@ import (
 func ActionStart() error {
 	for {
 		select {
-		case act := <- actions:
+		case act := <-actions:
 			doAction(act)
 		}
 	}
@@ -44,6 +44,6 @@ func doAction(act string) {
 		time.Sleep(time.Second)
 		status.SetState("running")
 	default:
-		fmt.Println("i dont know what to do with this action: "+act)
+		fmt.Println("i dont know what to do with this action: " + act)
 	}
 }

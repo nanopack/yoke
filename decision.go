@@ -35,18 +35,17 @@ func DecisionStart() error {
 		for {
 			select {
 
-
-		  case result := <- advice:
-		    fmt.Print(result)
-		    if result == "demote" && self.DBRole == "master" {
+			case result := <-advice:
+				fmt.Print(result)
+				if result == "demote" && self.DBRole == "master" {
 					updateStatusRole("dead(master)")
 					actions <- "kill"
-		    } else {
-			    // what do i do with other advice?
+				} else {
+					// what do i do with other advice?
 					// if clusterChanges() {
 					// 	performAction()
 					// }
-		    }
+				}
 			case <-timer:
 				fmt.Println("timer ran out: checking cluster")
 				if clusterChanges() {

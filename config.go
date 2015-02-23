@@ -17,10 +17,10 @@ type Config struct {
 }
 
 var (
-	advice chan string
+	advice  chan string
 	actions chan string
-	conf Config
-	log  *lumber.ConsoleLogger
+	conf    Config
+	log     *lumber.ConsoleLogger
 )
 
 //

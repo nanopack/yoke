@@ -15,14 +15,14 @@ type EventHandler struct {
 // The Node argument must not be modified.
 func (e EventHandler) NotifyJoin(n *memberlist.Node) {
 	fmt.Printf("NotifyJoin:%+v", n)
-	advice <- "join"+n.Name
+	advice <- "join" + n.Name
 }
 
 // NotifyLeave is invoked when a node is detected to have left.
 // The Node argument must not be modified.
 func (e EventHandler) NotifyLeave(n *memberlist.Node) {
 	fmt.Printf("NotifyLeave:%+v", n)
-	advice <- "leave"+n.Name
+	advice <- "leave" + n.Name
 }
 
 // NotifyUpdate is invoked when a node is detected to have
@@ -30,7 +30,7 @@ func (e EventHandler) NotifyLeave(n *memberlist.Node) {
 // must not be modified.
 func (e EventHandler) NotifyUpdate(n *memberlist.Node) {
 	fmt.Printf("NotifyUpdate:%+v", n)
-	advice <- "update"+n.Name
+	advice <- "update" + n.Name
 }
 
 //
