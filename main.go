@@ -2,25 +2,19 @@ package main
 
 import "fmt"
 import "os"
-import "errors"
 
-var list *memberlist.Memberlist
 
 func main() {
-	err := ClusterStart()
-	handle(err)
-	err := RpcStart()
-	handle(err)
-	err := DecisionStart()
-	handle(err)
-	err := ActionStart()
-	handle(err)
-	// hang
+	handle(ClusterStart())
+	handle(RpcStart())
+	handle(DecisionStart())
+	handle(ActionStart())
+	// do some sleep thing
 }
 
 func handle(err error) {
 	if err != nil {
-		fmt.Println("error: " + err)
+		fmt.Println("error: " + err.Error())
 		os.Exit(1)
 	}
 }

@@ -22,6 +22,7 @@ func (self *Status) save() {
 func (self *Status) retrieve() {
 	self.Role = conf.Role
 	self.State = "booting"
+	// scribble stuff
 }
 
 func (self *Status) updateState(state string) {
@@ -37,14 +38,17 @@ func (self *Status) Get(who string, reply *Status) error {
 }
 
 func (self *Status) Cluster(who string, reply *Statuses) error {
+
 	for _, member := range list.Members() {
-		append(reply, GetNodeStatus(member))
+		// not working yet
+		fmt.Println(member)
+		// append(reply, GetNodeStatus(member))
 	}
 	return nil
 }
 
-func GetNodeStatus(memberlist.Node) Status {
-
+func GetNodeStatus(node *memberlist.Node) Status {
+	return *status
 }
 
 var status *Status

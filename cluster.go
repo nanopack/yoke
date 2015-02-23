@@ -1,7 +1,10 @@
+package main
 
 import (
 	"github.com/hashicorp/memberlist"
 )
+
+var list *memberlist.Memberlist
 
 func ClusterStart() error {
 	config := memberlist.DefaultLANConfig()
@@ -15,8 +18,10 @@ func ClusterStart() error {
 		return err
 	}
 
-	n, err := list.Join(conf.Peers)
+	_, err = list.Join(conf.Peers)
 	if err != nil {
 		return err
 	}
+
+	return nil
 }
