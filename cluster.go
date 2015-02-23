@@ -19,7 +19,6 @@ func ClusterStart() error {
 		log.Error("cluster Error: %s", err.Error())
 	}
 	list = l
-	
 	_, err = list.Join(conf.Peers)
 	if err != nil {
 		log.Error("cluster Error: %s", err.Error())

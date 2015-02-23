@@ -115,6 +115,7 @@ func startType(def string) string {
 	case "slave", "dead(slave)":
 		return "slave"
 	}
+	fmt.Printf("%+v\n",self)
 	panic("i should have caught all scenarios")
 	return def
 }
