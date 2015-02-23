@@ -13,7 +13,7 @@ func DecisionStart() error {
 	waitForClusterFull()
 	// start the database and perform actions on that database
 	go func() {
-		self, _ := Whoami()
+		self := myself()
 		if self.CRole == "monitor" {
 			fmt.Println("im a monitor.. i dont make decisions")
 			return
@@ -72,7 +72,7 @@ func waitForClusterFull() {
 
 // figure out what to start as.
 func startDB() {
-	self, _ := Whoami()
+	self := myself()
 	switch self.CRole {
 	case "primary":
 		updateStatusRole("master")
@@ -87,7 +87,7 @@ func startDB() {
 
 //
 func startType(def string) string {
-	self, _ := Whoami()
+	self := myself()
 	switch self.DBRole {
 	case "initialized":
 		return def
@@ -134,7 +134,7 @@ func clusterChanges() bool {
 
 //
 func performAction() {
-	self, _ := Whoami()
+	self := myself()
 	other, _ := Whois(otherRole(self))
 
 	switch self.DBRole {
@@ -247,4 +247,16 @@ func otherRole(st *Status) string {
 		return "secondary"
 	}
 	return "primary"
+}
+
+func myself() *Status {
+	for i := 0; i < 10; i++ {
+		self, err := Whoami()
+		if err == nil {
+			return self
+		}
+		log.Error("Decision: Myself: "+ err.Error())
+	}
+	panic("Decision: Myself: I never found myself!")
+	return nil
 }
