@@ -50,9 +50,9 @@ func StatusStart() error {
 	go func(l net.Listener) {
 		for {
 			if conn, err := l.Accept(); err != nil {
-				fmt.Println("accept error: " + err.Error())
+				log.Error("accept error: " + err.Error())
 			} else {
-				fmt.Printf("new connection established\n")
+				log.Trace("new connection established\n")
 				go rpc.ServeConn(conn)
 			}
 		}

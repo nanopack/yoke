@@ -66,6 +66,8 @@ func waitForClusterFull() {
 			fmt.Println("members are all online!")
 			return
 		}
+		
+		fmt.Printf("waiting for members (cluster(%d), list(%d))\n",len(c), len(list.Members()))
 		time.Sleep(time.Second)
 	}
 }
