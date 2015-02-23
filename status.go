@@ -22,20 +22,17 @@ type (
 	}
 )
 
-var (
-	status *Status
-	store  *scribble.Driver
-)
+var store *scribble.Driver
 
 //
 func StatusStart() error {
 
 	//
-	s := Status{CRole: conf.Role, State: "booting"}
+	s := &Status{CRole: conf.Role, State: "booting"}
 
 	//
 	store = scribble.New("./status", log)
-	t := scribble.Transaction{Operation: "write", Collection: "cluster", RecordID: "node", Container: &s}
+	t := scribble.Transaction{Operation: "write", Collection: "cluster", RecordID: "node", Container: s}
 	if err := store.Transact(t); err != nil {
 		return err
 	}
