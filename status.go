@@ -32,7 +32,7 @@ var(
 func StatusStart() error {
 
 	//
-	status = &Status{CRole: conf.Role, State: "booting", UpdateAt: Time.Now()}
+	status = &Status{CRole: conf.Role, State: "booting", UpdatedAt: time.Now()}
 
 	//
 	store = scribble.New("./status", log)
@@ -76,7 +76,7 @@ func (s *Status) SetDBRole(role string) {
 		panic("Unable to set db role! " + err.Error())
 	}
 
-	s.UpdateAt = Time.Now()
+	s.UpdatedAt = time.Now()
 }
 
 //
