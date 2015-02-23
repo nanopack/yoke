@@ -23,16 +23,12 @@ type (
 )
 
 var (
-	client *rpc.Client
 	status *Status
 	store  *scribble.Driver
 )
 
 //
 func StatusStart() error {
-
-	//
-	port := strconv.FormatInt(int64(conf.ClusterPort+1), 10)
 
 	//
 	s := Status{CRole: conf.Role, State: "booting"}
@@ -48,7 +44,7 @@ func StatusStart() error {
 	rpc.Register(s)
 
 	// RPC SERVER
-	l, err := net.Listen("tcp", ":"+port)
+	l, err := net.Listen("tcp", ":" + strconv.FormatInt(int64(conf.ClusterPort+1), 10))
 	if err != nil {
 		return err
 	}
@@ -65,25 +61,10 @@ func StatusStart() error {
 		}
 	}(l)
 
-	// RPC CLIENT
-	client, err = rpc.Dial("tcp", port)
-	if err != nil {
-		return err
-	}
-
 	return nil
 }
 
 // 'public' methods
-
-//
-// func (s *Status) SetCRole(role string) {
-// 	s.CRole = role
-// 	if err := save(s); err != nil {
-// 		log.Fatal("BONK!", err)
-// 		panic("Unable to set set cluster role! " + err.Error())
-// 	}
-// }
 
 //
 func (s *Status) SetDBRole(role string) {
@@ -103,15 +84,14 @@ func (s *Status) SetState(state string) {
 	}
 }
 
-// 'public' (RPC mapped) function
+// 'public' function
 
 //
 func Whoami() (*Status, error) {
-	fmt.Println("WHAT IS THIS", list.LocalNode())
-
 	s := &Status{}
 
-	if err := client.Call("Status.whoami", nil, s); err != nil {
+	//
+	if err := get(list.LocalNode().Name, s); err != nil {
 		return nil, err
 	}
 
@@ -120,11 +100,29 @@ func Whoami() (*Status, error) {
 
 //
 func Whois(role string) (*Status, error) {
-	s := &Status{}
 
-	if err := client.Call("Status.whois", role, s); err != nil {
+	var conn string
+
+	for _, m := range list.Members() {
+		if m.Name == role {
+			conn = fmt.Sprintf("%s:%s", m.Addr, strconv.FormatInt(int64(m.Port+1), 10))
+		}
+	}
+
+	//
+	client, err := rpc.Dial("tcp", conn)
+	if err != nil {
 		return nil, err
 	}
+
+	s := &Status{}
+
+	if err := client.Call("Status.Ping", role, s); err != nil {
+		return nil, err
+	}
+
+	//
+	client.Close()
 
 	return s, nil
 }
@@ -133,8 +131,17 @@ func Whois(role string) (*Status, error) {
 func Cluster() ([]*Status, error) {
 	var members = []*Status{}
 
-	if err := client.Call("Status.cluster", nil, &members); err != nil {
-		return nil, err
+	//
+	for _, m := range list.Members() {
+
+		//
+		status, err := Whois(m.Name)
+		if err != nil {
+			return nil, err
+		}
+
+		//
+		members = append(members, status)
 	}
 
 	return members, nil
@@ -142,62 +149,23 @@ func Cluster() ([]*Status, error) {
 
 //
 func Demote() error {
-	if err := client.Call("Status.demote", nil, nil); err != nil {
-		return err
-	}
-
 	return nil
 }
 
-// 'private' (RPC) methods
+// RPC methods
 
 //
-func (s *Status) whoami(v interface{}) error {
-
-	//
-	if err := get(s.CRole, v); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-//
-func (s *Status) whois(role string, v interface{}) error {
+func (s *Status) Ping(role string, status *Status) error {
 
 	//
 	for _, m := range list.Members() {
 		if m.Name == role {
-			if err := get(role, v); err != nil {
+			if err := get(role, status); err != nil {
 				return err
 			}
 		}
 	}
 
-	return nil
-}
-
-//
-func (s *Status) cluster(v []*Status) error {
-
-	//
-	for range list.Members() {
-
-		//
-		status, err := Whoami()
-		if err != nil {
-			return err
-		}
-
-		//
-		v = append(v, status)
-	}
-
-	return nil
-}
-
-//
-func (s *Status) demote() error {
 	return nil
 }
 
