@@ -25,19 +25,19 @@ func doAction(act string) {
 		time.Sleep(time.Second)
 		status.SetState("down")
 	case "master":
-		status.SetState("configging")
+		status.SetState("configuring")
 		time.Sleep(time.Second)
 		status.SetState("starting/restarting")
 		time.Sleep(time.Second)
 		status.SetState("running")
 	case "slave":
-		status.SetState("configging")
+		status.SetState("configuring")
 		time.Sleep(time.Second)
 		status.SetState("starting/restarting")
 		time.Sleep(time.Second)
 		status.SetState("running")
 	case "single":
-		status.SetState("configging")
+		status.SetState("configuring")
 		time.Sleep(time.Second)
 		status.SetState("starting/restarting")
 		time.Sleep(time.Second)
