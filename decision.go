@@ -37,13 +37,13 @@ func DecisionStart() error {
 		for {
 			select {
 
-			case result := <-advice:
-				if result == "demote" && self.DBRole == "master" {
+			case adv := <-advice:
+				if adv == "demote" && self.DBRole == "master" {
 					updateStatusRole("dead(master)")
 					actions <- "kill"
 				} else {
-					log.Info("got a result i am not doing anything with:" +result)
-					what do i do with other advice?
+					log.Info("got some advice:" +adv)
+					// what do i do with other advice?
 					if clusterChanges() {
 						performAction()
 					}
