@@ -14,6 +14,7 @@ func ClusterStart() error {
 	config.Conflict = EventHandler{true}
 	config.BindPort = conf.ClusterPort
 	config.AdvertisePort = conf.ClusterPort
+	config.IndirectChecks = 1
 	l, err := memberlist.Create(config)
 	if err != nil {
 		log.Error("cluster Error: %s", err.Error())
