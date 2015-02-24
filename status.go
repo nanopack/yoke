@@ -21,17 +21,16 @@ import (
 
 // Status represents the Status of node in the cluser
 type Status struct {
-	CRole    	string 		// the nodes 'role' in the cluster (primary, secondary, monitor)
-	DBRole   	string 		// the 'role' of the running pgsql instance inside the node (master, slave)
-	State    	string 		// the current state of the node
+	CRole     string    // the nodes 'role' in the cluster (primary, secondary, monitor)
+	DBRole    string    // the 'role' of the running pgsql instance inside the node (master, slave)
+	State     string    // the current state of the node
 	UpdatedAt time.Time // the last time the node state was updated
 }
 
-var(
+var (
 	status *Status
-	store *scribble.Driver
+	store  *scribble.Driver
 )
-
 
 // StatusStart
 func StatusStart() error {
@@ -61,7 +60,7 @@ func StatusStart() error {
 	log.Info("[STATUS] Starting RPC server...\n")
 
 	// fire up an RPC (tcp) server
-	l, err := net.Listen("tcp", ":" + strconv.FormatInt(int64(conf.ClusterPort+1), 10))
+	l, err := net.Listen("tcp", ":"+strconv.FormatInt(int64(conf.ClusterPort+1), 10))
 	if err != nil {
 		log.Error("[STATUS] Unable to start server! %v\n", err)
 		return err

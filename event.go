@@ -27,7 +27,7 @@ func (e EventHandler) NotifyLeave(n *memberlist.Node) {
 	go func() {
 		advice <- "leave" + n.Name
 	}()
-	
+
 }
 
 // NotifyUpdate is invoked when a node is detected to have
@@ -38,7 +38,7 @@ func (e EventHandler) NotifyUpdate(n *memberlist.Node) {
 	go func() {
 		advice <- "update" + n.Name
 	}()
-	
+
 }
 
 //

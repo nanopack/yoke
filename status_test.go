@@ -17,37 +17,37 @@ import (
 //
 func testSetDBRole(t *testing.T) {
 
-	status 		 := &Status{CRole: "primary", DBRole: "initialized", State: "booting", UpdatedAt: time.Now()}
+	status := &Status{CRole: "primary", DBRole: "initialized", State: "booting", UpdatedAt: time.Now()}
 	targetRole := "master"
 
 	//
 	status.SetDBRole(targetRole)
 
 	if status.DBRole != targetRole {
-    t.Error(
-      "For", status.DBRole,
-      "expected", targetRole,
-      "got", status.DBRole,
-    )
-  }
+		t.Error(
+			"For", status.DBRole,
+			"expected", targetRole,
+			"got", status.DBRole,
+		)
+	}
 }
 
 //
 func (s *Status) testSetState(t *testing.T) {
 
-	status 			:= &Status{CRole: "primary", DBRole: "initialized", State: "booting", UpdatedAt: time.Now()}
+	status := &Status{CRole: "primary", DBRole: "initialized", State: "booting", UpdatedAt: time.Now()}
 	targetState := "running"
 
 	//
 	status.SetState(targetState)
 
 	if status.DBRole != targetState {
-    t.Error(
-      "For", status.DBRole,
-      "expected", targetState,
-      "got", status.DBRole,
-    )
-  }
+		t.Error(
+			"For", status.DBRole,
+			"expected", targetState,
+			"got", status.DBRole,
+		)
+	}
 }
 
 //

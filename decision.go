@@ -42,7 +42,7 @@ func DecisionStart() error {
 					updateStatusRole("dead(master)")
 					actions <- "kill"
 				} else {
-					log.Info("got some advice:" +adv)
+					log.Info("got some advice:" + adv)
 					// what do i do with other advice?
 					if clusterChanges() {
 						performAction()
@@ -67,8 +67,8 @@ func waitForClusterFull() {
 			log.Info("[decision] members are all online!")
 			return
 		}
-		
-		log.Info("[decision] waiting for members (cluster(%d), list(%d))\n",len(c), len(list.Members()))
+
+		log.Info("[decision] waiting for members (cluster(%d), list(%d))\n", len(c), len(list.Members()))
 		time.Sleep(time.Second)
 	}
 }
@@ -81,12 +81,12 @@ func startDB() {
 	case "primary":
 		r := startType("master")
 		updateStatusRole(r)
-		log.Info("[decision] I am starting as "+r)
+		log.Info("[decision] I am starting as " + r)
 		actions <- r
 	case "secondary":
 		r := startType("slave")
 		updateStatusRole(r)
-		log.Info("[decision] I am starting as "+r)
+		log.Info("[decision] I am starting as " + r)
 		actions <- r
 	default:
 		log.Warn("[decision] Monitors dont do anything. (and this shouldnt have been executed)")
@@ -121,7 +121,7 @@ func startType(def string) string {
 	case "slave", "dead(slave)":
 		return "slave"
 	}
-	log.Error("[decision] Error: Status: %+v\n",self)
+	log.Error("[decision] Error: Status: %+v\n", self)
 	panic("i should have caught all scenarios")
 	return def
 }
@@ -249,12 +249,12 @@ func performActionFromDead(self, other *Status) {
 		case "dead(master)":
 			newRole := startType("master")
 			updateStatusRole(newRole)
-			log.Info("[decision] performActionFromDead: other online: going "+newRole)
+			log.Info("[decision] performActionFromDead: other online: going " + newRole)
 			actions <- newRole
 		case "dead(slave)":
 			newRole := startType("slave")
 			updateStatusRole(newRole)
-			log.Info("[decision] performActionFromDead: other online: going "+newRole)
+			log.Info("[decision] performActionFromDead: other online: going " + newRole)
 			actions <- newRole
 		default:
 			panic("i dont know how to be a " + self.DBRole)
@@ -282,7 +282,7 @@ func myself() *Status {
 		if err == nil {
 			return self
 		}
-		log.Error("Decision: Myself: "+ err.Error())
+		log.Error("Decision: Myself: " + err.Error())
 	}
 	panic("Decision: Myself: I never found myself!")
 	return nil

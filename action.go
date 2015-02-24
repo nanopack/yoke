@@ -1,8 +1,8 @@
 package main
 
 import (
-	"time"
 	"fmt"
+	"time"
 )
 
 //
@@ -10,7 +10,7 @@ func ActionStart() error {
 	for {
 		select {
 		case act := <-actions:
-			log.Info("[action] new action: "+act)
+			log.Info("[action] new action: " + act)
 			doAction(act)
 		}
 	}
