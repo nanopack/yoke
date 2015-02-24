@@ -31,10 +31,13 @@ var(
 //
 func StatusStart() error {
 
-	log.Info("[STATUS - StatusStart] ...\n")
+	s, err := Whoami()
+	if err != nil {
+		log.Error("[STATUS - StatusStart] 404: Not found - when looking for '%s'\n", conf.Role)
+		status = &Status{CRole: conf.Role, DBRole: "initialized", State: "booting", UpdatedAt: time.Now()}
+	}
 
-	//
-	status = &Status{CRole: conf.Role, DBRole: "initialized", State: "booting", UpdatedAt: time.Now()}
+	status = s
 
 	log.Debug("[STATUS] Created status: %+v\n", status)
 
@@ -63,7 +66,7 @@ func StatusStart() error {
 			if conn, err := l.Accept(); err != nil {
 				log.Error("[STATUS] RPC server - failed to accept connection\n", err.Error())
 			} else {
-				log.Trace("[STATUS] RPC server - new connection established\n")
+				log.Debug("[STATUS] RPC server - new connection established\n")
 				go rpc.ServeConn(conn)
 			}
 		}
@@ -76,7 +79,7 @@ func StatusStart() error {
 
 //
 func (s *Status) SetDBRole(role string) {
-	log.Info("[STATUS - SetDBRole] setting role '%s' on node '%s'\n", role, s.CRole)
+	log.Debug("[STATUS - SetDBRole] setting role '%s' on node '%s'\n", role, s.CRole)
 
 	s.DBRole = role
 
@@ -90,7 +93,7 @@ func (s *Status) SetDBRole(role string) {
 
 //
 func (s *Status) SetState(state string) {
-	log.Info("[STATUS - SetState] setting '%s' on '%s'\n", state, s.CRole)
+	log.Debug("[STATUS - SetState] setting '%s' on '%s'\n", state, s.CRole)
 
 	s.State = state
 
@@ -104,7 +107,6 @@ func (s *Status) SetState(state string) {
 
 //
 func Whoami() (*Status, error) {
-	log.Info("[STATUS - Whoami] I am '%s'", list.LocalNode().Name)
 	log.Debug("[STATUS - Whoami] list.LocalNode() - %+v", list.LocalNode())
 
 	s := &Status{}
@@ -119,7 +121,7 @@ func Whoami() (*Status, error) {
 
 //
 func Whois(role string) (*Status, error) {
-	log.Info("[STATUS - Whois] Who is '%s'?", role)
+	log.Debug("[STATUS - Whois] Who is '%s'?", role)
 
 	var conn string
 
@@ -170,7 +172,7 @@ func Cluster() ([]*Status, error) {
 		members = append(members, s)
 	}
 
-	log.Info("[STATUS - Cluster] members - %+v", members)
+	log.Debug("[STATUS - Cluster] members - %+v", members)
 
 	return members, nil
 }
