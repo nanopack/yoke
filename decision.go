@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"time"
 )
 
@@ -9,13 +8,15 @@ var lastKnownCluster []*Status
 
 //
 func DecisionStart() error {
+	log.Info("[decision] starting")
 	// wait for the cluster to come online
 	waitForClusterFull()
 	// start the database and perform actions on that database
 	go func() {
 		self := myself()
+		log.Info("[decision] myself %+v", self)
 		if self.CRole == "monitor" {
-			fmt.Println("im a monitor.. i dont make decisions")
+			log.Info("[decision] im a monitor.. i dont make decisions")
 			return
 		}
 		// start the database up
@@ -47,7 +48,7 @@ func DecisionStart() error {
 					// }
 				}
 			case <-timer:
-				fmt.Println("timer ran out: checking cluster")
+				log.Info("[decision] timer ran out: checking cluster")
 				if clusterChanges() {
 					performAction()
 				}
@@ -63,35 +64,39 @@ func waitForClusterFull() {
 	for {
 		c, _ := Cluster()
 		if len(c) == 3 {
-			fmt.Println("members are all online!")
+			log.Info("[decision] members are all online!")
 			return
 		}
 		
-		fmt.Printf("waiting for members (cluster(%d), list(%d))\n",len(c), len(list.Members()))
+		log.Info("[decision] waiting for members (cluster(%d), list(%d))\n",len(c), len(list.Members()))
 		time.Sleep(time.Second)
 	}
 }
 
 // figure out what to start as.
 func startDB() {
+	log.Info("[decision] Starting Db")
 	self := myself()
 	switch self.CRole {
 	case "primary":
 		r := startType("master")
 		updateStatusRole(r)
+		log.Info("[decision] I am starting as "+r)
 		actions <- r
 	case "secondary":
 		r := startType("slave")
 		updateStatusRole(r)
+		log.Info("[decision] I am starting as "+r)
 		actions <- r
 	default:
-		fmt.Println("Monitors dont do anything.")
+		log.Info("[decision] Monitors dont do anything.")
 	}
 }
 
 //
 func startType(def string) string {
 	self := myself()
+	log.Info("[decision] startType: self: %+v", self)
 	switch self.DBRole {
 	case "initialized":
 		return def
@@ -102,6 +107,7 @@ func startType(def string) string {
 		// if not i stay master
 		// if so i go secondary
 		other, _ := Whois(otherRole(self))
+		log.Info("[decision] startType: other: %+v", other)
 		// if the other guy has transitioned to single
 		if other.DBRole == "single" {
 			return "slave"
@@ -115,7 +121,7 @@ func startType(def string) string {
 	case "slave", "dead(slave)":
 		return "slave"
 	}
-	fmt.Printf("%+v\n",self)
+	log.Error("[decision] %+v\n",self)
 	panic("i should have caught all scenarios")
 	return def
 }
@@ -142,11 +148,12 @@ func performAction() {
 	self := myself()
 	other, _ := Whois(otherRole(self))
 
+	log.Info("[decision] performAction: self: %+v, other: %+v", self, other)
 	switch self.DBRole {
 	case "single":
 		performActionFromSingle(self, other)
 	case "master":
-		performActionFromMaste(self, other)
+		performActionFromMaster(self, other)
 	case "slave":
 		performActionFromSlave(self, other)
 	case "dead(master)", "dead(slave)":
@@ -160,20 +167,23 @@ func performActionFromSingle(self, other *Status) {
 		// i was in single but the other node came back online
 		// I should be safe to assume master
 		updateStatusRole("master")
+		log.Info("[decision] performActionFromSingle: going master")
 		actions <- "master"
 	}
 }
 
 //
-func performActionFromMaste(self, other *Status) {
+func performActionFromMaster(self, other *Status) {
 	if other != nil && other.DBRole == "slave" {
 		// i lost the monitor
 		// shouldnt hurt anything
+		log.Info("[decision] performActionFromMaster: other is slave .. im doing nothing")
 		return
 	}
 	if other != nil && other.DBRole == "dead(slave)" {
 		// my slave has died and i need to transition into single mode
 		updateStatusRole("single")
+		log.Info("[decision] performActionFromMaster: other is dead .. going single")
 		actions <- "single"
 	}
 	// see if im the odd man out or if it is the other guy
@@ -183,11 +193,13 @@ func performActionFromMaste(self, other *Status) {
 		// the other member died but i can still talk to the monitor
 		// i can safely become a single
 		updateStatusRole("single")
+		log.Info("[decision] performActionFromMaster: other dead but im still in going single")
 		actions <- "single"
 	} else {
 		// I have lost communication with everything else
 		// kill my server
 		updateStatusRole("dead(master)")
+		log.Info("[decision] performActionFromMaster: i am out of cluster SUPUKU")
 		actions <- "kill"
 	}
 }
