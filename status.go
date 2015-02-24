@@ -53,7 +53,7 @@ func StatusStart() error {
 		log.Debug("[STATUS - StatusStart] Creating record for '%s'\n", conf.Role)
 		save(status)
 
-	// found a record matching the current node
+		// found a record matching the current node
 	} else {
 		status = s
 	}
