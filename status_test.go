@@ -1,84 +1,79 @@
 package main
 
-// import (
-// 	"fmt"
-// 	"net"
-// 	"net/rpc"
-// 	"strconv"
-// 	"testing"
-// 	"time"
+import (
+	// "fmt"
+	// "net"
+	// "net/rpc"
+	// "strconv"
+	"testing"
+	"time"
 
-// 	"github.com/nanobox-core/scribble"
-// )
+	// "github.com/nanobox-core/scribble"
+)
 
-// //
-// type (
+//
+// func testStatusStart() error { }
 
-// 	//
-// 	testStatus struct {
-// 		cRole    	string
-// 		dbRole   	string
-// 		state    	string
-// 		updatedAt time.Time
-// 	}
-// )
+//
+func testSetDBRole(t *testing.T) {
 
-// var(
-// 	status *Status
-// 	store *scribble.Driver
-// )
+	status 		 := &Status{CRole: "primary", DBRole: "initialized", State: "booting", UpdatedAt: time.Now()}
+	targetRole := "master"
 
+	//
+	status.SetDBRole(targetRole)
 
-// //
-// func testStatusStart() error {
+	if status.DBRole != targetRole {
+    t.Error(
+      "For", status.DBRole,
+      "expected", targetRole,
+      "got", status.DBRole,
+    )
+  }
+}
 
-// 	status = &testStatus{cRole: 'primary', dbRole: "initialized", state: "booting", updatedAt: time.Now()}
+//
+func (s *Status) testSetState(t *testing.T) {
 
-// 	if status != 1.5 {
-//         t.Error("Expected 1.5, got ", v)
-//     }
-// }
+	status 			:= &Status{CRole: "primary", DBRole: "initialized", State: "booting", UpdatedAt: time.Now()}
+	targetState := "running"
 
-// // 'public' methods
+	//
+	status.SetState(targetState)
 
-// //
-// func (s *Status) testSetDBRole(role string) {
-// }
+	if status.DBRole != targetState {
+    t.Error(
+      "For", status.DBRole,
+      "expected", targetState,
+      "got", status.DBRole,
+    )
+  }
+}
 
-// //
-// func (s *Status) testSetState(state string) {
-// }
-
-// // 'public' function
-
-// //
+//
 // func testWhoami() (*Status, error) {
 // }
 
-// //
+//
 // func testWhois(role string) (*Status, error) {
 // }
 
-// //
+//
 // func testCluster() ([]*Status, error) {
 // }
 
-// // RPC methods
-
-// //
+//
 // func (s *Status) testPing(role string, status *Status) error {
 // }
 
-// //
+//
 // func (s *Status) testDemote(source string, status *Status) error {
 // }
 
-// // 'private' functions
-
-// //
+//
 // func testGet(role string, status *Status) error {
 // }
 
-// //
+//
 // func testSave(status *Status) error {
 // }
