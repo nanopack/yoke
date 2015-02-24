@@ -31,10 +31,14 @@ var(
 //
 func StatusStart() error {
 
+	//
+	store = scribble.New("./status", log)
+
 	s, err := Whoami()
 	if err != nil {
 		log.Error("[STATUS - StatusStart] 404: Not found - when looking for '%s'\n", conf.Role)
 		status = &Status{CRole: conf.Role, DBRole: "initialized", State: "booting", UpdatedAt: time.Now()}
+		save(status)
 	}
 
 	status = s
@@ -42,11 +46,10 @@ func StatusStart() error {
 	log.Debug("[STATUS] Created status: %+v\n", status)
 
 	//
-	store = scribble.New("./status", log)
-	t := scribble.Transaction{Operation: "write", Collection: "cluster", RecordID: status.CRole, Container: status}
-	if err := store.Transact(t); err != nil {
-		return err
-	}
+	// t := scribble.Transaction{Operation: "write", Collection: "cluster", RecordID: status.CRole, Container: status}
+	// if err := store.Transact(t); err != nil {
+	// 	return err
+	// }
 
 	//
 	rpc.Register(status)
