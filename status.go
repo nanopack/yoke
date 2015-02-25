@@ -45,12 +45,12 @@ func StatusStart() error {
 
 	// no record found that matches the current node
 	if err != nil {
-		log.Warn("[STATUS - StatusStart] 404 Not found: No record found for '%s'\n", conf.Role)
+		log.Warn("[status.StatusStart] 404 Not found: No record found for '%s'\n", conf.Role)
 
 		// create a new record in scribble for the current node
 		status = &Status{CRole: conf.Role, DBRole: "initialized", State: "booting", UpdatedAt: time.Now()}
 
-		log.Debug("[STATUS - StatusStart] Creating record for '%s'\n", conf.Role)
+		log.Debug("[status.StatusStart] Creating record for '%s'\n", conf.Role)
 		save(status)
 
 		// found a record matching the current node
@@ -58,17 +58,17 @@ func StatusStart() error {
 		status = s
 	}
 
-	log.Debug("[STATUS] Node Status: %+v\n", status)
+	log.Debug("[status] Node Status: %+v\n", status)
 
 	// register our Status struct with RPC
 	rpc.Register(status)
 
-	log.Info("[STATUS] Starting RPC server...\n")
+	log.Info("[status] Starting RPC server...\n")
 
 	// fire up an RPC (tcp) server
 	l, err := net.Listen("tcp", ":"+strconv.FormatInt(int64(conf.ClusterPort+1), 10))
 	if err != nil {
-		log.Error("[STATUS] Unable to start server! %v\n", err)
+		log.Error("[status] Unable to start server!\n%v\n", err)
 		return err
 	}
 
@@ -78,9 +78,9 @@ func StatusStart() error {
 		// accept connections on the RPC server
 		for {
 			if conn, err := l.Accept(); err != nil {
-				log.Error("[STATUS] RPC server - failed to accept connection\n", err.Error())
+				log.Error("[status] RPC server - failed to accept connection!\n%s%n", err.Error())
 			} else {
-				log.Debug("[STATUS] RPC server - new connection established\n")
+				log.Debug("[status] RPC server - new connection established!\n")
 
 				//
 				go rpc.ServeConn(conn)
@@ -94,7 +94,7 @@ func StatusStart() error {
 // Whoami attempts to pull a matching record from scribble for the local node
 // returned from memberlist
 func Whoami() (*Status, error) {
-	log.Debug("[STATUS - Whoami] list.LocalNode() - %+v", list.LocalNode())
+	log.Debug("[status.Whoami] list.LocalNode() - %+v", list.LocalNode())
 
 	s := &Status{}
 
@@ -111,7 +111,7 @@ func Whoami() (*Status, error) {
 // which is used to make an RPC call to the matching node, which returns a Status
 // object for that node
 func Whois(role string) (*Status, error) {
-	log.Debug("[STATUS - Whois] Who is '%s'?", role)
+	log.Debug("[status.Whois] Who is '%s'?", role)
 
 	var conn string
 
@@ -122,12 +122,12 @@ func Whois(role string) (*Status, error) {
 		}
 	}
 
-	log.Debug("[STATUS - Whois] connection - %s", conn)
+	log.Debug("[status.Whois] connection - %s", conn)
 
 	// create an RPC client that will connect to the matching node
 	client, err := rpc.Dial("tcp", conn)
 	if err != nil {
-		log.Error("[STATUS - Whois] RPC Client unable to dial! %s", err.Error())
+		log.Error("[status.Whois] RPC Client unable to dial!\n%s\n", err.Error())
 		return nil, err
 	}
 
@@ -135,7 +135,7 @@ func Whois(role string) (*Status, error) {
 
 	// 'ping' the matching node to retrieve its Status
 	if err := client.Call("Status.Ping", role, s); err != nil {
-		log.Error("[STATUS - Whois] RPC Client unable to call! %s", err.Error())
+		log.Error("[status.Whois] RPC Client unable to call!\n%s\n", err.Error())
 		return nil, err
 	}
 
@@ -148,7 +148,7 @@ func Whois(role string) (*Status, error) {
 // Cluster iterates over all the nodes in member list, running a Whois(), and
 // storing each corresponding Status into a slice and returning the collection
 func Cluster() ([]*Status, error) {
-	// log.Info("[STATUS - Cluster]")
+	// log.Info("[status.Cluster]")
 
 	var members = []*Status{}
 
@@ -165,7 +165,7 @@ func Cluster() ([]*Status, error) {
 		members = append(members, s)
 	}
 
-	log.Debug("[STATUS - Cluster] members - %+v", members)
+	log.Debug("[status.Cluster] members - %+v", members)
 
 	return members, nil
 }
@@ -173,12 +173,12 @@ func Cluster() ([]*Status, error) {
 // SetDBRole takes a 'role' string and attempts to set the Status.DBRole, and then
 // update the record via scribble
 func (s *Status) SetDBRole(role string) {
-	log.Debug("[STATUS - SetDBRole] setting role '%s' on node '%s'\n", role, s.CRole)
+	log.Debug("[status.SetDBRole] setting role '%s' on node '%s'\n", role, s.CRole)
 
 	s.DBRole = role
 
 	if err := save(s); err != nil {
-		log.Fatal("[STATUS - SetDBRole] Failed to save status! %s", err)
+		log.Fatal("[status.SetDBRole] Failed to save status! %s", err)
 		panic(err)
 	}
 
@@ -188,12 +188,12 @@ func (s *Status) SetDBRole(role string) {
 // SetState takes a 'state' string and attempts to set the Status.State, and then
 // update the record via scribble
 func (s *Status) SetState(state string) {
-	log.Debug("[STATUS - SetState] setting '%s' on '%s'\n", state, s.CRole)
+	log.Debug("[status.SetState] setting '%s' on '%s'\n", state, s.CRole)
 
 	s.State = state
 
 	if err := save(s); err != nil {
-		log.Fatal("[STATUS - SetDBRole] Failed to save status! %s", err)
+		log.Fatal("[status.SetDBRole] Failed to save status! %s", err)
 		panic(err)
 	}
 }
@@ -203,7 +203,7 @@ func (s *Status) SetState(state string) {
 // finds a matching node
 func (s *Status) Ping(role string, status *Status) error {
 
-	log.Info("[STATUS - Ping] pinging '%s'...", role)
+	log.Info("[status.Ping] pinging '%s'...", role)
 
 	// iterate through each node in memberlist looking for a node whos name matches
 	// the desired 'role'
@@ -212,7 +212,7 @@ func (s *Status) Ping(role string, status *Status) error {
 
 			// attempt to retrieve that Status of the node from scribble
 			if err := get(role, status); err != nil {
-				log.Error("[STATUS - Ping] Unable to read '%s'! %s", role, err.Error())
+				log.Error("[status.Ping] Unable to read '%s'!\n%s\n", role, err.Error())
 				return err
 			}
 		}
@@ -223,7 +223,7 @@ func (s *Status) Ping(role string, status *Status) error {
 
 // Demote is used as a way to 'advise' the current node that it needs to demote
 func (s *Status) Demote(source string, status *Status) error {
-	log.Info("[STATUS - Demote] Advising demote...")
+	log.Info("[status.Demote] Advising demote...")
 
 	advice <- "demote"
 
@@ -232,7 +232,7 @@ func (s *Status) Demote(source string, status *Status) error {
 
 // get retrieves a Status from scribble by 'role'
 func get(role string, status *Status) error {
-	log.Debug("[STATUS - get] Attempting to get node '%s'", role)
+	log.Debug("[status.get] Attempting to get node '%s'", role)
 
 	t := scribble.Transaction{Operation: "read", Collection: "cluster", RecordID: role, Container: &status}
 	if err := store.Transact(t); err != nil {
@@ -244,7 +244,7 @@ func get(role string, status *Status) error {
 
 // save saves a Status to scribble by 'role'
 func save(status *Status) error {
-	log.Debug("[STATUS - get] Attempting to save node '%s'", status.CRole)
+	log.Debug("[status.save] Attempting to save node '%s'", status.CRole)
 
 	t := scribble.Transaction{Operation: "write", Collection: "cluster", RecordID: status.CRole, Container: &status}
 	if err := store.Transact(t); err != nil {

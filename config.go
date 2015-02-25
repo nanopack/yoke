@@ -9,12 +9,15 @@ import (
 	"github.com/vaughan0/go-ini"
 )
 
+//
 type Config struct {
 	Role        string
+	ClusterIP 	string
 	ClusterPort int
 	Peers       []string
 }
 
+//
 var (
 	advice  chan string
 	actions chan string
@@ -28,7 +31,7 @@ func init() {
 	actions = make(chan string)
 
 	//
-	log = lumber.NewConsoleLogger(lumber.INFO)
+	log = lumber.NewConsoleLogger(lumber.DEBUG)
 
 	//
 	conf = Config{
@@ -37,13 +40,17 @@ func init() {
 		Peers:       []string{},
 	}
 
+	//
 	if len(os.Args) < 2 {
-		panic("where is my config file bro?")
+		log.Error("[config.init]: Config file required, run 'yoke path/to/config.ini' to start! Exiting...")
+		os.Exit(1)
 	}
 
+	//
 	file, err := ini.LoadFile(os.Args[1])
 	if err != nil {
-		panic("failed to load config file: " + err.Error())
+		log.Error("[config.init]: Failed to load config file!\n%s\n", err)
+		os.Exit(1)
 	}
 
 	// no conversion required for strings.
@@ -53,6 +60,9 @@ func init() {
 		}
 		conf.Role = role
 	}
+
+	ip, _ := file.Get("config", "cluster_ip")
+	conf.ClusterIP = ip
 
 	parseInt(&conf.ClusterPort, file, "config", "cluster_port")
 	parseArr(&conf.Peers, file, "config", "peers")
