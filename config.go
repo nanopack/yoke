@@ -15,6 +15,7 @@ type Config struct {
 	ClusterIP 	string
 	ClusterPort int
 	Peers       []string
+	DataDir     string
 }
 
 //
@@ -38,6 +39,7 @@ func init() {
 		Role:        "Monitor",
 		ClusterPort: 1234,
 		Peers:       []string{},
+		DataDir:     "/data",
 	}
 
 	//
@@ -59,6 +61,10 @@ func init() {
 			panic("That Role is NOT OK!")
 		}
 		conf.Role = role
+	}
+
+	if dDir, ok := file.Get("config", "data_dir"); ok {
+		conf.DataDir = dDir
 	}
 
 	ip, _ := file.Get("config", "cluster_ip")
