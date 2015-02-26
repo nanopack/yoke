@@ -8,14 +8,6 @@ import(
 	// "strings"
 )
 
-var dataRoot string
-
-//
-func init() {
-	// dataRoot = "/data"
-	dataRoot = "./"
-}
-
 //
 func things(st *Status) string {
 	if st.CRole == "primary" {
@@ -35,7 +27,7 @@ func configureHBAConf() error {
 host    replication     postgres        %s            trust
 `, other.Ip)
 
-	file := dataRoot+"pg_hba.conf"
+	file := conf.DataDir+"pg_hba.conf"
 
 	//
 	// fi, err := stat(dataRoot"pg_hba.conf")
@@ -76,7 +68,7 @@ hot_standby = on`
 			synchronous_standby_names = slave`
 	}
 
-	file := dataRoot+"postgres.conf"
+	file := conf.DataDir+"postgres.conf"
 
 	//
 	f, err := os.Create(file)
@@ -121,7 +113,7 @@ hot_standby = on`
 //
 func createRecovery() error {
 
-	file := dataRoot+"recovery.conf"
+	file := conf.DataDir+"recovery.conf"
 	self, _ := Whoami()
   other, _ := Whois(otherRole(self))
 
@@ -161,7 +153,7 @@ restore_command = 'exit 0'`, other.Ip, other.PGPort)
 //
 func destroyRecovery() {
 
-	file := dataRoot+"recovery.conf"
+	file := conf.DataDir+"recovery.conf"
 
 	//
 	err := os.Remove(file)
