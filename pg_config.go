@@ -16,12 +16,6 @@ func init() {
 	dataRoot = "./"
 }
 
-func whatever() error {
-	fmt.Println("??????????? HERE ????????????")
-	configureHBAConf()
-	return nil
-}
-
 //
 func things(st *Status) string {
 	if st.CRole == "primary" {
