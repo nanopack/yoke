@@ -71,6 +71,12 @@ func init() {
 		conf.DataDir = dDir
 	}
 
+	// make sure the datadir ends with a slash
+	// this should make it easier to handle
+	if !strings.HasSuffix(conf.DataDir, "/") {
+		conf.DataDir = conf.DataDir + "/"
+	}
+
 	if sync, ok := file.Get("config", "sync_command"); ok {
 		conf.SyncCommand = sync
 	}
