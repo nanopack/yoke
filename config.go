@@ -11,14 +11,15 @@ import (
 
 //
 type Config struct {
-	Role        string
-	AdvertiseIp 	string
-	AdvertisePort int
-	PGPort      int
-	Peers       []string
-	DataDir     string
-	StatusDir   string
-	SyncCommand string
+	Role            string
+	AdvertiseIp 	  string
+	AdvertisePort   int
+	PGPort          int
+	Peers           []string
+	DataDir         string
+	StatusDir       string
+	SyncCommand     string
+	DecisionTimeout int
 }
 
 //
@@ -46,6 +47,7 @@ func init() {
 		DataDir:     "/data/",
 		StatusDir:   "./status/",
 		SyncCommand: "rsync -a {{local_dir}} {{slave_ip}}:{{slave_dir}}",
+		DecisionTimeout: 10,
 	}
 
 	//
@@ -95,14 +97,9 @@ func init() {
 		conf.AdvertiseIp = ip
 	}
 
-	if conf.AdvertiseIp == "" || conf.AdvertiseIp == "0.0.0.0" {
-		log.Fatal("I need a advertise_ip in my config file")
-		log.Close()
-		os.Exit(1)
-	}
-
 	parseInt(&conf.AdvertisePort, file, "config", "advertise_port")
 	parseInt(&conf.PGPort, file, "config", "pg_port")
+	parseInt(&conf.DecisionTimeout, file, "config", "decision_timeout")
 	parseArr(&conf.Peers, file, "config", "peers")
 }
 
