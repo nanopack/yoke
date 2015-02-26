@@ -43,7 +43,8 @@ func init() {
 		ClusterPort: 1234,
 		PGPort:      5432,
 		Peers:       []string{},
-		DataDir:     "/data",
+		DataDir:     "/data/",
+		StatusDir:   "./status/",
 		SyncCommand: "rsync -a {{local_dir}} {{slave_ip}}:{{slave_dir}}",
 	}
 
@@ -92,6 +93,12 @@ func init() {
 
 	if ip, ok := file.Get("config", "cluster_ip"); ok {
 		conf.ClusterIP = ip
+	}
+
+	if conf.ClusterIP == "" {
+		log.Fatal("I need a cluster_ip in my config file")
+		log.Close()
+		os.Exit(1)
 	}
 
 	parseInt(&conf.ClusterPort, file, "config", "cluster_port")
