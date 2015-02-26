@@ -97,6 +97,13 @@ func init() {
 		conf.AdvertiseIp = ip
 	}
 
+	if conf.AdvertiseIp == "" || conf.AdvertiseIp == "0.0.0.0" {
+			log.Fatal("advertise_ip ("conf.AdvertiseIp + ") is not a valid ip")
+			log.Close()
+			os.Exit(1)
+
+	}
+
 	parseInt(&conf.AdvertisePort, file, "config", "advertise_port")
 	parseInt(&conf.PGPort, file, "config", "pg_port")
 	parseInt(&conf.DecisionTimeout, file, "config", "decision_timeout")
