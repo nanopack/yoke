@@ -31,7 +31,7 @@ func configureHBAConf() error {
 
 	if other != nil {
 		entry += fmt.Sprintf(`
-host    replication     postgres        %s            trust`, other.Ip)
+host    replication     postgres        %s/32            trust`, other.Ip)
 	}
 
 	file := conf.DataDir+"pg_hba.conf"
