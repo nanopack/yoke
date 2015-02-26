@@ -17,6 +17,7 @@ type Config struct {
 	PGPort      int
 	Peers       []string
 	DataDir     string
+	StatusDir   string
 	SyncCommand string
 }
 
@@ -75,6 +76,14 @@ func init() {
 	// this should make it easier to handle
 	if !strings.HasSuffix(conf.DataDir, "/") {
 		conf.DataDir = conf.DataDir + "/"
+	}
+
+	if sDir, ok := file.Get("config", "status_dir"); ok {
+		conf.StatusDir = sDir
+	}
+
+	if !strings.HasSuffix(conf.StatusDir, "/") {
+		conf.StatusDir = conf.StatusDir + "/"
 	}
 
 	if sync, ok := file.Get("config", "sync_command"); ok {

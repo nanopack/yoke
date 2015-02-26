@@ -38,7 +38,7 @@ var (
 func StatusStart() error {
 
 	// create a new scribble store
-	store = scribble.New("./status", log)
+	store = scribble.New(conf.StatusDir, log)
 	status = &Status{}
 
 	// the current node will attempt to discover who they are in the event of an

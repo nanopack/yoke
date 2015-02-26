@@ -85,7 +85,7 @@ func startMaster() {
 	// connect to DB and tell it to start backup
   db, err := sql.Open("postgres", fmt.Sprintf("user=postgres sslmode=disable host=localhost port=%d", conf.PGPort))
   if err != nil {
-  	log.Fatal("[ACTION - startMaster] Couldnt establish Database connection " + err.Error())
+  	log.Fatal("[action.startMaster] Couldnt establish Database connection " + err.Error())
   	log.Close()
   	os.Exit(1)
   }
@@ -93,7 +93,7 @@ func startMaster() {
 
   _, err = db.Exec("select pg_start_backup('replication')")
   if err != nil {
-  	log.Fatal("[ACTION - startMaster] Couldnt start backup " + err.Error())
+  	log.Fatal("[action.startMaster] Couldnt start backup " + err.Error())
   	log.Close()
   	os.Exit(1)
   }
@@ -105,17 +105,17 @@ func startMaster() {
   sync := mustache.Render(conf.SyncCommand, map[string]string{"local_dir":conf.DataDir,"slave_ip":other.Ip,"slave_dir":other.DataDir})
   cmd := strings.Split(sync, " ")
   sc := exec.Command(cmd[0], cmd[1:]...)
-	sc.Stdout = Piper{"[SYNC - STDOUT]"}
-	sc.Stderr = Piper{"[SYNC - STDERR]"}
+	sc.Stdout = Piper{"[sync.stdout]"}
+	sc.Stderr = Piper{"[sync.stderr]"}
   
 	if err = sc.Run(); err != nil {
-		log.Error("[ACTION] SYNC failed.")
+		log.Error("[action] sync failed.")
 	}
 
 	// connect to DB and tell it to stop backup
   _, err = db.Exec("select pg_stop_backup()")
   if err != nil {
-  	log.Fatal("[ACTION - startMaster] Couldnt start backup " + err.Error())
+  	log.Fatal("[action.startMaster] Couldnt start backup " + err.Error())
   	log.Close()
   	os.Exit(1)
   }
@@ -224,8 +224,8 @@ func startDB() {
 		killDB()
 	}
 	cmd = exec.Command("postgres", "-D", conf.DataDir)
-	cmd.Stdout = Piper{"[POSTGRES - STDOUT]"}
-	cmd.Stderr = Piper{"[POSTGRES - STDERR]"}
+	cmd.Stdout = Piper{"[postgres.stdout]"}
+	cmd.Stderr = Piper{"[postgres.stderr]"}
 	cmd.Start()
 	time.Sleep(10 * time.Second)
 	if cmd.ProcessState.Exited() {
@@ -243,11 +243,11 @@ func restartDB() {
 func initDB() {
 	if _, err := os.Stat(conf.DataDir+"/postgresql.conf"); os.IsNotExist(err) {
 		init := exec.Command("initdb", conf.DataDir)
-		init.Stdout = Piper{"[INITDB - STDOUT]"}
-		init.Stderr = Piper{"[INITDB - STDERR]"}
+		init.Stdout = Piper{"[INITDB.stdout]"}
+		init.Stderr = Piper{"[INITDB.stderr]"}
 
 		if err = init.Run(); err != nil {
-			log.Fatal("[ACTION] initdb failed. Are you missing your postgresql.conf")
+			log.Fatal("[action] initdb failed. Are you missing your postgresql.conf")
 			log.Close()
 			os.Exit(1)
 		}
