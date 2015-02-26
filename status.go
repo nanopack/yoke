@@ -51,9 +51,6 @@ func StatusStart() error {
 		log.Warn("[status.StatusStart] 404 Not found: No record found for '%s'\n", conf.Role)
 
 		// create a new record in scribble for the current node
-<<<<<<< Updated upstream
-		status = &Status{CRole: conf.Role, DBRole: "initialized", State: "booting", Ip: conf.AdvertiseIp, DataDir: conf.DataDir, UpdatedAt: time.Now()}
-=======
 		status = &Status{
 			CRole:     conf.Role,
 			DataDir:   conf.DataDir,
@@ -63,7 +60,6 @@ func StatusStart() error {
 			State:     "booting",
 			UpdatedAt: time.Now(),
 		}
->>>>>>> Stashed changes
 
 		log.Debug("[status.StatusStart] Creating record for '%s'\n", conf.Role)
 		save(status)
