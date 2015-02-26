@@ -60,8 +60,11 @@ func doAction(act string) {
 
 // Starts the database as a master node and sends its data file to the slave
 func startMaster() {
+	log.Debug("[action] start master")
 	// make sure we have a database in the data folder
 	initDB()
+	log.Debug("[action] db init'ed")
+
 	// set postgresql.conf as not master
 	status.SetState("configuring")
 	configurePGConf(false)
@@ -72,6 +75,7 @@ func startMaster() {
 	// start the database
 	status.SetState("starting")
 	startDB()
+	log.Debug("[action] dbstarted")
 	// connect to DB and tell it to start backup
   db, err := sql.Open("postgres", fmt.Sprintf("user=postgres sslmode=disable host=localhost port=%d", conf.PGPort))
   if err != nil {
@@ -87,6 +91,7 @@ func startMaster() {
   	log.Close()
   	os.Exit(1)
   }
+  log.Debug("[action] backup started")
 	// rsync my files over to the slave server
 	status.SetState("syncing")
 	self := myself()
@@ -97,7 +102,8 @@ func startMaster() {
   sc := exec.Command(cmd[0], cmd[1:]...)
 	sc.Stdout = Piper{"[sync.stdout]"}
 	sc.Stderr = Piper{"[sync.stderr]"}
-  
+  log.Debug("[action] running sync (%s)", sync)
+
 	if err = sc.Run(); err != nil {
 		log.Error("[action] sync failed.")
 	}
@@ -110,15 +116,21 @@ func startMaster() {
   	os.Exit(1)
   }
 
+  log.Debug("[action] backup complete")
+
 	// set postgresql.conf as master
 	configurePGConf(true)
 
 	// start refresh/restart server
+	log.Debug("[action] restarting DB")
 	restartDB()
 
 	// make sure slave is connected and in sync
 	status.SetState("waiting")
   defer status.SetState("running")
+
+	log.Debug("[action] db wait for sync")
+
 	for {
 	  rows, err := db.Query("SELECT application_name, client_addr, state, sync_state, pg_xlog_location_diff(pg_current_xlog_location(), sent_location) FROM pg_stat_replication")
 	  if err != nil {
@@ -140,7 +152,7 @@ func startMaster() {
 	  }
 	  time.Sleep(time.Second)
 	}
-
+	log.Debug("[action] db synced")
 
 }
 
@@ -148,6 +160,7 @@ func startMaster() {
 func startSlave() {
 	// wait for master server to be running
 	status.SetState("waiting")
+	log.Debug("[action] wait for master")
 	self := myself()
 	for {
 		other, err := Whois(otherRole(self))
@@ -161,8 +174,6 @@ func startSlave() {
 		}
 		time.Sleep(time.Second)
 	}
-	// make sure we have a database in the data folder
-	initDB()
 	// set postgresql.conf as not master
   status.SetState("configuring")
 	configurePGConf(false)
@@ -172,14 +183,13 @@ func startSlave() {
 	createRecovery()
 	// start the database
 	status.SetState("starting")
+	log.Debug("[action] starting database")
 	startDB()
   status.SetState("running")
 }
 
 // Starts the database as a single node 
 func startSingle() {
-	// make sure we have a database in the data folder
-	initDB()
 	// set postgresql.conf as not master
 	configurePGConf(false)
 	// set pg_hba.conf
@@ -192,16 +202,19 @@ func startSingle() {
 
 // this will kill the database that is running. reguardless of its current state
 func killDB() {
+	log.Debug("[action] KillingDB")
 	defer func() {
 		status.SetState("down")
 	}()
 	// return if it was never created or up
 	if cmd == nil {
+		log.Debug("[action] nothing to kill")
 		return
 	}
 
 	// db is no longer running
 	if running == false {
+		log.Debug("[action] already dead")
 		cmd = nil
 		return
 	}
@@ -211,8 +224,10 @@ func killDB() {
 
 	// waiting for shutdown
 	status.SetState("waiting")
+	log.Debug("[action] waiting to die")
 	cmd.Wait()
 	cmd = nil
+	status.SetState("down")
 }
 
 func startDB() {
@@ -220,10 +235,12 @@ func startDB() {
 	if cmd != nil {
 		killDB()
 	}
+	log.Debug("[action] starting db")
 	cmd = exec.Command("postgres", "-D", conf.DataDir)
 	cmd.Stdout = Piper{"[postgres.stdout]"}
 	cmd.Stderr = Piper{"[postgres.stderr]"}
 	cmd.Start()
+	log.Debug("[action] starting db")
 	running = true
 	go waiter(cmd)
 	time.Sleep(10 * time.Second)
@@ -254,7 +271,9 @@ func initDB() {
 }
 
 func waiter(c *exec.Cmd) {
+	log.Debug("[action] Waiter waiting")
 	c.Wait()
+	log.Debug("[action] Watier done")
 	running = false
 }
 
