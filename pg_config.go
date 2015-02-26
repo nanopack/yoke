@@ -19,11 +19,15 @@ func things(st *Status) string {
 //
 func configureHBAConf() error {
 
-	self, _ := Whoami()
-  other, _ := Whois(otherRole(self))
+	self := myself()
+  other, err := Whois(otherRole(self))
+  if err != nil {
+  	log.Error("NO OTHER! %s", err)
+  }
 
 	//
 	entry := fmt.Sprintf(`
+host    all             all             all           trust
 host    replication     postgres        %s            trust
 `, other.Ip)
 
@@ -65,10 +69,11 @@ hot_standby = on`
 	// master only
 	if master {
 		entry += `
-			synchronous_standby_names = slave`
+# master only
+synchronous_standby_names = slave`
 	}
 
-	file := conf.DataDir+"postgres.conf"
+	file := conf.DataDir+"postgresql.conf"
 
 	//
 	f, err := os.Create(file)
@@ -114,8 +119,12 @@ hot_standby = on`
 func createRecovery() error {
 
 	file := conf.DataDir+"recovery.conf"
-	self, _ := Whoami()
-  other, _ := Whois(otherRole(self))
+
+	self := myself()
+  other, err := Whois(otherRole(self))
+  if err != nil {
+  	log.Error("NO OTHER! %s", err)
+  }
 
 	//
 	f, err := os.Create(file)
