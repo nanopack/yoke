@@ -41,13 +41,15 @@ var	cmd	*exec.Cmd
 
 // Listen on the action channel and perform the action
 func ActionStart() error {
-	for {
-		select {
-		case act := <-actions:
-			log.Info("[action] new action: " + act)
-			doAction(act)
+	go func() {
+		for {
+			select {
+			case act := <-actions:
+				log.Info("[action] new action: " + act)
+				doAction(act)
+			}
 		}
-	}
+	}()
 
 	return nil
 }
@@ -85,7 +87,7 @@ func startMaster() {
 	// connect to DB and tell it to start backup
   db, err := sql.Open("postgres", fmt.Sprintf("user=postgres sslmode=disable host=localhost port=%d", conf.PGPort))
   if err != nil {
-  	log.Fatal("[action.startMaster] Couldnt establish Database connection " + err.Error())
+  	log.Fatal("[action.startMaster] Couldnt establish Database connection (%s)", err.Error())
   	log.Close()
   	os.Exit(1)
   }
@@ -93,7 +95,7 @@ func startMaster() {
 
   _, err = db.Exec("select pg_start_backup('replication')")
   if err != nil {
-  	log.Fatal("[action.startMaster] Couldnt start backup " + err.Error())
+  	log.Fatal("[action.startMaster] Couldnt start backup (%s)", err.Error())
   	log.Close()
   	os.Exit(1)
   }
@@ -115,7 +117,7 @@ func startMaster() {
 	// connect to DB and tell it to stop backup
   _, err = db.Exec("select pg_stop_backup()")
   if err != nil {
-  	log.Fatal("[action.startMaster] Couldnt start backup " + err.Error())
+  	log.Fatal("[action.startMaster] Couldnt start backup (%s)", err.Error())
   	log.Close()
   	os.Exit(1)
   }

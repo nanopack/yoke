@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
+	"os/signal"
+	"syscall"
 )
 
 //
@@ -11,7 +13,32 @@ func main() {
 	handle(StatusStart())
 	handle(DecisionStart())
 	handle(ActionStart())
-	// do some sleep thing
+	// signal Handle
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, os.Kill, syscall.SIGQUIT)
+
+	// Block until a signal is received.
+	for {
+		s := <-c
+		switch s {
+		case syscall.SIGQUIT, os.Kill:
+			// kill the database then quit
+			log.Info("Signal Recieved: %s", s.String())
+			log.Info("Killing Database")
+			actions <- "kill"
+			// called twice because the first one returns immediately
+			// the second call is so i can confirm the first action completed
+			actions <- "kill"
+			os.Exit(0)
+		case os.Interrupt:
+			// demote
+			log.Info("Signal Recieved: %s", s.String())
+			log.Info("advising a demotion")
+			advice <- "demote"
+		}
+	}
+
+
 }
 
 //
