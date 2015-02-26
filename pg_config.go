@@ -22,8 +22,7 @@ func configureHBAConf() error {
 	self := myself()
   other, err := Whois(otherRole(self))
   if err != nil {
-  	log.Error("NO OTHER! %s", err)
-  	os.Exit(1)
+  	log.Warn("I cant find another. disabling replication")
   }
 
 	//
@@ -155,7 +154,7 @@ func createRecovery() error {
 # tries to connect to the primary according to the connection settings
 # primary_conninfo, and receives XLOG records continuously.
 standby_mode = on
-primary_conninfo = 'host=%s port=%s application_name=slave'
+primary_conninfo = 'host=%s port=%d application_name=slave'
 
 # restore_command specifies the shell command that is executed to copy log files
 # back from archival storage. This parameter is *required* for an archive
