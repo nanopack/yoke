@@ -11,21 +11,6 @@ import (
 	"strings"
 	"github.com/hoisie/mustache"
 )
-// tmp methods until domino does his thing
-func configurePGConf(thing bool) {
-	
-}
-
-func configureHBAConf() {
-	
-}
-
-func createRecovery() {
-
-}
-func destroyRecovery() {
-	
-}
 
 type Piper struct {
 	Prefix string
