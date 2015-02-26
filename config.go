@@ -111,7 +111,9 @@ func parseInt(val *int, file ini.File, section, name string) {
 	if port, ok := file.Get(section, name); ok {
 		i, err := strconv.ParseInt(port, 10, 64)
 		if err != nil {
-			panic(name + " is not an int")
+			log.Fatal(name + " is not an int")
+			log.Close()
+			os.Exit(1)
 		}
 		*val = int(i)
 	}
