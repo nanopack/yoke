@@ -26,8 +26,8 @@ func main() {
 			log.Info("Signal Recieved: %s", s.String())
 			log.Info("Killing Database")
 			actions <- "kill"
-			// called twice because the first one returns immediately
-			// the second call is so i can confirm the first action completed
+			// called twice because the first call returns when the job is picked up
+			// the second call returns when the first job is complete
 			actions <- "kill"
 			os.Exit(0)
 		case os.Interrupt:
