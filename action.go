@@ -18,7 +18,7 @@ type Piper struct {
 }
 
 func (p Piper) Write(d []byte) (int, error) {
-	log.Info(p.Prefix+" %s", d)
+	log.Info("%s %s", p.Prefix, d)
 	return len(d), nil
 }
 
@@ -242,8 +242,8 @@ func restartDB() {
 func initDB() {
 	if _, err := os.Stat(conf.DataDir+"/postgresql.conf"); os.IsNotExist(err) {
 		init := exec.Command("initdb", conf.DataDir)
-		init.Stdout = Piper{"[INITDB.stdout]"}
-		init.Stderr = Piper{"[INITDB.stderr]"}
+		init.Stdout = Piper{"[initdb.stdout]"}
+		init.Stderr = Piper{"[initdb.stderr]"}
 
 		if err = init.Run(); err != nil {
 			log.Fatal("[action] initdb failed. Are you missing your postgresql.conf")
