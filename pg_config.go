@@ -23,13 +23,16 @@ func configureHBAConf() error {
   other, err := Whois(otherRole(self))
   if err != nil {
   	log.Error("NO OTHER! %s", err)
+  	os.Exit(1)
   }
 
 	//
-	entry := fmt.Sprintf(`
-host    all             all             all           trust
-host    replication     postgres        %s            trust
-`, other.Ip)
+	entry := "host    all             all             all           trust"
+
+	if other != nil {
+		entry += fmt.Sprintf(`
+host    replication     postgres        %s            trust`, other.Ip)
+	}
 
 	file := conf.DataDir+"pg_hba.conf"
 
@@ -55,10 +58,20 @@ host    replication     postgres        %s            trust
 //
 func configurePGConf(master bool) error {
 
-	// # 80 GB required on pg_xlog
-
 	//
 	entry := `
+listen_addresses = '0.0.0.0'
+max_connections = 100
+shared_buffers = 128MB
+log_timezone = 'UTC'
+datestyle = 'iso, mdy'
+timezone = 'UTC'
+lc_messages = 'en_US.UTF-8'
+lc_monetary = 'en_US.UTF-8'
+lc_numeric = 'en_US.UTF-8'
+lc_time = 'en_US.UTF-8'
+default_text_search_config = 'pg_catalog.english'
+
 wal_level = hot_standby
 archive_mode = on
 archive_command = 'exit 0'
@@ -69,7 +82,6 @@ hot_standby = on`
 	// master only
 	if master {
 		entry += `
-# master only
 synchronous_standby_names = slave`
 	}
 
@@ -124,6 +136,7 @@ func createRecovery() error {
   other, err := Whois(otherRole(self))
   if err != nil {
   	log.Error("NO OTHER! %s", err)
+  	os.Exit(1)
   }
 
 	//
@@ -194,13 +207,15 @@ func parseFile(file string) (map[string]string, error) {
 
 	defer f.Close()
 
-	conf := make(map[string]string)
+	m := make(map[string]string)
+	s := make([]string, 0)
+
 	scanner := bufio.NewScanner(f)
 	readLine := 1
 
 	// Read line by line, sending lines to parseLine
 	for scanner.Scan() {
-		if err := parseLine(scanner.Text(), conf); err != nil {
+		if err := parseLine(scanner.Text(), m, s); err != nil {
 			log.Error("[pg_config] Error reading line: %v\n", readLine)
 			return nil, err
 		}
@@ -208,16 +223,19 @@ func parseFile(file string) (map[string]string, error) {
 		readLine++
 	}
 
-	return conf, nil
+	fmt.Println("SLICE???", s)
+
+	return m, nil
 }
 
 // parseLine reads each line of the config file, extracting a key/value pair to
 // insert into an 'conf' map.
-func parseLine(line string, conf map[string]string) error {
+func parseLine(line string, m map[string]string, s []string) error {
 
 	// if the line isn't already in the map add it
-	if _, ok := conf[line]; !ok {
-		conf[line] = line
+	if _, ok := m[line]; !ok {
+		m[line] = line
+		s = append(s, line)
 	}
 
 	return nil
