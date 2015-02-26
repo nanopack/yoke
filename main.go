@@ -21,16 +21,21 @@ func main() {
 	for {
 		s := <-c
 		switch s {
-		case syscall.SIGQUIT, os.Kill:
+		case syscall.SIGQUIT, os.Kill, os.Interrupt:
 			// kill the database then quit
 			log.Info("Signal Recieved: %s", s.String())
-			log.Info("Killing Database")
-			actions <- "kill"
-			// called twice because the first call returns when the job is picked up
-			// the second call returns when the first job is complete
-			actions <- "kill"
+			if conf.Role == "monitor" {
+				log.Info("shutting down")
+			} else {
+				log.Info("Killing Database")
+				actions <- "kill"
+				// called twice because the first call returns when the job is picked up
+				// the second call returns when the first job is complete
+				actions <- "kill"
+			}
+			log.Close()
 			os.Exit(0)
-		case os.Interrupt:
+		case syscall.SIGHUP:
 			// demote
 			log.Info("Signal Recieved: %s", s.String())
 			log.Info("advising a demotion")

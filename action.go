@@ -144,6 +144,7 @@ func startMaster() {
 // Starts the database as a slave node after waiting for master to come online
 func startSlave() {
 	// wait for master server to be running
+	status.SetState("waiting")
 	self := myself()
 	for {
 		other, _ := Whois(otherRole(self))
