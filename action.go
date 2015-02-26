@@ -225,7 +225,7 @@ func startDB() {
 	cmd.Stderr = Piper{"[postgres.stderr]"}
 	cmd.Start()
 	running = true
-	waiter(cmd)
+	go waiter(cmd)
 	time.Sleep(10 * time.Second)
 	if running == false {
 		log.Fatal("I just started the database and it is not running")
