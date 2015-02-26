@@ -147,7 +147,12 @@ func startSlave() {
 	status.SetState("waiting")
 	self := myself()
 	for {
-		other, _ := Whois(otherRole(self))
+		other, err := Whois(otherRole(self))
+		if err != nil {
+			log.Error("I have lost communication with the other server")
+			status.SetState("master_lost")
+			return
+		}
 		if other.State == "running" || other.State == "waiting" {
 			break
 		}
