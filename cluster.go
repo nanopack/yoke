@@ -17,7 +17,7 @@ func ClusterStart() error {
 	config.Events = EventHandler{true}
 	config.Conflict = EventHandler{true}
 	config.BindPort = conf.ClusterPort
-	config.AdvertiseAddr = conf.ListenIp
+	config.AdvertiseAddr = conf.ClusterIP
 	config.AdvertisePort = conf.ClusterPort
 	config.IndirectChecks = 1
 

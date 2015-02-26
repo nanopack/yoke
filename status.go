@@ -24,6 +24,8 @@ type Status struct {
 	CRole     string    // the nodes 'role' in the cluster (primary, secondary, monitor)
 	DBRole    string    // the 'role' of the running pgsql instance inside the node (master, slave)
 	State     string    // the current state of the node
+	Ip        string
+	DataDir   string    // directory of the postgres database
 	UpdatedAt time.Time // the last time the node state was updated
 }
 
@@ -48,7 +50,7 @@ func StatusStart() error {
 		log.Warn("[status.StatusStart] 404 Not found: No record found for '%s'\n", conf.Role)
 
 		// create a new record in scribble for the current node
-		status = &Status{CRole: conf.Role, DBRole: "initialized", State: "booting", UpdatedAt: time.Now()}
+		status = &Status{CRole: conf.Role, DBRole: "initialized", State: "booting", Ip: conf.ClusterIP, DataDir: conf.DataDir, UpdatedAt: time.Now()}
 
 		log.Debug("[status.StatusStart] Creating record for '%s'\n", conf.Role)
 		save(status)

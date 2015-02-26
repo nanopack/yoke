@@ -12,7 +12,7 @@ import (
 //
 type Config struct {
 	Role        string
-	ListenIp 	string
+	ClusterIP 	string
 	ClusterPort int
 	PGPort      int
 	Peers       []string
@@ -75,9 +75,9 @@ func init() {
 		conf.SyncCommand = sync
 	}
 
-
-	ip, _ := file.Get("config", "cluster_ip")
-	conf.ListenIp = ip
+	if ip, ok := file.Get("config", "cluster_ip"); ok {
+		conf.ClusterIP = ip
+	}
 
 	parseInt(&conf.ClusterPort, file, "config", "cluster_port")
 	parseInt(&conf.PGPort, file, "config", "pg_port")
