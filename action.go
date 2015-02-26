@@ -75,7 +75,7 @@ func startMaster() {
 	// start the database
 	status.SetState("starting")
 	startDB()
-	log.Debug("[action] dbstarted")
+
 	// connect to DB and tell it to start backup
   db, err := sql.Open("postgres", fmt.Sprintf("user=postgres sslmode=disable host=localhost port=%d", conf.PGPort))
   if err != nil {
@@ -240,7 +240,7 @@ func startDB() {
 	cmd.Stdout = Piper{"[postgres.stdout]"}
 	cmd.Stderr = Piper{"[postgres.stderr]"}
 	cmd.Start()
-	log.Debug("[action] starting db")
+	log.Debug("[action] db started")
 	running = true
 	go waiter(cmd)
 	time.Sleep(10 * time.Second)
@@ -272,7 +272,10 @@ func initDB() {
 
 func waiter(c *exec.Cmd) {
 	log.Debug("[action] Waiter waiting")
-	c.Wait()
+	err := c.Wait()
+	if err != nil {
+		log.Error("[action] Waiter Error: %s", err.Error())
+	}
 	log.Debug("[action] Watier done")
 	running = false
 }
