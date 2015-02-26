@@ -24,8 +24,11 @@ func (p Piper) Write(d []byte) (int, error) {
 
 var	cmd	*exec.Cmd
 
+var	running bool
+
 // Listen on the action channel and perform the action
 func ActionStart() error {
+	running = false
 	go func() {
 		for {
 			select {
@@ -196,11 +199,12 @@ func killDB() {
 	if cmd == nil {
 		return
 	}
-	// if it was stopped set the cmd to nil and return
-	if cmd.ProcessState.Exited() {
+
+	// db is no longer running
+	if running == false {
+		cmd = nil
 		return
 	}
-
 	// if it is running kill it and wait for it to go down
 	status.SetState("signaling")
 	cmd.Process.Signal(syscall.SIGQUIT)
@@ -220,8 +224,10 @@ func startDB() {
 	cmd.Stdout = Piper{"[postgres.stdout]"}
 	cmd.Stderr = Piper{"[postgres.stderr]"}
 	cmd.Start()
+	running = true
+	waiter(cmd)
 	time.Sleep(10 * time.Second)
-	if cmd.ProcessState.Exited() {
+	if running == false {
 		log.Fatal("I just started the database and it is not running")
 		log.Close()
 		os.Exit(1)
@@ -246,3 +252,9 @@ func initDB() {
 		}
 	}
 }
+
+func waiter(c *exec.Cmd) {
+	c.Wait()
+	running = false
+}
+
