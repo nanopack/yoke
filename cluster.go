@@ -16,9 +16,9 @@ func ClusterStart() error {
 	config.Name = conf.Role
 	config.Events = EventHandler{true}
 	config.Conflict = EventHandler{true}
-	config.BindPort = conf.ClusterPort
-	config.AdvertiseAddr = conf.ClusterIP
-	config.AdvertisePort = conf.ClusterPort
+	config.BindPort = conf.AdvertisePort
+	config.AdvertiseAddr = conf.AdvertiseIp
+	config.AdvertisePort = conf.AdvertisePort
 	config.IndirectChecks = 1
 
 	//

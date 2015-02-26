@@ -12,8 +12,8 @@ import (
 //
 type Config struct {
 	Role        string
-	ClusterIP 	string
-	ClusterPort int
+	AdvertiseIp 	string
+	AdvertisePort int
 	PGPort      int
 	Peers       []string
 	DataDir     string
@@ -40,7 +40,7 @@ func init() {
 	//
 	conf = Config{
 		Role:        "Monitor",
-		ClusterPort: 1234,
+		AdvertisePort: 1234,
 		PGPort:      5432,
 		Peers:       []string{},
 		DataDir:     "/data/",
@@ -91,17 +91,17 @@ func init() {
 		conf.SyncCommand = sync
 	}
 
-	if ip, ok := file.Get("config", "cluster_ip"); ok {
-		conf.ClusterIP = ip
+	if ip, ok := file.Get("config", "advertise_ip"); ok {
+		conf.AdvertiseIp = ip
 	}
 
-	if conf.ClusterIP == "" {
-		log.Fatal("I need a cluster_ip in my config file")
+	if conf.AdvertiseIp == "" || conf.AdvertiseIp == "0.0.0.0" {
+		log.Fatal("I need a advertise_ip in my config file")
 		log.Close()
 		os.Exit(1)
 	}
 
-	parseInt(&conf.ClusterPort, file, "config", "cluster_port")
+	parseInt(&conf.AdvertisePort, file, "config", "advertise_port")
 	parseInt(&conf.PGPort, file, "config", "pg_port")
 	parseArr(&conf.Peers, file, "config", "peers")
 }

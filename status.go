@@ -50,7 +50,7 @@ func StatusStart() error {
 		log.Warn("[status.StatusStart] 404 Not found: No record found for '%s'\n", conf.Role)
 
 		// create a new record in scribble for the current node
-		status = &Status{CRole: conf.Role, DBRole: "initialized", State: "booting", Ip: conf.ClusterIP, DataDir: conf.DataDir, UpdatedAt: time.Now()}
+		status = &Status{CRole: conf.Role, DBRole: "initialized", State: "booting", Ip: conf.AdvertiseIp, DataDir: conf.DataDir, UpdatedAt: time.Now()}
 
 		log.Debug("[status.StatusStart] Creating record for '%s'\n", conf.Role)
 		save(status)
@@ -68,7 +68,7 @@ func StatusStart() error {
 	log.Info("[status] Starting RPC server...\n")
 
 	// fire up an RPC (tcp) server
-	l, err := net.Listen("tcp", ":"+strconv.FormatInt(int64(conf.ClusterPort+1), 10))
+	l, err := net.Listen("tcp", ":"+strconv.FormatInt(int64(conf.AdvertisePort+1), 10))
 	if err != nil {
 		log.Error("[status] Unable to start server!\n%v\n", err)
 		return err
