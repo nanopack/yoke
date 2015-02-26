@@ -227,8 +227,11 @@ func killDB() {
 
 	// waiting for shutdown
 	status.SetState("waiting")
-	log.Debug("[action] waiting to die")
-	cmd.Wait()
+	
+	for running == true {
+		log.Debug("[action] waiting to die")
+		time.Sleep(time.Second)
+	}
 	cmd = nil
 	status.SetState("down")
 }
