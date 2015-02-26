@@ -12,10 +12,12 @@ import (
 //
 type Config struct {
 	Role        string
-	ClusterIP 	string
+	ListenIp 	string
 	ClusterPort int
+	PGPort      int
 	Peers       []string
 	DataDir     string
+	SyncCommand string
 }
 
 //
@@ -38,8 +40,10 @@ func init() {
 	conf = Config{
 		Role:        "Monitor",
 		ClusterPort: 1234,
+		PGPort:      5432,
 		Peers:       []string{},
 		DataDir:     "/data",
+		SyncCommand: "rsync -a {{local_dir}} {{slave_ip}}:{{slave_dir}}",
 	}
 
 	//
@@ -67,10 +71,16 @@ func init() {
 		conf.DataDir = dDir
 	}
 
+	if sync, ok := file.Get("config", "sync_command"); ok {
+		conf.SyncCommand = sync
+	}
+
+
 	ip, _ := file.Get("config", "cluster_ip")
-	conf.ClusterIP = ip
+	conf.ListenIp = ip
 
 	parseInt(&conf.ClusterPort, file, "config", "cluster_port")
+	parseInt(&conf.PGPort, file, "config", "pg_port")
 	parseArr(&conf.Peers, file, "config", "peers")
 }
 

@@ -20,7 +20,7 @@ func DecisionStart() error {
 			return
 		}
 		// start the database up
-		startDB()
+		startupDB()
 		lastKnownCluster, _ = Cluster()
 
 		// start a timer that will trigger a cluster check
@@ -74,7 +74,7 @@ func waitForClusterFull() {
 }
 
 // figure out what to start as.
-func startDB() {
+func startupDB() {
 	log.Debug("[decision] Starting Db")
 	self := myself()
 	switch self.CRole {
