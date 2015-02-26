@@ -191,7 +191,7 @@ func performActionFromMaster(self, other *Status) {
 	}
 
 	// see if im the odd man out or if it is the other guy
-	time.Sleep(10 * time.Second)
+	time.Sleep(time.Duration(conf.DecisionTimeout) * time.Second)
 	mon, _ := Whois("monitor")
 	if mon != nil {
 		// the other member died but i can still talk to the monitor
@@ -224,7 +224,7 @@ func performActionFromSlave(self, other *Status) {
 	}
 
 	// see if im the odd man out or if it is the other guy
-	time.Sleep(10 * time.Second)
+	time.Sleep(time.Duration(conf.DecisionTimeout) * time.Second)
 	mon, _ := Whois("monitor")
 	if mon != nil {
 		// the other member died but i can still talk to the monitor
