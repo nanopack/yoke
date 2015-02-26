@@ -55,7 +55,7 @@ func StatusStart() error {
 			CRole:     conf.Role,
 			DataDir:   conf.DataDir,
 			DBRole:    "initialized",
-			Ip: 		   conf.ClusterIP,
+			Ip: 		   conf.AdvertiseIp,
 			PGPort:    conf.PGPort,
 			State:     "booting",
 			UpdatedAt: time.Now(),
