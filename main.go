@@ -13,6 +13,7 @@ func main() {
 	handle(StatusStart())
 	handle(DecisionStart())
 	handle(ActionStart())
+
 	// signal Handle
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, syscall.SIGINT, os.Kill, syscall.SIGQUIT, syscall.SIGHUP)
