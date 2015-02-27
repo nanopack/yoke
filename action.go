@@ -66,14 +66,14 @@ func startMaster() {
 	log.Debug("[action] db init'ed")
 
 	// set postgresql.conf as not master
-	status.SetState("configuring")
+	status.SetState("(master)configuring")
 	configurePGConf(false)
 	// set pg_hba.conf
 	configureHBAConf()
 	// delete recovery.conf
 	destroyRecovery()
 	// start the database
-	status.SetState("starting")
+	status.SetState("(master)starting")
 	startDB()
 
 	// connect to DB and tell it to start backup
@@ -93,7 +93,7 @@ func startMaster() {
   }
   log.Debug("[action] backup started")
 	// rsync my files over to the slave server
-	status.SetState("syncing")
+	status.SetState("(master)syncing")
 	self := myself()
 	other, _ := Whois(otherRole(self))
 	// rsync -a {{local_dir}} {{slave_ip}}:{{slave_dir}}
@@ -126,8 +126,8 @@ func startMaster() {
 	restartDB()
 
 	// make sure slave is connected and in sync
-	status.SetState("waiting")
-  defer status.SetState("running")
+	status.SetState("(master)waiting")
+  defer status.SetState("(master)running")
 
 	log.Debug("[action] db wait for sync")
 
@@ -145,7 +145,7 @@ func startMaster() {
       err = rows.Scan(&name, &addr, &state, &sync, &behind)
       if err != nil { panic(err) }
       if behind > 0 {
-      	log.Info("Sync is catching up (name:%s,address:%s,state:%s,sync:%s,behind:%d)", name, addr, state, sync, behind)
+      	log.Info("[action] Sync is catching up (name:%s,address:%s,state:%s,sync:%s,behind:%d)", name, addr, state, sync, behind)
       } else {
       	return
       }
@@ -159,37 +159,38 @@ func startMaster() {
 // Starts the database as a slave node after waiting for master to come online
 func startSlave() {
 	// wait for master server to be running
-	status.SetState("waiting")
+	status.SetState("(slave)waiting")
 	log.Debug("[action] wait for master")
 	self := myself()
 	for {
 		other, err := Whois(otherRole(self))
 		if err != nil {
 			log.Error("I have lost communication with the other server")
-			status.SetState("master_lost")
+			status.SetState("(slave)master_lost")
 			return
 		}
-		if other.State == "running" || other.State == "waiting" {
+		if other.State == "(master)running" || other.State == "(master)waiting" {
 			break
 		}
 		time.Sleep(time.Second)
 	}
 	// set postgresql.conf as not master
-  status.SetState("configuring")
+  status.SetState("(slave)configuring")
 	configurePGConf(false)
 	// set pg_hba.conf
 	configureHBAConf()
 	// set recovery.conf
 	createRecovery()
 	// start the database
-	status.SetState("starting")
+	status.SetState("(slave)starting")
 	log.Debug("[action] starting database")
 	startDB()
-  status.SetState("running")
+  status.SetState("(slave)running")
 }
 
 // Starts the database as a single node 
 func startSingle() {
+	status.SetState("(single)configuring")
 	// set postgresql.conf as not master
 	configurePGConf(false)
 	// set pg_hba.conf
@@ -197,14 +198,18 @@ func startSingle() {
 	// delete recovery.conf
 	destroyRecovery()
 	// start the database
+	status.SetState("(single)starting")
 	startDB()
+	status.SetState("(single)running")
 }
 
 // this will kill the database that is running. reguardless of its current state
 func killDB() {
 	log.Debug("[action] KillingDB")
+
+	// done in a defer because we might return early
 	defer func() {
-		status.SetState("down")
+		status.SetState("(kill)down")
 	}()
 	// return if it was never created or up
 	if cmd == nil {
@@ -219,21 +224,20 @@ func killDB() {
 		return
 	}
 	// if it is running kill it and wait for it to go down
-	status.SetState("signaling")
+	status.SetState("(kill)signaling")
 	err := cmd.Process.Signal(syscall.SIGQUIT)
 	if err != nil {
 		log.Error("[action] Kill Signal error: %s", err.Error())
 	}
 
 	// waiting for shutdown
-	status.SetState("waiting")
+	status.SetState("(kill)waiting")
 	
 	for running == true {
 		log.Debug("[action] waiting to die")
 		time.Sleep(time.Second)
 	}
 	cmd = nil
-	status.SetState("down")
 }
 
 func startDB() {

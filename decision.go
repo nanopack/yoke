@@ -38,11 +38,13 @@ func DecisionStart() error {
 			select {
 
 			case adv := <-advice:
+				// i need a new self to see if im currently the master
+				self := myself()
 				if adv == "demote" && self.DBRole == "master" {
 					updateStatusRole("dead(master)")
 					actions <- "kill"
 				} else {
-					log.Info("got some advice:" + adv)
+					log.Info("[decision] got some advice:" + adv)
 					// what do i do with other advice?
 					if clusterChanges() {
 						performAction()
@@ -130,14 +132,14 @@ func startType(def string) string {
 func clusterChanges() bool {
 	c, _ := Cluster()
 	if len(lastKnownCluster) != len(c) {
-		log.Debug("the cluster size changed from %d to %d", len(lastKnownCluster), len(c))
+		log.Debug("[decision] The cluster size changed from %d to %d", len(lastKnownCluster), len(c))
 		lastKnownCluster, _ = Cluster()
 		return true
 	}
 	for _, member := range lastKnownCluster {
 		other, _ := Whois(member.CRole)
 		if member.DBRole != other.DBRole {
-			log.Debug("The cluster members(%s) role changed from %s to %s", member.DBRole, other.DBRole)
+			log.Debug("[decision] The cluster members(%s) role changed from %s to %s", member.DBRole, member.DBRole, other.DBRole)
 			lastKnownCluster, _ = Cluster()
 			return true
 		}

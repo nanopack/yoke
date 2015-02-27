@@ -46,7 +46,7 @@ func init() {
 		Peers:       []string{},
 		DataDir:     "/data/",
 		StatusDir:   "./status/",
-		SyncCommand: "rsync -a {{local_dir}} {{slave_ip}}:{{slave_dir}}",
+		SyncCommand: "rsync -a --delete {{local_dir}} {{slave_ip}}:{{slave_dir}}",
 		DecisionTimeout: 10,
 	}
 
