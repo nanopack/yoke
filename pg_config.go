@@ -1,6 +1,6 @@
 package main
 
-import(
+import (
 	"bufio"
 	"fmt"
 	"io/ioutil"
@@ -12,13 +12,13 @@ import(
 func configureHBAConf() error {
 
 	//
-  other, err := Whois(otherRole(myself()))
-  if err != nil {
-  	log.Warn("[pg_config.configureHBAConf] Unable to find another!\n%s\n", err)
-  }
+	other, err := Whois(otherRole(myself()))
+	if err != nil {
+		log.Warn("[pg_config.configureHBAConf] Unable to find another!\n%s\n", err)
+	}
 
 	//
-	file := conf.DataDir+"pg_hba.conf"
+	file := conf.DataDir + "pg_hba.conf"
 	f, err := os.Open(file)
 	if err != nil {
 		log.Error("[pg_config.configureHBAConf] Failed to open '%s'!\n%s\n", file, err)
@@ -30,8 +30,8 @@ func configureHBAConf() error {
 	//
 	scanner := bufio.NewScanner(f)
 	reFindConfigOption := regexp.MustCompile(`^\s*#?\s*(local|host)\s*(replication)`)
-	readLine 	:= 1
-	entry 		:= ""
+	readLine := 1
+	entry := ""
 
 	// Read file line by line
 	for scanner.Scan() {
@@ -44,7 +44,7 @@ func configureHBAConf() error {
 		readLine++
 	}
 
-  //
+	//
 	if other != nil {
 		entry += fmt.Sprintf(`
 #------------------------------------------------------------------------------
@@ -63,10 +63,10 @@ host    replication     postgres        %s/32            trust`, other.Ip)
 
 	//
 	err = ioutil.WriteFile(file, []byte(entry), 0644)
-  if err != nil {
-  	log.Error("[pg_config.configureHBAConf] Failed to write to '%s'!\n%s\n", file, err)
-  	return err
-  }
+	if err != nil {
+		log.Error("[pg_config.configureHBAConf] Failed to write to '%s'!\n%s\n", file, err)
+		return err
+	}
 
 	return nil
 }
@@ -75,7 +75,7 @@ host    replication     postgres        %s/32            trust`, other.Ip)
 func configurePGConf(master bool) error {
 
 	//
-	file := conf.DataDir+"postgresql.conf"
+	file := conf.DataDir + "postgresql.conf"
 	f, err := os.Open(file)
 	if err != nil {
 		return err
@@ -153,14 +153,14 @@ synchronous_standby_names = slave # standby servers that provide sync rep
 //
 func createRecovery() error {
 
-	file := conf.DataDir+"recovery.conf"
+	file := conf.DataDir + "recovery.conf"
 
 	self := myself()
-  other, err := Whois(otherRole(self))
-  if err != nil {
-  	log.Fatal("[pg_config.createRecovery] Unable to find another... Exiting!\n%s\n", err)
-  	os.Exit(1)
-  }
+	other, err := Whois(otherRole(self))
+	if err != nil {
+		log.Fatal("[pg_config.createRecovery] Unable to find another... Exiting!\n%s\n", err)
+		os.Exit(1)
+	}
 
 	//
 	f, err := os.Create(file)
@@ -202,7 +202,7 @@ restore_command = 'exit 0'`, other.Ip, other.PGPort)
 //
 func destroyRecovery() {
 
-	file := conf.DataDir+"recovery.conf"
+	file := conf.DataDir + "recovery.conf"
 
 	//
 	err := os.Remove(file)
