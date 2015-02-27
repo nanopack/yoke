@@ -137,7 +137,12 @@ func clusterChanges() bool {
 		return true
 	}
 	for _, member := range lastKnownCluster {
-		other, _ := Whois(member.CRole)
+		other, err := Whois(member.CRole)
+		if err != nil {
+			log.Debug("[decision] The other member died while i was trying to pull its updats")
+			lastKnownCluster, _ = Cluster()	
+			return true
+		}
 		if member.DBRole != other.DBRole {
 			log.Debug("[decision] The cluster members(%s) role changed from %s to %s", member.DBRole, member.DBRole, other.DBRole)
 			lastKnownCluster, _ = Cluster()
@@ -190,6 +195,7 @@ func performActionFromMaster(self, other *Status) {
 		updateStatusRole("single")
 		log.Info("[decision] performActionFromMaster: other is dead: going single")
 		actions <- "single"
+		return
 	}
 
 	// see if im the odd man out or if it is the other guy
@@ -201,12 +207,14 @@ func performActionFromMaster(self, other *Status) {
 		updateStatusRole("single")
 		log.Info("[decision] performActionFromMaster: other gone: going single")
 		actions <- "single"
+		return
 	} else {
 		// I have lost communication with everything else
 		// kill my server
 		updateStatusRole("dead(master)")
 		log.Info("[decision] performActionFromMaster: lost connection to cluster: going dead")
 		actions <- "kill"
+		return
 	}
 }
 
@@ -223,6 +231,7 @@ func performActionFromSlave(self, other *Status) {
 		updateStatusRole("single")
 		log.Info("[decision] performActionFromSlave: other is dead: going single")
 		actions <- "single"
+		return
 	}
 
 	// see if im the odd man out or if it is the other guy
@@ -234,12 +243,14 @@ func performActionFromSlave(self, other *Status) {
 		updateStatusRole("single")
 		log.Info("[decision] performActionFromSlave: other gone: going single")
 		actions <- "single"
+		return
 	} else {
 		// I have lost communication with everything else
 		// kill my server
 		updateStatusRole("dead(slave)")
 		log.Info("[decision] performActionFromSlave: lost connection to cluster: going dead")
 		actions <- "kill"
+		return
 	}
 }
 
