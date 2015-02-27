@@ -44,7 +44,7 @@ func (e EventHandler) NotifyUpdate(n *memberlist.Node) {
 
 }
 
-// Detections if we colide with a member of the service with the same role 
+// Detections if we colide with a member of the service with the same role
 // we cannot join.
 func (e EventHandler) NotifyConflict(existing, other *memberlist.Node) {
 	defer func() {

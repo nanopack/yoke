@@ -278,7 +278,7 @@ func performActionFromDead(self, other *Status) {
 	}
 }
 
-// when we udpate the DBROle we need to make sure 
+// when we udpate the DBROle we need to make sure
 // to reflect this in the lastKnownCluster singleton
 func updateStatusRole(r string) {
 	status.SetDBRole(r)

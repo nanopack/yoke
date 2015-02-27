@@ -24,7 +24,7 @@ type Config struct {
 	DecisionTimeout int
 }
 
-// establish constants 
+// establish constants
 // these are singleton values that are used throughout
 // the package.
 var (
