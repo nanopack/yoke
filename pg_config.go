@@ -1,55 +1,72 @@
 package main
 
-import (
+import(
 	"bufio"
-	// "errors"
 	"fmt"
+	"io/ioutil"
 	"os"
-	// "strings"
+	"regexp"
 )
-
-//
-func things(st *Status) string {
-	if st.CRole == "primary" {
-		return "secondary"
-	}
-	return "primary"
-}
 
 //
 func configureHBAConf() error {
 
-	self := myself()
-	other, err := Whois(otherRole(self))
-	if err != nil {
-		log.Warn("I cant find another. disabling replication")
-	}
+	//
+  other, err := Whois(otherRole(myself()))
+  if err != nil {
+  	log.Warn("[pg_config.configureHBAConf] Unable to find another!\n%s\n", err)
+  }
 
 	//
-	entry := "host    all             all             all           trust"
+	file := conf.DataDir+"pg_hba.conf"
+	f, err := os.Open(file)
+	if err != nil {
+		log.Error("[pg_config.configureHBAConf] Failed to open '%s'!\n%s\n", file, err)
+		return err
+	}
 
+	defer f.Close()
+
+	//
+	scanner := bufio.NewScanner(f)
+	reFindConfigOption := regexp.MustCompile(`^\s*#?\s*(local|host)\s*(replication)`)
+	readLine 	:= 1
+	entry 		:= ""
+
+	// Read file line by line
+	for scanner.Scan() {
+
+		// dont care about submatches, just if the string matches
+		if reFindConfigOption.FindString(scanner.Text()) == "" {
+			entry += fmt.Sprintf("%s\n", scanner.Text())
+		}
+
+		readLine++
+	}
+
+  //
 	if other != nil {
 		entry += fmt.Sprintf(`
+#------------------------------------------------------------------------------
+# PAGODA BOX
+#------------------------------------------------------------------------------
+
+# these configuration options have been removed from their standard location and
+# placed here so that Pagoda Box could override them with the neccessary values
+# to configure redundancy.
+
+# IMPORTANT: these settings will always be overriden when the server boots. They
+# are set dynamically and so should never change.
+
 host    replication     postgres        %s/32            trust`, other.Ip)
 	}
 
-	file := conf.DataDir + "pg_hba.conf"
-
 	//
-	// fi, err := stat(dataRoot"pg_hba.conf")
-
-	//
-	f, err := os.Create(file)
-	if err != nil {
-		log.Error("[pg_config.configureHBAConf] Failed to create '%s'!\n%s\n", file, err)
-		return err
-	}
-
-	//
-	if _, err := f.WriteString(entry); err != nil {
-		log.Error("[pg_config.configureHBAConf] Failed to write to '%s'!\n%s\n", file, err)
-		return err
-	}
+	err = ioutil.WriteFile(file, []byte(entry), 0644)
+  if err != nil {
+  	log.Error("[pg_config.configureHBAConf] Failed to write to '%s'!\n%s\n", file, err)
+  	return err
+  }
 
 	return nil
 }
@@ -58,70 +75,77 @@ host    replication     postgres        %s/32            trust`, other.Ip)
 func configurePGConf(master bool) error {
 
 	//
-	entry := `
-listen_addresses = '0.0.0.0'
-max_connections = 100
-shared_buffers = 128MB
-log_timezone = 'UTC'
-datestyle = 'iso, mdy'
-timezone = 'UTC'
-lc_messages = 'en_US.UTF-8'
-lc_monetary = 'en_US.UTF-8'
-lc_numeric = 'en_US.UTF-8'
-lc_time = 'en_US.UTF-8'
-default_text_search_config = 'pg_catalog.english'
+	file := conf.DataDir+"postgresql.conf"
+	f, err := os.Open(file)
+	if err != nil {
+		return err
+	}
 
-wal_level = hot_standby
-archive_mode = on
-archive_command = 'exit 0'
-max_wal_senders = 10
-wal_keep_segments = 5000
-hot_standby = on`
+	defer f.Close()
 
-	// master only
+	reFindConfigOption := regexp.MustCompile(`^\s*#?\s*(listen_addresses|port|wal_level|archive_mode|archive_command|max_wal_senders|wal_keep_segments|hot_standby)\s*=\s*`)
+	scanner := bufio.NewScanner(f)
+	readLine := 1
+	entry := ""
+
+	// Read file line by line
+	for scanner.Scan() {
+
+		submatch := reFindConfigOption.FindStringSubmatch(scanner.Text())
+
+		//
+		if submatch == nil {
+			entry += fmt.Sprintf("%s\n", scanner.Text())
+		}
+
+		readLine++
+	}
+
+	//
+	entry += fmt.Sprintf(`
+#------------------------------------------------------------------------------
+# PAGODA BOX
+#------------------------------------------------------------------------------
+
+# these configuration options have been removed from their standard location and
+# placed here so that Pagoda Box could override them with the neccessary values
+# to configure redundancy.
+
+# IMPORTANT: these settings will always be overriden when the server boots. They
+# are set dynamically and so should never change.
+
+listen_addresses = 0.0.0.0        # what IP address(es) to listen on;
+                                  # comma-separated list of addresses;
+                                  # defaults to 'localhost'; use '*' for all
+                                  # (change requires restart)
+port = %d                     # (change requires restart)
+wal_level = hot_standy            # minimal, archive, or hot_standby
+                                  # (change requires restart)
+archive_mode = on                 # allows archiving to be done
+                                  # (change requires restart)
+archive_command = 'exit 0'        # command to use to archive a logfile segment
+                                  # placeholders: %p = path of file to archive
+                                  #               %f = file name only
+                                  # e.g. 'test ! -f /mnt/server/archivedir/%f && cp %p /mnt/server/archivedir/%f'
+max_wal_senders = 10              # max number of walsender processes
+                                  # (change requires restart)
+wal_keep_segments = 5000          # in logfile segments, 16MB each; 0 disables
+hot_standby = on                  # "on" allows queries during recovery
+                                  # (change requires restart)`, conf.PGPort)
+
+	//
 	if master {
 		entry += `
-synchronous_standby_names = slave`
+synchronous_standby_names = slave # standby servers that provide sync rep
+                                  # comma-separated list of application_name
+                                  # from standby(s); '*' = all`
 	}
 
-	file := conf.DataDir + "postgresql.conf"
-
 	//
-	f, err := os.Create(file)
+	err = ioutil.WriteFile(file, []byte(entry), 0644)
 	if err != nil {
-		log.Error("[pg_config.configurePGConf] Failed to create '%s'!\n%s\n", file, err)
-		return err
-	}
-
-	//
-	if _, err := f.WriteString(entry); err != nil {
 		log.Error("[pg_config.configurePGConf] Failed to write to '%s'!\n%s\n", file, err)
-		return err
 	}
-
-	// #wal_level = minimal                    # minimal, archive, or hot_standby
-	//                                         # (change requires restart)
-	// #archive_mode = off             # allows archiving to be done
-	//                                 # (change requires restart)
-	// #archive_command = ''           # command to use to archive a logfile segment
-	//                                 # placeholders: %p = path of file to archive
-	//                                 #               %f = file name only
-	//                                 # e.g. 'test ! -f /mnt/server/archivedir/%f && cp %p /mnt/server/archivedir/%f'
-	// #max_wal_senders = 0            # max number of walsender processes
-	//                                 # (change requires restart)
-	// #wal_keep_segments = 0          # in logfile segments, 16MB each; 0 disables
-	// #hot_standby = off                      # "on" allows queries during recovery
-	//                                         # (change requires restart)
-
-	//
-	// opts := make(map[string]string)
-	// opts["wal_level"] 								= "hot_standby"
-	// opts["archive_mode"] 							= "on"
-	// opts["archive_command"] 					= "exit 0"
-	// opts["max_wal_senders"] 					= "10"
-	// opts["wal_keep_segments"] 				= "5000"
-	// opts["hot_standby"] 							= "on"
-	// opts["synchronous_standby_names"] = "slave"
 
 	return nil
 }
@@ -129,14 +153,14 @@ synchronous_standby_names = slave`
 //
 func createRecovery() error {
 
-	file := conf.DataDir + "recovery.conf"
+	file := conf.DataDir+"recovery.conf"
 
 	self := myself()
-	other, err := Whois(otherRole(self))
-	if err != nil {
-		log.Error("NO OTHER! %s", err)
-		os.Exit(1)
-	}
+  other, err := Whois(otherRole(self))
+  if err != nil {
+  	log.Fatal("[pg_config.createRecovery] Unable to find another... Exiting!\n%s\n", err)
+  	os.Exit(1)
+  }
 
 	//
 	f, err := os.Create(file)
@@ -146,9 +170,13 @@ func createRecovery() error {
 	}
 
 	//
-	entry := fmt.Sprintf(`# -------------------------------------------------------
-# PostgreSQL recovery config file generated by Pagoda Box
+	entry := fmt.Sprintf(`
 # -------------------------------------------------------
+# PAGODA BOX
+# -------------------------------------------------------
+
+# IMPORTANT: this config file is dynamically generated by Pagoda Box for redundancy
+# any changes made here will be overriden.
 
 # When standby_mode is enabled, the PostgreSQL server will work as a standby. It
 # tries to connect to the primary according to the connection settings
@@ -174,68 +202,11 @@ restore_command = 'exit 0'`, other.Ip, other.PGPort)
 //
 func destroyRecovery() {
 
-	file := conf.DataDir + "recovery.conf"
+	file := conf.DataDir+"recovery.conf"
 
 	//
 	err := os.Remove(file)
 	if err != nil {
 		log.Warn("[pg_config.destroyRecovery] No recovery.conf found at '%s'", file)
 	}
-}
-
-//
-func stat(f string) (os.FileInfo, error) {
-	fi, err := os.Stat(f)
-	if err != nil {
-		log.Fatal("[pg_config.readFile]", err)
-		return nil, err
-	}
-
-	return fi, nil
-}
-
-// parseFile will parse a config file, returning a 'opts' map of the resulting
-// config options.
-func parseFile(file string) (map[string]string, error) {
-
-	// attempt to open file
-	f, err := os.Open(file)
-	if err != nil {
-		return nil, err
-	}
-
-	defer f.Close()
-
-	m := make(map[string]string)
-	s := make([]string, 0)
-
-	scanner := bufio.NewScanner(f)
-	readLine := 1
-
-	// Read line by line, sending lines to parseLine
-	for scanner.Scan() {
-		if err := parseLine(scanner.Text(), m, s); err != nil {
-			log.Error("[pg_config] Error reading line: %v\n", readLine)
-			return nil, err
-		}
-
-		readLine++
-	}
-
-	fmt.Println("SLICE???", s)
-
-	return m, nil
-}
-
-// parseLine reads each line of the config file, extracting a key/value pair to
-// insert into an 'conf' map.
-func parseLine(line string, m map[string]string, s []string) error {
-
-	// if the line isn't already in the map add it
-	if _, ok := m[line]; !ok {
-		m[line] = line
-		s = append(s, line)
-	}
-
-	return nil
 }
