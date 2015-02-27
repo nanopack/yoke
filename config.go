@@ -9,7 +9,9 @@ import (
 	"github.com/vaughan0/go-ini"
 )
 
-//
+// Config is the struct of all global configuration data
+// it is set by a config file that is the first arguement
+// given to the exec
 type Config struct {
 	Role            string
 	AdvertiseIp     string
@@ -22,7 +24,9 @@ type Config struct {
 	DecisionTimeout int
 }
 
-//
+// establish constants 
+// these are singleton values that are used throughout
+// the package.
 var (
 	advice  chan string
 	actions chan string
@@ -30,7 +34,7 @@ var (
 	log     *lumber.ConsoleLogger
 )
 
-//
+// init Initializeds the config file and the other constants
 func init() {
 	advice = make(chan string)
 	actions = make(chan string)
@@ -108,6 +112,24 @@ func init() {
 	parseInt(&conf.PGPort, file, "config", "pg_port")
 	parseInt(&conf.DecisionTimeout, file, "config", "decision_timeout")
 	parseArr(&conf.Peers, file, "config", "peers")
+
+	if logLevel, ok := file.Get("config", "log_level"); ok {
+		switch logLevel {
+		case "TRACE", "trace":
+			log.Level(lumber.TRACE)
+		case "DEBUG", "debug":
+			log.Level(lumber.DEBUG)
+		case "INFO", "info":
+			log.Level(lumber.INFO)
+		case "WARN", "warn":
+			log.Level(lumber.WARN)
+		case "ERROR", "error":
+			log.Level(lumber.ERROR)
+		case "FATAL", "fatal":
+			log.Level(lumber.FATAL)
+		}
+	}
+
 }
 
 //

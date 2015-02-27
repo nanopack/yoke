@@ -12,11 +12,13 @@ import (
 	"time"
 )
 
+// Piper is build to Pipe data from exec.Cmd objects to our logger
 type Piper struct {
 	Prefix string
 	// just need a couple methods
 }
 
+// Write is just a fulfillment of the io.Writer interface
 func (p Piper) Write(d []byte) (int, error) {
 	log.Info("%s %s", p.Prefix, d)
 	return len(d), nil

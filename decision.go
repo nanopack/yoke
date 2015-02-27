@@ -6,7 +6,8 @@ import (
 
 var lastKnownCluster []*Status
 
-//
+// Starts a goroutine that makes all the decisions
+// about who is to become master/slave/single and at what times
 func DecisionStart() error {
 	log.Info("[decision] starting")
 	// wait for the cluster to come online
@@ -95,7 +96,8 @@ func startupDB() {
 	}
 }
 
-//
+// takes the default starting string
+// and decides how it should start
 func startType(def string) string {
 	self := myself()
 	log.Debug("[decision] startType: self: %+v", self)
@@ -128,7 +130,8 @@ func startType(def string) string {
 	return def
 }
 
-//
+// detect a change in the cluster
+// new members, lost members, or changes to member states
 func clusterChanges() bool {
 	c, _ := Cluster()
 	if len(lastKnownCluster) != len(c) {
@@ -152,7 +155,7 @@ func clusterChanges() bool {
 	return false
 }
 
-//
+// decides what state to take when clusterChanges is true
 func performAction() {
 	self := myself()
 	other, _ := Whois(otherRole(self))
@@ -170,7 +173,7 @@ func performAction() {
 	}
 }
 
-//
+// Breakdown of the performAction for when we are single
 func performActionFromSingle(self, other *Status) {
 	if other != nil {
 		// i was in single but the other node came back online
@@ -181,7 +184,7 @@ func performActionFromSingle(self, other *Status) {
 	}
 }
 
-//
+// Breakdown of the performAction for when we are master
 func performActionFromMaster(self, other *Status) {
 	if other != nil && other.DBRole == "slave" {
 		// i lost the monitor
@@ -218,7 +221,7 @@ func performActionFromMaster(self, other *Status) {
 	}
 }
 
-//
+// Breakdown of the performAction for when we are slave
 func performActionFromSlave(self, other *Status) {
 	if other != nil && other.DBRole == "master" {
 		// i probably lost the monitor
@@ -254,7 +257,7 @@ func performActionFromSlave(self, other *Status) {
 	}
 }
 
-//
+// Breakdown of the performAction for when we are dead
 func performActionFromDead(self, other *Status) {
 	c, _ := Cluster()
 	if other != nil && len(c) == 3 {
@@ -275,13 +278,15 @@ func performActionFromDead(self, other *Status) {
 	}
 }
 
-//
+// when we udpate the DBROle we need to make sure 
+// to reflect this in the lastKnownCluster singleton
 func updateStatusRole(r string) {
 	status.SetDBRole(r)
 	lastKnownCluster, _ = Cluster()
 }
 
-//
+// look at our role and decide what the role of the other
+// node will be
 func otherRole(st *Status) string {
 	if st.CRole == "primary" {
 		return "secondary"
@@ -289,6 +294,8 @@ func otherRole(st *Status) string {
 	return "primary"
 }
 
+// get my own status and retry a few times just incase
+// there is a file system problem
 func myself() *Status {
 	for i := 0; i < 10; i++ {
 		self, err := Whoami()
