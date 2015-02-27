@@ -1,6 +1,6 @@
 package main
 
-import(
+import (
 	"bufio"
 	// "errors"
 	"fmt"
@@ -20,10 +20,10 @@ func things(st *Status) string {
 func configureHBAConf() error {
 
 	self := myself()
-  other, err := Whois(otherRole(self))
-  if err != nil {
-  	log.Warn("I cant find another. disabling replication")
-  }
+	other, err := Whois(otherRole(self))
+	if err != nil {
+		log.Warn("I cant find another. disabling replication")
+	}
 
 	//
 	entry := "host    all             all             all           trust"
@@ -33,7 +33,7 @@ func configureHBAConf() error {
 host    replication     postgres        %s/32            trust`, other.Ip)
 	}
 
-	file := conf.DataDir+"pg_hba.conf"
+	file := conf.DataDir + "pg_hba.conf"
 
 	//
 	// fi, err := stat(dataRoot"pg_hba.conf")
@@ -84,7 +84,7 @@ hot_standby = on`
 synchronous_standby_names = slave`
 	}
 
-	file := conf.DataDir+"postgresql.conf"
+	file := conf.DataDir + "postgresql.conf"
 
 	//
 	f, err := os.Create(file)
@@ -129,14 +129,14 @@ synchronous_standby_names = slave`
 //
 func createRecovery() error {
 
-	file := conf.DataDir+"recovery.conf"
+	file := conf.DataDir + "recovery.conf"
 
 	self := myself()
-  other, err := Whois(otherRole(self))
-  if err != nil {
-  	log.Error("NO OTHER! %s", err)
-  	os.Exit(1)
-  }
+	other, err := Whois(otherRole(self))
+	if err != nil {
+		log.Error("NO OTHER! %s", err)
+		os.Exit(1)
+	}
 
 	//
 	f, err := os.Create(file)
@@ -174,7 +174,7 @@ restore_command = 'exit 0'`, other.Ip, other.PGPort)
 //
 func destroyRecovery() {
 
-	file := conf.DataDir+"recovery.conf"
+	file := conf.DataDir + "recovery.conf"
 
 	//
 	err := os.Remove(file)

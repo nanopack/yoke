@@ -12,7 +12,7 @@ import (
 //
 type Config struct {
 	Role            string
-	AdvertiseIp 	  string
+	AdvertiseIp     string
 	AdvertisePort   int
 	PGPort          int
 	Peers           []string
@@ -40,13 +40,13 @@ func init() {
 
 	//
 	conf = Config{
-		Role:        "Monitor",
-		AdvertisePort: 1234,
-		PGPort:      5432,
-		Peers:       []string{},
-		DataDir:     "/data/",
-		StatusDir:   "./status/",
-		SyncCommand: "rsync -a --delete {{local_dir}} {{slave_ip}}:{{slave_dir}}",
+		Role:            "Monitor",
+		AdvertisePort:   1234,
+		PGPort:          5432,
+		Peers:           []string{},
+		DataDir:         "/data/",
+		StatusDir:       "./status/",
+		SyncCommand:     "rsync -a --delete {{local_dir}} {{slave_ip}}:{{slave_dir}}",
 		DecisionTimeout: 10,
 	}
 
@@ -98,9 +98,9 @@ func init() {
 	}
 
 	if conf.AdvertiseIp == "" || conf.AdvertiseIp == "0.0.0.0" {
-			log.Fatal("advertise_ip (" + conf.AdvertiseIp + ") is not a valid ip")
-			log.Close()
-			os.Exit(1)
+		log.Fatal("advertise_ip (" + conf.AdvertiseIp + ") is not a valid ip")
+		log.Close()
+		os.Exit(1)
 
 	}
 

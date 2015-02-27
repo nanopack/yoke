@@ -140,7 +140,7 @@ func clusterChanges() bool {
 		other, err := Whois(member.CRole)
 		if err != nil {
 			log.Debug("[decision] The other member died while i was trying to pull its updats")
-			lastKnownCluster, _ = Cluster()	
+			lastKnownCluster, _ = Cluster()
 			return true
 		}
 		if member.DBRole != other.DBRole {

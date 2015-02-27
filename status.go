@@ -24,8 +24,8 @@ type Status struct {
 	CRole     string    // the nodes 'role' in the cluster (primary, secondary, monitor)
 	DataDir   string    // directory of the postgres database
 	DBRole    string    // the 'role' of the running pgsql instance inside the node (master, slave)
-	Ip 				string 		//
-	PGPort 		int 			//
+	Ip        string    //
+	PGPort    int       //
 	State     string    // the current state of the node
 	UpdatedAt time.Time // the last time the node state was updated
 }
@@ -58,7 +58,7 @@ func StatusStart() error {
 			CRole:     conf.Role,
 			DataDir:   conf.DataDir,
 			DBRole:    "initialized",
-			Ip: 		   conf.AdvertiseIp,
+			Ip:        conf.AdvertiseIp,
 			PGPort:    conf.PGPort,
 			State:     "booting",
 			UpdatedAt: time.Now(),
