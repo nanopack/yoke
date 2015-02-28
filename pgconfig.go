@@ -1,3 +1,6 @@
+// pgconfig.go provides methods for configuring a node corresponding to if it is
+// running a 'master' or 'slave' instance of postgres.
+
 package main
 
 import (
@@ -8,16 +11,19 @@ import (
 	"regexp"
 )
 
-//
+// configureHBAConf attempts to open the 'pg_hba.conf' file. Once open it will scan
+// the file line by line looking for replication settings, and overwrite only those
+// settings with the settings required for redundancy on Pagoda Box
 func configureHBAConf() error {
 
-	//
+	// get the role of the other node in the cluster that is running an instance
+	// of postgresql
 	other, err := Whois(otherRole(myself()))
 	if err != nil {
 		log.Warn("[pg_config.configureHBAConf] Unable to find another!\n%s\n", err)
 	}
 
-	//
+	// open the pg_hba.conf
 	file := conf.DataDir + "pg_hba.conf"
 	f, err := os.Open(file)
 	if err != nil {
@@ -27,24 +33,22 @@ func configureHBAConf() error {
 
 	defer f.Close()
 
-	//
 	scanner := bufio.NewScanner(f)
 	reFindConfigOption := regexp.MustCompile(`^\s*#?\s*(local|host)\s*(replication)`)
-	readLine := 1
 	entry := ""
 
-	// Read file line by line
+	// scan the file line by line to build an 'entry' to be re-written back to the
+	// file, skipping ('removing') any line that deals with redundancy.
 	for scanner.Scan() {
 
 		// dont care about submatches, just if the string matches
 		if reFindConfigOption.FindString(scanner.Text()) == "" {
 			entry += fmt.Sprintf("%s\n", scanner.Text())
 		}
-
-		readLine++
 	}
 
-	//
+	// if the other node is present, write redundancy into the 'entry' (otherwise
+	// just leave it out)
 	if other != nil {
 		entry += fmt.Sprintf(`
 #------------------------------------------------------------------------------
@@ -61,7 +65,7 @@ func configureHBAConf() error {
 host    replication     postgres        %s/32            trust`, other.Ip)
 	}
 
-	//
+	// write the 'entry' to the file
 	err = ioutil.WriteFile(file, []byte(entry), 0644)
 	if err != nil {
 		log.Error("[pg_config.configureHBAConf] Failed to write to '%s'!\n%s\n", file, err)
@@ -71,10 +75,12 @@ host    replication     postgres        %s/32            trust`, other.Ip)
 	return nil
 }
 
-//
+// configurePGConf attempts to open the 'postgresql.conf' file. Once open it will
+// scan the file line by line looking for replication settings, and overwrite only
+// those settings with the settings required for redundancy on Pagoda Box
 func configurePGConf(master bool) error {
 
-	//
+	// open the postgresql.conf
 	file := conf.DataDir + "postgresql.conf"
 	f, err := os.Open(file)
 	if err != nil {
@@ -85,10 +91,10 @@ func configurePGConf(master bool) error {
 
 	reFindConfigOption := regexp.MustCompile(`^\s*#?\s*(listen_addresses|port|wal_level|archive_mode|archive_command|max_wal_senders|wal_keep_segments|hot_standby)\s*=\s*`)
 	scanner := bufio.NewScanner(f)
-	readLine := 1
 	entry := ""
 
-	// Read file line by line
+	// scan the file line by line to build an 'entry' to be re-written back to the
+	// file, skipping ('removing') any lines that need to be manually configured
 	for scanner.Scan() {
 
 		submatch := reFindConfigOption.FindStringSubmatch(scanner.Text())
@@ -97,11 +103,9 @@ func configurePGConf(master bool) error {
 		if submatch == nil {
 			entry += fmt.Sprintf("%s\n", scanner.Text())
 		}
-
-		readLine++
 	}
 
-	//
+	// write manual configurations into an 'entry'
 	entry += fmt.Sprintf(`
 #------------------------------------------------------------------------------
 # PAGODA BOX
@@ -133,7 +137,8 @@ wal_keep_segments = 5000          # in logfile segments, 16MB each; 0 disables
 hot_standby = on                  # "on" allows queries during recovery
                                   # (change requires restart)`, conf.PGPort)
 
-	//
+	// if this node is currenty 'master' then write one additional configuration
+	// into the 'entry'
 	if master {
 		entry += `
 synchronous_standby_names = slave # standby servers that provide sync rep
@@ -141,7 +146,7 @@ synchronous_standby_names = slave # standby servers that provide sync rep
                                   # from standby(s); '*' = all`
 	}
 
-	//
+	// write 'entry' to the file
 	err = ioutil.WriteFile(file, []byte(entry), 0644)
 	if err != nil {
 		log.Error("[pg_config.configurePGConf] Failed to write to '%s'!\n%s\n", file, err)
@@ -150,7 +155,9 @@ synchronous_standby_names = slave # standby servers that provide sync rep
 	return nil
 }
 
-//
+// createRecovery creates a 'recovery.conf' file with the necessary settings
+// required for redundancy on Pagoda Box. This method is called on the node that
+// is being configured to run the 'slave' instance of postgres
 func createRecovery() error {
 
 	file := conf.DataDir + "recovery.conf"
@@ -162,14 +169,14 @@ func createRecovery() error {
 		os.Exit(1)
 	}
 
-	//
+	// open/truncate the recover.conf
 	f, err := os.Create(file)
 	if err != nil {
 		log.Error("[pg_config.createRecovery] Failed to create '%s'!\n%s\n", file, err)
 		return err
 	}
 
-	//
+	// write manual configuration an 'entry'
 	entry := fmt.Sprintf(`
 # -------------------------------------------------------
 # PAGODA BOX
@@ -190,7 +197,7 @@ primary_conninfo = 'host=%s port=%d application_name=slave'
 # the requirement without doing anything.
 restore_command = 'exit 0'`, other.Ip, other.PGPort)
 
-	//
+	// write 'entry' to the file
 	if _, err := f.WriteString(entry); err != nil {
 		log.Error("[pg_config.createRecovery] Failed to write to '%s'!\n%s\n", file, err)
 		return err
@@ -199,12 +206,13 @@ restore_command = 'exit 0'`, other.Ip, other.PGPort)
 	return nil
 }
 
-//
+// destroyRecovery attempts to destroy the 'recovery.conf'. This method is called
+// on a node that is being configured to run the 'master' instance of postgres
 func destroyRecovery() {
 
 	file := conf.DataDir + "recovery.conf"
 
-	//
+	// remove 'recovery.conf'
 	err := os.Remove(file)
 	if err != nil {
 		log.Warn("[pg_config.destroyRecovery] No recovery.conf found at '%s'", file)

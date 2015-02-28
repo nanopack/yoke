@@ -1,7 +1,7 @@
-// status.go - status defines a Status struct for each node in the cluster,
-// providing four attributes (CRole, DBRole, State, UpdateAt) as a way of
-// determining each nodes role in the cluster, current state, and the role of
-// the pgqsl running inside each (non-monitor) node.
+// status.go defines a Status struct for each node in the cluster, providing
+// four attributes (CRole, DBRole, State, UpdateAt) as a way of determining each
+// nodes role in the cluster, current state, and the role of the pgqsl running
+// inside each (non-monitor) node.
 //
 // status provides methods for updating the DBRole and State as the clusters
 // environment changes due to outages, and also provides methods of retrieving

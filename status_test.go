@@ -1,3 +1,5 @@
+// status_test.go tests the functionaly of status.go
+
 package main
 
 import (
