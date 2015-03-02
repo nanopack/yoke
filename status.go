@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"net"
 	"net/rpc"
+	"os"
 	"strconv"
 	"time"
 
@@ -43,11 +44,11 @@ func StatusStart() error {
 
 	// create a new scribble store
 	store = scribble.New(conf.StatusDir, log)
-	self 	= &Status{}
+	status 	= &Status{}
 
 	// the current node will attempt to discover who they are in the event of an
 	// outage, or be created for the first time
-	self = Whoami()
+	status = Whoami()
 
 	// no record found that matches the current node create a new record in scribble
 	// for the current node
@@ -55,7 +56,7 @@ func StatusStart() error {
 		log.Warn("[status.StatusStart] 404 Not found: No record found for '%s'\n", conf.Role)
 
 		//
-		self = &Status{
+		status = &Status{
 			CRole:     conf.Role,
 			DataDir:   conf.DataDir,
 			DBRole:    "initialized",
@@ -66,13 +67,13 @@ func StatusStart() error {
 		}
 
 		log.Debug("[status.StatusStart] Creating record for '%s'\n", conf.Role)
-		save(self)
+		save(status)
 	}
 
-	log.Debug("[status] Node Status: %+v\n", self)
+	log.Debug("[status] Node Status: %+v\n", status)
 
 	// register our Status struct with RPC
-	rpc.Register(self)
+	rpc.Register(status)
 
 	log.Info("[status] Starting RPC server...\n")
 
