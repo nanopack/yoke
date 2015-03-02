@@ -7,6 +7,9 @@ import (
 	"github.com/hashicorp/memberlist"
 )
 
+// EventHandler is a implentation of memberlists Deligate interface
+// It will be used to alert our decision system when node activity
+// happens.
 type EventHandler struct {
 	Active bool
 }
