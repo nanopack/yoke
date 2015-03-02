@@ -175,10 +175,11 @@ func Whois(role string) (*Status, error) {
 // Whoisnot takes a 'role' string and attempts to find the 'other' node that does
 // not match the role provided
 func Whoisnot(not string) (*Status, error) {
+	log.Debug("[status.Whoisnot] Who is not '%s'?", role)
 
 	var role string
 
-	// set role equal to the 'oposite' of the given role
+	// set role equal to the 'opposite' of the given role
 	switch not {
 	case "primary":
 		role = "secondary"
@@ -193,8 +194,6 @@ func Whoisnot(not string) (*Status, error) {
 // Cluster iterates over all the nodes in member list, running a Whois(), and
 // storing each corresponding Status into a slice and returning the collection
 func Cluster() ([]*Status, error) {
-	// log.Info("[status.Cluster]")
-
 	var members = []*Status{}
 
 	// iterate over all nodes in member list
@@ -247,8 +246,7 @@ func (s *Status) SetState(state string) {
 // Status of that node. It will iterate through each node in memberlist until it
 // finds a matching node
 func (s *Status) Ping(role string, status *Status) error {
-
-	log.Info("[status.Ping] pinging '%s'...", role)
+	log.Debug("[status.Ping] pinging '%s'...", role)
 
 	// iterate through each node in memberlist looking for a node whos name matches
 	// the desired 'role'
@@ -268,7 +266,7 @@ func (s *Status) Ping(role string, status *Status) error {
 
 // Demote is used as a way to 'advise' the current node that it needs to demote
 func (s *Status) Demote(source string, status *Status) error {
-	log.Info("[status.Demote] Advising demote...")
+	log.Debug("[status.Demote] Advising demote...")
 
 	advice <- "demote"
 
