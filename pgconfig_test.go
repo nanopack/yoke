@@ -3,11 +3,11 @@
 package main
 
 import (
-  // "bufio"
-  // "fmt"
-  // "io/ioutil"
-  // "os"
-  // "regexp"
+// "bufio"
+// "fmt"
+// "io/ioutil"
+// "os"
+// "regexp"
 )
 
 //
@@ -15,7 +15,7 @@ import (
 // }
 
 //
-// func testConfigurePGConf(master bool) error {
+// func testConfigurePGConf() error {
 // }
 
 //
