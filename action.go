@@ -295,6 +295,15 @@ func waiter(c *exec.Cmd) {
 	if err != nil {
 		log.Error("[action] Waiter Error: %s", err.Error())
 	}
+
+	// I should check to see if i exited and was not supposed to
+	self := Whoami()
+	if self.State == "(master)running" || self.State == "(slave)running" || self.State == "(single)running" {
+		log.Fatal("the database exited and it wasnt supposed to")
+		log.Close()
+		os.Exit(1)
+	}
+	
 	log.Debug("[action] Watier done")
 	running = false
 }
