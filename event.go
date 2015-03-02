@@ -51,11 +51,11 @@ func (e EventHandler) NotifyConflict(existing, other *memberlist.Node) {
 
 	//
 	defer func() {
-    if r := recover(); r != nil {
+		if r := recover(); r != nil {
 			log.Fatal("[event.NotifyConflict] '%s' already exists in cluster... unable to join! Exiting...\n", existing.Name)
 			log.Close()
 			os.Exit(1)
-    }
+		}
 	}()
 
 	fmt.Println(len(list.Members()))

@@ -3,13 +3,14 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"github.com/hoisie/mustache"
-	_ "github.com/lib/pq"
 	"os"
 	"os/exec"
 	"strings"
 	"syscall"
 	"time"
+
+	"github.com/hoisie/mustache"
+	_ "github.com/lib/pq"
 )
 
 // Piper is build to Pipe data from exec.Cmd objects to our logger
