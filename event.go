@@ -1,3 +1,5 @@
+// event.go
+
 package main
 
 import (
@@ -7,54 +9,52 @@ import (
 	"github.com/hashicorp/memberlist"
 )
 
-// EventHandler is a implentation of memberlists Deligate interface
-// It will be used to alert our decision system when node activity
-// happens.
+// EventHandler is a implentation of memberlists Deligate interface. It will be
+// used to alert our decision system when node activity happens.
 type EventHandler struct {
-	Active bool
+	Active bool //
 }
 
-// NotifyJoin is invoked when a node is detected to have joined.
-// The Node argument must not be modified.
-// We send advice to the decision engine and let it decide what to do
+// NotifyJoin is invoked when a node is detected to have joined. The Node argument
+// must not be modified. We send advice to the decision engine and let it decide
+// what to do
 func (e EventHandler) NotifyJoin(n *memberlist.Node) {
-	fmt.Printf("NotifyJoin:%+v", n)
+	log.Debug("[event.NotifyJoin] '%s' joined the cluster...\n", n.Name)
 	go func() {
 		advice <- "join" + n.Name
 	}()
 }
 
-// NotifyLeave is invoked when a node is detected to have left.
-// The Node argument must not be modified.
-// We send advice to the decision engine and let it decide what to do
+// NotifyLeave is invoked when a node is detected to have left. The Node argument
+// must not be modified. We send advice to the decision engine and let it decide
+// what to do
 func (e EventHandler) NotifyLeave(n *memberlist.Node) {
-	fmt.Printf("NotifyLeave:%+v", n)
+	log.Debug("[event.NotifyLeave] '%s' left the cluster...\n", n.Name)
 	go func() {
 		advice <- "leave" + n.Name
 	}()
-
 }
 
-// NotifyUpdate is invoked when a node is detected to have
-// updated, usually involving the meta data. The Node argument
-// must not be modified.
-// We send advice to the decision engine and let it decide what to do
+// NotifyUpdate is invoked when a node is detected to have updated, usually
+// involving the meta data. The Node argument must not be modified. We send advice
+// to the decision engine and let it decide what to do
 func (e EventHandler) NotifyUpdate(n *memberlist.Node) {
-	fmt.Printf("NotifyUpdate:%+v", n)
+	log.Debug("[event.NotifyUpdate] '%s' was updated\n", n.Name)
 	go func() {
 		advice <- "update" + n.Name
 	}()
-
 }
 
-// Detections if we colide with a member of the service with the same role
-// we cannot join.
+// NotifyConflict detects if we colide with a member of the same name and are
+// unable to join
 func (e EventHandler) NotifyConflict(existing, other *memberlist.Node) {
+
+	//
 	defer func() {
 		recover()
-		fmt.Println("I cannot join that cluster")
+		log.Fatal("[event.NotifyConflict] '%s' already exists in cluster... unable to join! Exiting...\n", n.Name)
 		os.Exit(1)
 	}()
+
 	fmt.Println(len(list.Members()))
-	fmt.Printf("someone tried joing us:\n %+v\n\n%+v", existing, other)
 }
