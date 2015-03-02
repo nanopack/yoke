@@ -119,7 +119,7 @@ func configurePGConf(master bool) error {
 # IMPORTANT: these settings will always be overriden when the server boots. They
 # are set dynamically and so should never change.
 
-listen_addresses = 0.0.0.0        # what IP address(es) to listen on;
+listen_addresses = '0.0.0.0'      # what IP address(es) to listen on;
                                   # comma-separated list of addresses;
                                   # defaults to 'localhost'; use '*' for all
                                   # (change requires restart)
@@ -129,9 +129,9 @@ wal_level = hot_standy            # minimal, archive, or hot_standby
 archive_mode = on                 # allows archiving to be done
                                   # (change requires restart)
 archive_command = 'exit 0'        # command to use to archive a logfile segment
-                                  # placeholders: %p = path of file to archive
-                                  #               %f = file name only
-                                  # e.g. 'test ! -f /mnt/server/archivedir/%f && cp %p /mnt/server/archivedir/%f'
+                                  # placeholders: \%p = path of file to archive
+                                  #               \%f = file name only
+                                  # e.g. 'test ! -f /mnt/server/archivedir/\%f && cp \%p /mnt/server/archivedir/\%f'
 max_wal_senders = 10              # max number of walsender processes
                                   # (change requires restart)
 wal_keep_segments = 5000          # in logfile segments, 16MB each; 0 disables
