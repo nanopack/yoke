@@ -46,13 +46,15 @@ func StatusStart() error {
 	store = scribble.New(conf.StatusDir, log)
 	status 	= &Status{}
 
-	// the current node will attempt to discover who they are in the event of an
-	// outage, or be created for the first time
-	status = Whoami()
-
-	// no record found that matches the current node create a new record in scribble
-	// for the current node
+	// determine if the current node already has a record in scribble
+	fi, err := os.Stat(conf.StatusDir + "/" + conf.Role)
 	if err != nil {
+		log.Warn("[status.StatusStart] Failed to read '%s'\n%s\n", conf.StatusDir + "/" + conf.Role, err)
+	}
+
+	// if no record found that matches the current node; create a new record in
+	// scribble
+	if fi == nil {
 		log.Warn("[status.StatusStart] 404 Not found: No record found for '%s'\n", conf.Role)
 
 		//
@@ -68,6 +70,10 @@ func StatusStart() error {
 
 		log.Debug("[status.StatusStart] Creating record for '%s'\n", conf.Role)
 		save(status)
+
+		// record found; set nodes status information
+	} else {
+		status = Whoami()
 	}
 
 	log.Debug("[status] Node Status: %+v\n", status)
