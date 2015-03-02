@@ -18,7 +18,8 @@ func configureHBAConf() error {
 
 	// get the role of the other node in the cluster that is running an instance
 	// of postgresql
-	other, err := Whois(otherRole(myself()))
+	self, _ := Whoami()
+	other, err := Whoisnot(self.CRole)
 	if err != nil {
 		log.Warn("[pg_config.configureHBAConf] Unable to find another!\n%s\n", err)
 	}
@@ -162,8 +163,8 @@ func createRecovery() error {
 
 	file := conf.DataDir + "recovery.conf"
 
-	self := myself()
-	other, err := Whois(otherRole(self))
+	self, _ := Whoami()
+	other, err := Whois(self.CRole)
 	if err != nil {
 		log.Fatal("[pg_config.createRecovery] Unable to find another... Exiting!\n%s\n", err)
 		os.Exit(1)

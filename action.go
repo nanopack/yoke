@@ -30,6 +30,8 @@ var running bool
 
 // Listen on the action channel and perform the action
 func ActionStart() error {
+	log.Info("[action.ActionStart]")
+
 	running = false
 	go func() {
 		for {
@@ -96,8 +98,10 @@ func startMaster() {
 	log.Debug("[action] backup started")
 	// rsync my files over to the slave server
 	status.SetState("(master)syncing")
-	self := myself()
-	other, _ := Whois(otherRole(self))
+
+	self, _ := Whoami()
+	other, _ := Whoisnot(self.CRole)
+
 	// rsync -a {{local_dir}} {{slave_ip}}:{{slave_dir}}
 	sync := mustache.Render(conf.SyncCommand, map[string]string{"local_dir": conf.DataDir, "slave_ip": other.Ip, "slave_dir": other.DataDir})
 	cmd := strings.Split(sync, " ")
@@ -165,9 +169,9 @@ func startSlave() {
 	// wait for master server to be running
 	status.SetState("(slave)waiting")
 	log.Debug("[action] wait for master")
-	self := myself()
+	self, _ := Whoami()
 	for {
-		other, err := Whois(otherRole(self))
+		other, err := Whoisnot(self.CRole)
 		if err != nil {
 			log.Error("I have lost communication with the other server")
 			status.SetState("(slave)master_lost")

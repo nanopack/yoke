@@ -37,6 +37,7 @@ var (
 
 // StatusStart
 func StatusStart() error {
+	log.Info("[status.StatusStart]")
 
 	var err error
 
@@ -108,12 +109,21 @@ func Whoami() (*Status, error) {
 
 	s := &Status{}
 
-	// attempt to pull a record from scribble for the current node
-	if err := get(list.LocalNode().Name, s); err != nil {
-		return nil, err
+	//
+	for i := 0; i < 10; i++ {
+
+		// attempt to pull a record from scribble for the current node
+		if err := get(list.LocalNode().Name, s); err == nil {
+			return s, nil
+		} else {
+			log.Error("[status.Whoami] Unable to retrieve record! retrying... (%s)", err)
+		}
 	}
 
-	return s, nil
+	log.Fatal("[status.Whoami] Failed to retrieve record!")
+	os.Exit(1)
+
+	return nil, nil
 }
 
 // Whois takes a 'role' string and iterates over all the nodes in memberlist looking
@@ -153,6 +163,24 @@ func Whois(role string) (*Status, error) {
 	client.Close()
 
 	return s, nil
+}
+
+// Whoisnot takes a 'role' string and attempts to find the 'other' node that does
+// not match the role provided
+func Whoisnot(not string) (*Status, error) {
+
+	var role string
+
+	// set role equal to the 'oposite' of the given role
+	switch not {
+	case "primary":
+		role = "secondary"
+	case "secondary":
+		role = "primary"
+	}
+
+	// return the node that does not match the give role
+	return Whois(role)
 }
 
 // Cluster iterates over all the nodes in member list, running a Whois(), and

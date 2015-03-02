@@ -9,12 +9,13 @@ var lastKnownCluster []*Status
 // Starts a goroutine that makes all the decisions
 // about who is to become master/slave/single and at what times
 func DecisionStart() error {
-	log.Info("[decision] starting")
+	log.Info("[decision.DecisionStart]")
+
 	// wait for the cluster to come online
 	waitForClusterFull()
 	// start the database and perform actions on that database
 	go func() {
-		self := myself()
+		self := Whoami()
 		log.Debug("[decision] myself %+v", self)
 		if self.CRole == "monitor" {
 			log.Debug("[decision] im a monitor.. i dont make decisions")
@@ -40,7 +41,7 @@ func DecisionStart() error {
 
 			case adv := <-advice:
 				// i need a new self to see if im currently the master
-				self := myself()
+				self := Whoami()
 				if adv == "demote" && self.DBRole == "master" {
 					updateStatusRole("dead(master)")
 					actions <- "kill"
@@ -79,7 +80,7 @@ func waitForClusterFull() {
 // figure out what to start as.
 func startupDB() {
 	log.Debug("[decision] Starting Db")
-	self := myself()
+	self := Whoami()
 	switch self.CRole {
 	case "primary":
 		r := startType("master")
@@ -99,7 +100,8 @@ func startupDB() {
 // takes the default starting string
 // and decides how it should start
 func startType(def string) string {
-	self := myself()
+	self, _ := Whoami()
+
 	log.Debug("[decision] startType: self: %+v", self)
 	switch self.DBRole {
 	case "initialized":
@@ -110,7 +112,7 @@ func startType(def string) string {
 		// check the other node and see if it is single
 		// if not i stay master
 		// if so i go secondary
-		other, _ := Whois(otherRole(self))
+		other, _ := Whoisnot(self.CRole)
 		log.Debug("[decision] startType: other: %+v", other)
 		// if the other guy has transitioned to single
 		if other.DBRole == "single" {
@@ -157,8 +159,8 @@ func clusterChanges() bool {
 
 // decides what state to take when clusterChanges is true
 func performAction() {
-	self := myself()
-	other, _ := Whois(otherRole(self))
+	self, _ := Whoami()
+	other, _ := Whois(self.CRole)
 
 	log.Debug("[decision] performAction: self: %+v, other: %+v", self, other)
 	switch self.DBRole {
@@ -283,27 +285,4 @@ func performActionFromDead(self, other *Status) {
 func updateStatusRole(r string) {
 	status.SetDBRole(r)
 	lastKnownCluster, _ = Cluster()
-}
-
-// look at our role and decide what the role of the other
-// node will be
-func otherRole(st *Status) string {
-	if st.CRole == "primary" {
-		return "secondary"
-	}
-	return "primary"
-}
-
-// get my own status and retry a few times just incase
-// there is a file system problem
-func myself() *Status {
-	for i := 0; i < 10; i++ {
-		self, err := Whoami()
-		if err == nil {
-			return self
-		}
-		log.Error("Decision: Myself: " + err.Error())
-	}
-	panic("Decision: Myself: I never found myself!")
-	return nil
 }
