@@ -124,7 +124,7 @@ listen_addresses = '0.0.0.0'      # what IP address(es) to listen on;
                                   # defaults to 'localhost'; use '*' for all
                                   # (change requires restart)
 port = %d                     # (change requires restart)
-wal_level = hot_standy            # minimal, archive, or hot_standby
+wal_level = hot_standby           # minimal, archive, or hot_standby
                                   # (change requires restart)
 archive_mode = on                 # allows archiving to be done
                                   # (change requires restart)
