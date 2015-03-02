@@ -53,29 +53,29 @@ func (s *Status) testSetState(t *testing.T) {
 }
 
 //
-// func testWhoami() (*Status, error) {
+// func testWhoami() {
 // }
 
 //
-// func testWhois(role string) (*Status, error) {
+// func testWhois() {
 // }
 
 //
-// func testCluster() ([]*Status, error) {
+// func testCluster() {
 // }
 
 //
-// func (s *Status) testPing(role string, status *Status) error {
+// func (s *Status) testPing() {
 // }
 
 //
-// func (s *Status) testDemote(source string, status *Status) error {
+// func (s *Status) testDemote() {
 // }
 
 //
-// func testGet(role string, status *Status) error {
+// func testGet() {
 // }
 
 //
-// func testSave(status *Status) error {
+// func testSave() {
 // }

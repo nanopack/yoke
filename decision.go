@@ -100,7 +100,7 @@ func startupDB() {
 // takes the default starting string
 // and decides how it should start
 func startType(def string) string {
-	self, _ := Whoami()
+	self := Whoami()
 
 	log.Debug("[decision] startType: self: %+v", self)
 	switch self.DBRole {
@@ -159,7 +159,7 @@ func clusterChanges() bool {
 
 // decides what state to take when clusterChanges is true
 func performAction() {
-	self, _ := Whoami()
+	self := Whoami()
 	other, _ := Whois(self.CRole)
 
 	log.Debug("[decision] performAction: self: %+v, other: %+v", self, other)

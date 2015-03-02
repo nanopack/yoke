@@ -43,11 +43,11 @@ func StatusStart() error {
 
 	// create a new scribble store
 	store = scribble.New(conf.StatusDir, log)
-	status = &Status{}
+	self 	= &Status{}
 
 	// the current node will attempt to discover who they are in the event of an
 	// outage, or be created for the first time
-	status, err = Whoami()
+	self = Whoami()
 
 	// no record found that matches the current node create a new record in scribble
 	// for the current node
@@ -55,7 +55,7 @@ func StatusStart() error {
 		log.Warn("[status.StatusStart] 404 Not found: No record found for '%s'\n", conf.Role)
 
 		//
-		status = &Status{
+		self = &Status{
 			CRole:     conf.Role,
 			DataDir:   conf.DataDir,
 			DBRole:    "initialized",
@@ -66,13 +66,13 @@ func StatusStart() error {
 		}
 
 		log.Debug("[status.StatusStart] Creating record for '%s'\n", conf.Role)
-		save(status)
+		save(self)
 	}
 
-	log.Debug("[status] Node Status: %+v\n", status)
+	log.Debug("[status] Node Status: %+v\n", self)
 
 	// register our Status struct with RPC
-	rpc.Register(status)
+	rpc.Register(self)
 
 	log.Info("[status] Starting RPC server...\n")
 
@@ -104,7 +104,7 @@ func StatusStart() error {
 
 // Whoami attempts to pull a matching record from scribble for the local node
 // returned from memberlist
-func Whoami() (*Status, error) {
+func Whoami() *Status {
 	log.Debug("[status.Whoami] list.LocalNode() - %+v", list.LocalNode())
 
 	s := &Status{}
@@ -114,7 +114,7 @@ func Whoami() (*Status, error) {
 
 		// attempt to pull a record from scribble for the current node
 		if err := get(list.LocalNode().Name, s); err == nil {
-			return s, nil
+			return s
 		} else {
 			log.Error("[status.Whoami] Unable to retrieve record! retrying... (%s)", err)
 		}
@@ -123,7 +123,7 @@ func Whoami() (*Status, error) {
 	log.Fatal("[status.Whoami] Failed to retrieve record!")
 	os.Exit(1)
 
-	return nil, nil
+	return nil
 }
 
 // Whois takes a 'role' string and iterates over all the nodes in memberlist looking

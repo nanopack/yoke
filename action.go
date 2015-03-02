@@ -100,7 +100,7 @@ func startMaster() {
 	// rsync my files over to the slave server
 	status.SetState("(master)syncing")
 
-	self, _ := Whoami()
+	self := Whoami()
 	other, _ := Whoisnot(self.CRole)
 
 	// rsync -a {{local_dir}} {{slave_ip}}:{{slave_dir}}
@@ -170,7 +170,7 @@ func startSlave() {
 	// wait for master server to be running
 	status.SetState("(slave)waiting")
 	log.Debug("[action] wait for master")
-	self, _ := Whoami()
+	self := Whoami()
 	for {
 		other, err := Whoisnot(self.CRole)
 		if err != nil {
