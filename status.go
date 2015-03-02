@@ -47,15 +47,15 @@ func StatusStart() error {
 	status 	= &Status{}
 
 	// determine if the current node already has a record in scribble
-	fi, err := os.Stat(conf.StatusDir + "/" + conf.Role)
+	fi, err := os.Stat(conf.StatusDir + "/cluster/" + conf.CRole)
 	if err != nil {
-		log.Warn("[status.StatusStart] Failed to read '%s'\n%s\n", conf.StatusDir + "/" + conf.Role, err)
+		log.Warn("[status.StatusStart] Failed to read '%s'\n%s\n", conf.StatusDir + "/" + conf.CRole, err)
 	}
 
 	// if no record found that matches the current node; create a new record in
 	// scribble
 	if fi == nil {
-		log.Warn("[status.StatusStart] 404 Not found: No record found for '%s'\n", conf.Role)
+		log.Warn("[status.StatusStart] 404 Not found: No record found for '%s'\n", conf.CRole)
 
 		//
 		status = &Status{
@@ -68,7 +68,7 @@ func StatusStart() error {
 			UpdatedAt: time.Now(),
 		}
 
-		log.Debug("[status.StatusStart] Creating record for '%s'\n", conf.Role)
+		log.Debug("[status.StatusStart] Creating record for '%s'\n", conf.CRole)
 		save(status)
 
 		// record found; set nodes status information
@@ -175,7 +175,7 @@ func Whois(role string) (*Status, error) {
 // Whoisnot takes a 'role' string and attempts to find the 'other' node that does
 // not match the role provided
 func Whoisnot(not string) (*Status, error) {
-	log.Debug("[status.Whoisnot] Who is not '%s'?", role)
+	log.Debug("[status.Whoisnot] Who is not '%s'?", not)
 
 	var role string
 
@@ -242,11 +242,10 @@ func (s *Status) SetState(state string) {
 	}
 }
 
-// Ping makes an RPC call to a desired node (by 'role') attempting to return the
-// Status of that node. It will iterate through each node in memberlist until it
-// finds a matching node
+// Ping is the response to an RPC call made from Whois requesting the status
+// information for the provided 'role'
 func (s *Status) Ping(role string, status *Status) error {
-	log.Debug("[status.Ping] pinging '%s'...", role)
+	log.Debug("[status.Ping] '%s' requesting '%s' status...", status.CRole, role)
 
 	// iterate through each node in memberlist looking for a node whos name matches
 	// the desired 'role'
