@@ -147,7 +147,7 @@ func clusterChanges() bool {
 			return true
 		}
 		if member.DBRole != other.DBRole {
-			log.Debug("[decision] The cluster members(%s) role changed from %s to %s", member.DBRole, member.DBRole, other.DBRole)
+			log.Debug("[decision] The cluster members role changed from %s to %s", member.DBRole, other.DBRole)
 			lastKnownCluster, _ = Cluster()
 			return true
 		}
