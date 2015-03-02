@@ -11,15 +11,15 @@ import (
 )
 
 //
-// func testConfigureHBAConf() error {
+// func testConfigureHBAConf() {
 // }
 
 //
-// func testConfigurePGConf() error {
+// func testConfigurePGConf() {
 // }
 
 //
-// func testCreateRecovery() error {
+// func testCreateRecovery() {
 // }
 
 //

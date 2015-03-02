@@ -40,7 +40,7 @@ func init() {
 	actions = make(chan string)
 
 	//
-	log = lumber.NewConsoleLogger(lumber.DEBUG)
+	log = lumber.NewConsoleLogger(lumber.INFO)
 
 	//
 	conf = Config{
