@@ -47,15 +47,15 @@ func StatusStart() error {
 	status 	= &Status{}
 
 	// determine if the current node already has a record in scribble
-	fi, err := os.Stat(conf.StatusDir + "/cluster/" + conf.CRole)
+	fi, err := os.Stat(conf.StatusDir + "/cluster/" + conf.Role)
 	if err != nil {
-		log.Warn("[status.StatusStart] Failed to read '%s'\n%s\n", conf.StatusDir + "/" + conf.CRole, err)
+		log.Warn("[status.StatusStart] Failed to read '%s'\n%s\n", conf.StatusDir + "/" + conf.Role, err)
 	}
 
 	// if no record found that matches the current node; create a new record in
 	// scribble
 	if fi == nil {
-		log.Warn("[status.StatusStart] 404 Not found: No record found for '%s'\n", conf.CRole)
+		log.Warn("[status.StatusStart] 404 Not found: No record found for '%s'\n", conf.Role)
 
 		//
 		status = &Status{
@@ -68,7 +68,7 @@ func StatusStart() error {
 			UpdatedAt: time.Now(),
 		}
 
-		log.Debug("[status.StatusStart] Creating record for '%s'\n", conf.CRole)
+		log.Debug("[status.StatusStart] Creating record for '%s'\n", conf.Role)
 		save(status)
 
 		// record found; set nodes status information
