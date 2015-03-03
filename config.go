@@ -44,8 +44,8 @@ func init() {
 
 	//
 	conf = Config{
-		Role:            "Monitor",
-		AdvertisePort:   1234,
+		Role:            "monitor",
+		AdvertisePort:   4400,
 		PGPort:          5432,
 		Peers:           []string{},
 		DataDir:         "/data/",
