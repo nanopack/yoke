@@ -162,12 +162,13 @@ func startMaster() {
 		time.Sleep(time.Second)
 	}
 	log.Debug("[action] db synced")
-
+	addVip()
 }
 
 // Starts the database as a slave node after waiting for master to come online
 func startSlave() {
 	// wait for master server to be running
+	removeVip()
 	status.SetState("(slave)waiting")
 	log.Debug("[action] wait for master")
 	self := Whoami()
@@ -211,6 +212,7 @@ func startSingle() {
 	status.SetState("(single)starting")
 	startDB()
 	status.SetState("(single)running")
+	addVip()
 }
 
 // this will kill the database that is running. reguardless of its current state
@@ -307,4 +309,30 @@ func waiter(c *exec.Cmd) {
 
 	log.Debug("[action] Waiter done")
 	running = false
+}
+
+func addVip() {
+	if vipable() {
+		vAddCmd := exec.Command(conf.VipAddCommand, conf.Vip)
+		vAddCmd.Stdout = Piper{"[VIPAddCommand.stdout]"}
+		vAddCmd.Stderr = Piper{"[VIPAddCommand.stderr]"}
+		if err := vAddCmd.Run(); err != nil {
+			log.Error("[action] VIPAddCommand failed.")
+		}
+	}
+}
+
+func removeVip() {
+	if vipable() {
+		vRemoveCmd := exec.Command(conf.VipAddCommand, conf.Vip)
+		vRemoveCmd.Stdout = Piper{"[VIPAddCommand.stdout]"}
+		vRemoveCmd.Stderr = Piper{"[VIPAddCommand.stderr]"}
+		if err := vRemoveCmd.Run(); err != nil {
+			log.Error("[action] VIPAddCommand failed.")
+		}
+	}
+}
+
+func vipable() bool {
+	return conf.Vip != "" && conf.VipAddCommand != "" && conf.VipRemoveCommand != ""
 }

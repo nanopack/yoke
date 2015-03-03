@@ -56,8 +56,6 @@ func (e EventHandler) NotifyConflict(existing, other *memberlist.Node) {
 			log.Close()
 			os.Exit(1)
 		}
-    }
-
 	}()
 
 	fmt.Println(len(list.Members()))
