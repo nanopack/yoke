@@ -55,18 +55,9 @@ func (e EventHandler) NotifyConflict(existing, other *memberlist.Node) {
 			log.Fatal("[event.NotifyConflict] '%s' already exists in cluster... unable to join! Exiting...\n", existing.Name)
 			log.Close()
 			os.Exit(1)
-<<<<<<< Updated upstream
 		}
-=======
     }
 
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
 	}()
 
 	fmt.Println(len(list.Members()))
