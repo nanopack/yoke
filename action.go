@@ -303,7 +303,7 @@ func waiter(c *exec.Cmd) {
 		log.Close()
 		os.Exit(1)
 	}
-	
+
 	log.Debug("[action] Watier done")
 	running = false
 }

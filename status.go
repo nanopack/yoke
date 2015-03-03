@@ -44,12 +44,12 @@ func StatusStart() error {
 
 	// create a new scribble store
 	store = scribble.New(conf.StatusDir, log)
-	status 	= &Status{}
+	status = &Status{}
 
 	// determine if the current node already has a record in scribble
 	fi, err := os.Stat(conf.StatusDir + "/cluster/" + conf.Role)
 	if err != nil {
-		log.Warn("[status.StatusStart] Failed to read '%s'\n%s\n", conf.StatusDir + "/" + conf.Role, err)
+		log.Warn("[status.StatusStart] Failed to read '%s'\n%s\n", conf.StatusDir+"/"+conf.Role, err)
 	}
 
 	// if no record found that matches the current node; create a new record in
