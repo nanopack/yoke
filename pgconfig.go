@@ -89,8 +89,7 @@ host    replication     postgres        %s/32            trust`, other.Ip)
 func configurePGConf(master bool) error {
 
 	// open the postgresql.conf
-	// file := conf.DataDir + "postgresql.conf"
-	file := "./postgresql.conf"
+	file := conf.DataDir + "postgresql.conf"
 	f, err := os.Open(file)
 	if err != nil {
 		return err
