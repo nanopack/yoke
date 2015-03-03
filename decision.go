@@ -23,7 +23,7 @@ func DecisionStart() error {
 		}
 		// start the database up
 		startupDB()
-		lastKnownCluster, _ = Cluster()
+		lastKnownCluster = Cluster()
 
 		// start a timer that will trigger a cluster check
 		timer := make(chan bool)
@@ -66,7 +66,7 @@ func DecisionStart() error {
 // appropriate number of members
 func waitForClusterFull() {
 	for {
-		c, _ := Cluster()
+		c := Cluster()
 		if len(c) == 3 {
 			log.Info("[decision] members are all online!")
 			return
@@ -135,22 +135,22 @@ func startType(def string) string {
 // detect a change in the cluster
 // new members, lost members, or changes to member states
 func clusterChanges() bool {
-	c, _ := Cluster()
+	c := Cluster()
 	if len(lastKnownCluster) != len(c) {
 		log.Debug("[decision] The cluster size changed from %d to %d", len(lastKnownCluster), len(c))
-		lastKnownCluster, _ = Cluster()
+		lastKnownCluster = Cluster()
 		return true
 	}
 	for _, member := range lastKnownCluster {
 		remote, err := Whois(member.CRole)
 		if err != nil {
 			log.Debug("[decision] The remote member died while i was trying to pull its updates")
-			lastKnownCluster, _ = Cluster()
+			lastKnownCluster = Cluster()
 			return true
 		}
 		if member.DBRole != remote.DBRole {
 			log.Debug("[decision] The cluster members(%s) role changed from %s to %s", member.CRole, member.DBRole, remote.DBRole)
-			lastKnownCluster, _ = Cluster()
+			lastKnownCluster = Cluster()
 			return true
 		}
 	}
@@ -261,7 +261,7 @@ func performActionFromSlave(self, other *Status) {
 
 // Breakdown of the performAction for when we are dead
 func performActionFromDead(self, other *Status) {
-	c, _ := Cluster()
+	c := Cluster()
 	if other != nil && len(c) == 3 {
 		switch self.DBRole {
 		case "dead(master)":
@@ -284,5 +284,5 @@ func performActionFromDead(self, other *Status) {
 // to reflect this in the lastKnownCluster singleton
 func updateStatusRole(r string) {
 	status.SetDBRole(r)
-	lastKnownCluster, _ = Cluster()
+	lastKnownCluster = Cluster()
 }
