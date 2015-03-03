@@ -105,7 +105,6 @@ func init() {
 		log.Fatal("advertise_ip (" + conf.AdvertiseIp + ") is not a valid ip")
 		log.Close()
 		os.Exit(1)
-
 	}
 
 	parseInt(&conf.AdvertisePort, file, "config", "advertise_port")

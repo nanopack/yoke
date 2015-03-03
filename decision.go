@@ -142,7 +142,7 @@ func clusterChanges() bool {
 		return true
 	}
 	for _, member := range lastKnownCluster {
-		other, err := Whois(member.CRole)
+		other, err := Whoisnot(member.CRole)
 		if err != nil {
 			log.Debug("[decision] The other member died while i was trying to pull its updats")
 			lastKnownCluster, _ = Cluster()
@@ -160,7 +160,7 @@ func clusterChanges() bool {
 // decides what state to take when clusterChanges is true
 func performAction() {
 	self := Whoami()
-	other, _ := Whois(self.CRole)
+	other, _ := Whoisnot(self.CRole)
 
 	log.Debug("[decision] performAction: self: %+v, other: %+v", self, other)
 	switch self.DBRole {
