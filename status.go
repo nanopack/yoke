@@ -193,8 +193,10 @@ func Whoisnot(not string) (*Status, error) {
 
 // Cluster iterates over all the nodes in member list, running a Whois(), and
 // storing each corresponding Status into a slice and returning the collection
-func Cluster() ([]*Status, error) {
+func Cluster() []*Status {
 	var members = []*Status{}
+
+	log.Debug("[status.Cluster] list.Members() - %+v", list.Members())
 
 	// iterate over all nodes in member list
 	for _, m := range list.Members() {
@@ -202,16 +204,16 @@ func Cluster() ([]*Status, error) {
 		// retrieve each nodes Status
 		s, err := Whois(m.Name)
 		if err != nil {
-			return nil, err
+			log.Warn("[status.Cluster] Failed to retrieve status for '%s'!\n%s\n", m.Name, err)
 		}
 
 		// append each status into our slice of statuses
 		members = append(members, s)
 	}
 
-	log.Debug("[status.Cluster] members - %+v", members)
+	log.Debug("[status.Cluster] cluster members - %+v", members)
 
-	return members, nil
+	return members
 }
 
 // SetDBRole takes a 'role' string and attempts to set the Status.DBRole, and then
