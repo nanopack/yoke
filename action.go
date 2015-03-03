@@ -171,11 +171,8 @@ func startSlave() {
 	status.SetState("(slave)waiting")
 	log.Debug("[action] wait for master")
 	self := Whoami()
-	fmt.Println("****TRACE****")
-	fmt.Printf("%+v\n", self)
 	for {
 		other, err := Whoisnot(self.CRole)
-		fmt.Printf("%+v\n", other)
 		if err != nil {
 			log.Error("I have lost communication with the other server")
 			status.SetState("(slave)master_lost")
