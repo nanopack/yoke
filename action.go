@@ -296,7 +296,6 @@ func waiter(c *exec.Cmd) {
 	if err != nil {
 		log.Error("[action] Waiter Error: %s", err.Error())
 	}
-<<<<<<< Updated upstream
 
 	// I should check to see if i exited and was not supposed to
 	self := Whoami()
@@ -306,9 +305,6 @@ func waiter(c *exec.Cmd) {
 		os.Exit(1)
 	}
 
-	log.Debug("[action] Watier done")
-=======
 	log.Debug("[action] Waiter done")
->>>>>>> Stashed changes
 	running = false
 }

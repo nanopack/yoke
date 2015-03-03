@@ -60,6 +60,9 @@ func (e EventHandler) NotifyConflict(existing, other *memberlist.Node) {
 =======
     }
 
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 	}()
 
