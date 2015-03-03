@@ -174,9 +174,10 @@ func startSlave() {
 	for {
 		other, err := Whoisnot(self.CRole)
 		if err != nil {
-			log.Error("I have lost communication with the other server")
+			log.Fatal("I have lost communication with the other server, I cannot start without it")
 			status.SetState("(slave)master_lost")
-			return
+			log.Close()
+			os.Exit(1)
 		}
 		if other.State == "(master)running" || other.State == "(master)waiting" {
 			break
@@ -295,6 +296,7 @@ func waiter(c *exec.Cmd) {
 	if err != nil {
 		log.Error("[action] Waiter Error: %s", err.Error())
 	}
+<<<<<<< Updated upstream
 
 	// I should check to see if i exited and was not supposed to
 	self := Whoami()
@@ -305,5 +307,8 @@ func waiter(c *exec.Cmd) {
 	}
 
 	log.Debug("[action] Watier done")
+=======
+	log.Debug("[action] Waiter done")
+>>>>>>> Stashed changes
 	running = false
 }
