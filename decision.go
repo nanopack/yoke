@@ -142,14 +142,14 @@ func clusterChanges() bool {
 		return true
 	}
 	for _, member := range lastKnownCluster {
-		other, err := Whoisnot(member.CRole)
+		remote, err := Whois(member.CRole)
 		if err != nil {
-			log.Debug("[decision] The other member died while i was trying to pull its updats")
+			log.Debug("[decision] The remote member died while i was trying to pull its updates")
 			lastKnownCluster, _ = Cluster()
 			return true
 		}
-		if member.DBRole != other.DBRole {
-			log.Debug("[decision] The cluster members(%s) role changed from %s to %s", member.CRole, member.DBRole, other.DBRole)
+		if member.DBRole != remote.DBRole {
+			log.Debug("[decision] The cluster members(%s) role changed from %s to %s", member.CRole, member.DBRole, remote.DBRole)
 			lastKnownCluster, _ = Cluster()
 			return true
 		}
