@@ -207,11 +207,12 @@ func Cluster() []*Status {
 		s, err := Whois(m.Name)
 		if err != nil {
 			log.Warn("[status.Cluster] Failed to retrieve status for '%s'!\n%s\n", m.Name, err)
-		}
 
-		// append each status into our slice of statuses
-		members = append(members, s)
-		cluster += fmt.Sprintf("(%s:%s) ", s.CRole, s.Ip)
+			// append each status into our slice of statuses
+		} else {
+			members = append(members, s)
+			cluster += fmt.Sprintf("(%s:%s) ", s.CRole, s.Ip)
+		}
 	}
 
 	log.Debug("[status.Cluster] %s", cluster)
