@@ -32,7 +32,7 @@ Each node in the cluster requires it's own config.ini file with the following op
     remove_command       # Command to use when removeing the vip. This will be called as {{remove_command}} {{vip}}
 
     [role_change]
-    script        # When this nodes role changes we will call the script with the new role as its arguement '{{script}} {{(master|slave|single}))'
+    command        # When this nodes role changes we will call the command with the new role as its arguement '{{command}} {{(master|slave|single}))'
 ```
 
 #### Startup
