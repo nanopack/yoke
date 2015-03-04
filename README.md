@@ -25,9 +25,14 @@ Each node in the cluster requires it's own config.ini file with the following op
     role=monitor          # REQUIRED - either 'primary', 'secondary', or 'monitor' (the cluster needs exactly one of each)
     status_dir=./status/  # the directory where node status information is stored
     sync_command="rsync -a --delete {{local_dir}} {{slave_ip}}:{{slave_dir}}" # the command you would like to use to sync the data from this node to the other when this node is master
-    vip="1.2.3.4"         # Virtual Ip you would like to use
-    vip_add_command       # Command to use when adding the vip. This will be called as {{vip_add_command}} {{vip}}
-    vip_remove_command    # Command to use when removeing the vip. This will be called as {{vip_remove_command}} {{vip}}
+
+    [vip]
+    ip="1.2.3.4"         # Virtual Ip you would like to use
+    add_command          # Command to use when adding the vip. This will be called as {{add_command}} {{vip}}
+    remove_command       # Command to use when removeing the vip. This will be called as {{remove_command}} {{vip}}
+
+    [role_change]
+    script        # When this nodes role changes we will call the script with the new role as its arguement '{{script}} {{(master|slave|single}))'
 ```
 
 #### Startup
