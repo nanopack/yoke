@@ -25,7 +25,7 @@ type Status struct {
 	CRole     string    // the nodes 'role' in the cluster (primary, secondary, monitor)
 	DataDir   string    // directory of the postgres database
 	DBRole    string    // the 'role' of the running pgsql instance inside the node (master, slave)
-	Ip        string    //
+	Ip        string    // advertise_ip
 	PGPort    int       //
 	State     string    // the current state of the node
 	UpdatedAt time.Time // the last time the node state was updated
@@ -194,7 +194,9 @@ func Whoisnot(not string) (*Status, error) {
 // Cluster iterates over all the nodes in member list, running a Whois(), and
 // storing each corresponding Status into a slice and returning the collection
 func Cluster() []*Status {
+
 	var members = []*Status{}
+	cluster := "cluster members - "
 
 	log.Debug("[status.Cluster] list.Members() - %+v", list.Members())
 
@@ -209,9 +211,11 @@ func Cluster() []*Status {
 
 		// append each status into our slice of statuses
 		members = append(members, s)
+
+		cluster += fmt.Sprintf("(%s:%s) ", s.CRole, s.Ip)
 	}
 
-	log.Debug("[status.Cluster] cluster members - %+v", members)
+	log.Debug("[status.Cluster] %s", cluster)
 
 	return members
 }
