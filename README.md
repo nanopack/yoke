@@ -25,7 +25,7 @@ Each node in the cluster requires it's own config.ini file with the following op
     pg_port=5432          # the postgresql port
     role=monitor          # REQUIRED - either 'primary', 'secondary', or 'monitor' (the cluster needs exactly one of each)
     status_dir=./status/  # the directory where node status information is stored
-    sync_command="rsync -a --delete {{local_dir}} {{slave_ip}}:{{slave_dir}}" # the command you would like to use to sync the data from this node to the other when this node is master. This uses Mustache style templating so Yoke can fill in the {{local_dir}}, {{slave_ip}}, {{slave_dir}} if you want to use them.
+    sync_command='rsync -a --delete {{local_dir}} {{slave_ip}}:{{slave_dir}}' # the command you would like to use to sync the data from this node to the other when this node is master. This uses Mustache style templating so Yoke can fill in the {{local_dir}}, {{slave_ip}}, {{slave_dir}} if you want to use them.
 
     [vip]
     ip="1.2.3.4"         # Virtual Ip you would like to use
