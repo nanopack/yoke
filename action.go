@@ -163,12 +163,14 @@ func startMaster() {
 	}
 	log.Debug("[action] db synced")
 	addVip()
+	roleChangeCommand("master")
 }
 
 // Starts the database as a slave node after waiting for master to come online
 func startSlave() {
 	// wait for master server to be running
 	removeVip()
+	roleChangeCommand("slave")
 	status.SetState("(slave)waiting")
 	log.Debug("[action] wait for master")
 	self := Whoami()
@@ -213,6 +215,7 @@ func startSingle() {
 	startDB()
 	status.SetState("(single)running")
 	addVip()
+	roleChangeCommand("single")
 }
 
 // this will kill the database that is running. reguardless of its current state
@@ -309,6 +312,17 @@ func waiter(c *exec.Cmd) {
 
 	log.Debug("[action] Waiter done")
 	running = false
+}
+
+func roleChangeCommand(role string) {
+	if conf.RoleChangeCommand != "" {
+		rcc := exec.Command(conf.RoleChangeCommand, role)
+		rcc.Stdout = Piper{"[RoleChangeCommand.stdout]"}
+		rcc.Stderr = Piper{"[RoleChangeCommand.stderr]"}
+		if err := rcc.Run(); err != nil {
+			log.Error("[action] RoleChangeCommand failed.")
+		}
+	}
 }
 
 func addVip() {

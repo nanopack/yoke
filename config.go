@@ -13,18 +13,19 @@ import (
 // it is set by a config file that is the first arguement
 // given to the exec
 type Config struct {
-	Role             string
-	AdvertiseIp      string
-	AdvertisePort    int
-	PGPort           int
-	Peers            []string
-	DataDir          string
-	StatusDir        string
-	SyncCommand      string
-	DecisionTimeout  int
-	Vip              string
-	VipAddCommand    string
-	VipRemoveCommand string
+	Role              string
+	AdvertiseIp       string
+	AdvertisePort     int
+	PGPort            int
+	Peers             []string
+	DataDir           string
+	StatusDir         string
+	SyncCommand       string
+	DecisionTimeout   int
+	Vip               string
+	VipAddCommand     string
+	VipRemoveCommand  string
+	RoleChangeCommand string
 }
 
 // establish constants
@@ -104,14 +105,18 @@ func init() {
 		conf.AdvertiseIp = ip
 	}
 
-	if vip, ok := file.Get("config", "vip"); ok {
+	if vip, ok := file.Get("vip", "ip"); ok {
 		conf.Vip = vip
 	}
-	if vipAddCommand, ok := file.Get("config", "vip_add_command"); ok {
+	if vipAddCommand, ok := file.Get("vip", "add_command"); ok {
 		conf.VipAddCommand = vipAddCommand
 	}
-	if vipRemoveCommand, ok := file.Get("config", "vip_remove_command"); ok {
+	if vipRemoveCommand, ok := file.Get("vip", "remove_command"); ok {
 		conf.VipRemoveCommand = vipRemoveCommand
+	}
+
+	if rcCommand, ok := file.Get("role_change", "command"); ok {
+		conf.RoleChangeCommand = rcCommand
 	}
 
 	if conf.AdvertiseIp == "" || conf.AdvertiseIp == "0.0.0.0" {

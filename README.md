@@ -10,7 +10,8 @@ Yoke has the following requirements/dependancies to run:
 - a 3 server cluster consisting of a 'primary', 'secondary', and 'monitor' node
 - 'primary' & 'secondary' nodes need ssh connections between each other (w/o passwords)
 - 'primary' & 'secondary' nodes need rsync (or some alternative sync_command) installed
-- 'primary' & 'secondary' nodes should have postgres installed under a postgres user, and in the `path`
+- 'primary' & 'secondary' nodes should have postgres installed under a postgres user, and in the `path`. Yoke tries calling 'postgres' and 'pg_ctl'
+- 'primary' & 'secondary' nodes run postgres as a child process so it should not be started independently
 
 Each node in the cluster requires it's own config.ini file with the following options (provided values are defaults):
 ```
@@ -24,7 +25,7 @@ Each node in the cluster requires it's own config.ini file with the following op
     pg_port=5432          # the postgresql port
     role=monitor          # REQUIRED - either 'primary', 'secondary', or 'monitor' (the cluster needs exactly one of each)
     status_dir=./status/  # the directory where node status information is stored
-    sync_command="rsync -a --delete {{local_dir}} {{slave_ip}}:{{slave_dir}}" # the command you would like to use to sync the data from this node to the other when this node is master
+    sync_command="rsync -a --delete {{local_dir}} {{slave_ip}}:{{slave_dir}}" # the command you would like to use to sync the data from this node to the other when this node is master. This uses Mustache style templating so Yoke can fill in the {{local_dir}}, {{slave_ip}}, {{slave_dir}} if you want to use them.
 
     [vip]
     ip="1.2.3.4"         # Virtual Ip you would like to use
