@@ -247,7 +247,7 @@ func (s *Status) SetState(state string) {
 // Ping is the response to an RPC call made from Whois requesting the status
 // information for the provided 'role'
 func (s *Status) Ping(role string, status *Status) error {
-	log.Debug("[status.Ping] '%s' requesting '%s' status...", status.CRole, role)
+	log.Debug("[status.Ping] '%s' requesting '%s' status...", s.CRole, role)
 
 	// iterate through each node in memberlist looking for a node whos name matches
 	// the desired 'role'
