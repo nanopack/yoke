@@ -4,15 +4,21 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"os/exec"
 	"syscall"
 )
 
 //
 func main() {
+	// kill postgres server thats running
+	log.Info("killing old postgres if there is one")
+	killOldPostgres()
+
 	handle(ClusterStart())
 	handle(StatusStart())
 	handle(DecisionStart())
 	handle(ActionStart())
+
 
 	// signal Handle
 	c := make(chan os.Signal, 1)
@@ -51,5 +57,14 @@ func handle(err error) {
 	if err != nil {
 		fmt.Println("error: " + err.Error())
 		os.Exit(1)
+	}
+}
+
+func killOldPostgres() {
+	killOld := exec.Command("pg_ctl", "stop", "-D", conf.DataDir, "-m", "fast")
+	killOld.Stdout = Piper{"[KillOLD.stdout]"}
+	killOld.Stderr = Piper{"[KillOLD.stderr]"}
+	if err := killOld.Run(); err != nil {
+		log.Error("[action] KillOLD failed.")
 	}
 }
