@@ -211,7 +211,6 @@ func Cluster() []*Status {
 
 		// append each status into our slice of statuses
 		members = append(members, s)
-
 		cluster += fmt.Sprintf("(%s:%s) ", s.CRole, s.Ip)
 	}
 
