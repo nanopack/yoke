@@ -198,8 +198,6 @@ func Cluster() []*Status {
 	var members = []*Status{}
 	cluster := "cluster members - "
 
-	log.Debug("[status.Cluster] list.Members() - %+v", list.Members())
-
 	// iterate over all nodes in member list
 	for _, m := range list.Members() {
 
