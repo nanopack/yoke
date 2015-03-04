@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"strings"
+	// "strings"
 	"syscall"
 	"time"
 
@@ -105,14 +105,15 @@ func startMaster() {
 
 	// rsync -a {{local_dir}} {{slave_ip}}:{{slave_dir}}
 	sync := mustache.Render(conf.SyncCommand, map[string]string{"local_dir": conf.DataDir, "slave_ip": other.Ip, "slave_dir": other.DataDir})
-	cmd := strings.Split(sync, " ")
-	sc := exec.Command(cmd[0], cmd[1:]...)
+	// cmd := strings.Split(sync, " ")
+	sc := exec.Command("bash", "-c", sync) // cmd[0], cmd[1:]...)
 	sc.Stdout = Piper{"[sync.stdout]"}
 	sc.Stderr = Piper{"[sync.stderr]"}
 	log.Debug("[action] running sync (%s)", sync)
 
 	if err = sc.Run(); err != nil {
 		log.Error("[action] sync failed.")
+		log.Debug("[sync.error] message: %s", err.Error())
 	}
 
 	// connect to DB and tell it to stop backup
@@ -339,10 +340,10 @@ func addVip() {
 func removeVip() {
 	if vipable() {
 		vRemoveCmd := exec.Command(conf.VipAddCommand, conf.Vip)
-		vRemoveCmd.Stdout = Piper{"[VIPAddCommand.stdout]"}
-		vRemoveCmd.Stderr = Piper{"[VIPAddCommand.stderr]"}
+		vRemoveCmd.Stdout = Piper{"[VIPRemoveCommand.stdout]"}
+		vRemoveCmd.Stderr = Piper{"[VIPRemoveCommand.stderr]"}
 		if err := vRemoveCmd.Run(); err != nil {
-			log.Error("[action] VIPAddCommand failed.")
+			log.Error("[action] VIPRemoveCommand failed.")
 		}
 	}
 }

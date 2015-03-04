@@ -10,6 +10,7 @@ import (
 
 //
 func main() {
+	log.Info("%#v", conf)
 	// kill postgres server thats running
 	log.Info("killing old postgres if there is one")
 	killOldPostgres()
