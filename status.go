@@ -213,7 +213,7 @@ func Cluster() []*Status {
 		}
 	}
 
-	log.Debug("[status.Cluster] %s", cluster)
+	log.Info("[status.Cluster] %s", cluster)
 
 	return members
 }

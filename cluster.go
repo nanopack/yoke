@@ -1,6 +1,8 @@
 package main
 
 import "github.com/hashicorp/memberlist"
+import "time"
+import "os"
 
 //
 var list *memberlist.Memberlist
@@ -39,8 +41,21 @@ func ClusterStart() error {
 	}
 
 	// Join an existing cluster by specifying at least one known member.
-	if _, err := list.Join(conf.Peers); err != nil {
-		log.Error("[cluster.ClusterStart] Failed to join cluster! \n%s\n", err)
+	joinSuccess := false
+	for i := 0; i < 10; i++ {
+		if _, err := list.Join(conf.Peers); err == nil {
+			joinSuccess = true
+			break
+		} else {
+			log.Error("[cluster.ClusterStart] Failed to join cluster! \n%s\n", err)
+			log.Debug("retrying %d more times", (9 - i))
+			time.Sleep(time.Second)
+		}
+	}
+	if !joinSuccess {
+		log.Fatal("I could not successfully join the cluster")
+		log.Close()
+		os.Exit(1)
 	}
 
 	return nil

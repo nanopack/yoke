@@ -72,7 +72,7 @@ func startMaster() {
 
 	// set postgresql.conf as not master
 	status.SetState("(master)configuring")
-	configurePGConf(false)
+	configurePGConf(pgConfig{master:false, listenAddr:"0.0.0.0"})
 	// set pg_hba.conf
 	configureHBAConf()
 	// delete recovery.conf
@@ -103,6 +103,12 @@ func startMaster() {
 	self := Whoami()
 	other, _ := Whoisnot(self.CRole)
 
+	if other == nil {
+		log.Fatal("The other member shutdown while I was trying to sync my data")
+		log.Close()
+		os.Exit(1)
+	}
+
 	// rsync -a {{local_dir}} {{slave_ip}}:{{slave_dir}}
 	sync := mustache.Render(conf.SyncCommand, map[string]string{"local_dir": conf.DataDir, "slave_ip": other.Ip, "slave_dir": other.DataDir})
 	// cmd := strings.Split(sync, " ")
@@ -127,7 +133,7 @@ func startMaster() {
 	log.Debug("[action] backup complete")
 
 	// set postgresql.conf as master
-	configurePGConf(true)
+	configurePGConf(pgConfig{master:true, listenAddr:"0.0.0.0"})
 
 	// start refresh/restart server
 	log.Debug("[action] restarting DB")
@@ -190,7 +196,7 @@ func startSlave() {
 	}
 	// set postgresql.conf as not master
 	status.SetState("(slave)configuring")
-	configurePGConf(false)
+	configurePGConf(pgConfig{master:false, listenAddr:"0.0.0.0"})
 	// set pg_hba.conf
 	configureHBAConf()
 	// set recovery.conf
@@ -206,7 +212,7 @@ func startSlave() {
 func startSingle() {
 	status.SetState("(single)configuring")
 	// set postgresql.conf as not master
-	configurePGConf(false)
+	configurePGConf(pgConfig{master:false, listenAddr:"0.0.0.0"})
 	// set pg_hba.conf
 	configureHBAConf()
 	// delete recovery.conf
@@ -317,33 +323,36 @@ func waiter(c *exec.Cmd) {
 
 func roleChangeCommand(role string) {
 	if conf.RoleChangeCommand != "" {
-		rcc := exec.Command(conf.RoleChangeCommand, role)
+		rcc := exec.Command("bash", "-c", fmt.Sprintf("%s %s", conf.RoleChangeCommand, role))
 		rcc.Stdout = Piper{"[RoleChangeCommand.stdout]"}
 		rcc.Stderr = Piper{"[RoleChangeCommand.stderr]"}
 		if err := rcc.Run(); err != nil {
 			log.Error("[action] RoleChangeCommand failed.")
+			log.Debug("[RoleChangeCommand.error] message: %s", err.Error())
 		}
 	}
 }
 
 func addVip() {
 	if vipable() {
-		vAddCmd := exec.Command(conf.VipAddCommand, conf.Vip)
+		vAddCmd := exec.Command("bash", "-c", fmt.Sprintf("%s %s", conf.VipAddCommand, conf.Vip))
 		vAddCmd.Stdout = Piper{"[VIPAddCommand.stdout]"}
 		vAddCmd.Stderr = Piper{"[VIPAddCommand.stderr]"}
 		if err := vAddCmd.Run(); err != nil {
 			log.Error("[action] VIPAddCommand failed.")
+			log.Debug("[VIPAddCommand.error] message: %s", err.Error())
 		}
 	}
 }
 
 func removeVip() {
 	if vipable() {
-		vRemoveCmd := exec.Command(conf.VipAddCommand, conf.Vip)
+		vRemoveCmd := exec.Command("bash", "-c", fmt.Sprintf("%s %s", conf.VipAddCommand, conf.Vip))
 		vRemoveCmd.Stdout = Piper{"[VIPRemoveCommand.stdout]"}
 		vRemoveCmd.Stderr = Piper{"[VIPRemoveCommand.stderr]"}
 		if err := vRemoveCmd.Run(); err != nil {
 			log.Error("[action] VIPRemoveCommand failed.")
+			log.Debug("[VIPRemoveCommand.error] message: %s", err.Error())
 		}
 	}
 }
