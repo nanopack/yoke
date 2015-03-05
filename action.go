@@ -210,6 +210,7 @@ func startSlave() {
 
 // Starts the database as a single node
 func startSingle() {
+	log.Info("[action] starting DB as single")
 	status.SetState("(single)configuring")
 	// set postgresql.conf as not master
 	configurePGConf(pgConfig{master:false, listenAddr:"0.0.0.0"})
@@ -221,6 +222,7 @@ func startSingle() {
 	status.SetState("(single)starting")
 	startDB()
 	status.SetState("(single)running")
+	log.Info("[action] running DB as single")
 	addVip()
 	roleChangeCommand("single")
 }

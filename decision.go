@@ -111,7 +111,7 @@ func startType(def string) string {
 	case "master", "dead(master)":
 		// check the other node and see if it is single
 		// if not i stay master
-		// if so i go secondary
+		// if so i go slave
 		other, _ := Whoisnot(self.CRole)
 		log.Debug("[decision] startType: other: %+v", other)
 		// if the other guy has transitioned to single
@@ -162,7 +162,7 @@ func performAction() {
 	self := Whoami()
 	other, _ := Whoisnot(self.CRole)
 
-	log.Debug("[decision] performAction: self: %+v, other: %+v", self, other)
+	log.Debug("[decision] performAction: \nself: %+v, \nother: %+v", self, other)
 	switch self.DBRole {
 	case "single":
 		performActionFromSingle(self, other)
@@ -205,6 +205,11 @@ func performActionFromMaster(self, other *Status) {
 
 	// see if im the odd man out or if it is the other guy
 	time.Sleep(time.Duration(conf.DecisionTimeout) * time.Second)
+	other, _ = Whoisnot(self.CRole)
+	if other != nil {
+		log.Info("[decision] performActionFromMaster: other came back: doing nothing")
+		return
+	}
 	mon, _ := Whois("monitor")
 	if mon != nil {
 		// the other member died but i can still talk to the monitor
@@ -241,6 +246,11 @@ func performActionFromSlave(self, other *Status) {
 
 	// see if im the odd man out or if it is the other guy
 	time.Sleep(time.Duration(conf.DecisionTimeout) * time.Second)
+	other, _ = Whoisnot(self.CRole)
+	if other != nil {
+		log.Info("[decision] performActionFromslave: other came back: doing nothing")
+		return
+	}
 	mon, _ := Whois("monitor")
 	if mon != nil {
 		// the other member died but i can still talk to the monitor
