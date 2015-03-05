@@ -349,7 +349,7 @@ func addVip() {
 func removeVip() {
 	if vipable() {
 		log.Info("[action] Removing VIP")
-		vRemoveCmd := exec.Command("bash", "-c", fmt.Sprintf("%s %s", conf.VipAddCommand, conf.Vip))
+		vRemoveCmd := exec.Command("bash", "-c", fmt.Sprintf("%s %s", conf.VipRemoveCommand, conf.Vip))
 		vRemoveCmd.Stdout = Piper{"[VIPRemoveCommand.stdout]"}
 		vRemoveCmd.Stderr = Piper{"[VIPRemoveCommand.stderr]"}
 		if err := vRemoveCmd.Run(); err != nil {
