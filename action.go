@@ -103,10 +103,10 @@ func startMaster() {
 	self := Whoami()
 	other, _ := Whoisnot(self.CRole)
 
-	if other == nil {
-		log.Fatal("The other member shutdown while I was trying to sync my data")
-		log.Close()
-		os.Exit(1)
+	for other == nil {
+		log.Error("The other member shutdown while I was trying to sync my data. retrying...")
+		other, _ = Whoisnot(self.CRole)
+		time.Sleep(time.Second)
 	}
 
 	// rsync -a {{local_dir}} {{slave_ip}}:{{slave_dir}}
@@ -125,7 +125,7 @@ func startMaster() {
 	// connect to DB and tell it to stop backup
 	_, err = db.Exec("select pg_stop_backup()")
 	if err != nil {
-		log.Fatal("[action.startMaster] Couldnt start backup (%s)", err.Error())
+		log.Fatal("[action.startMaster] Couldnt stop backup (%s)", err.Error())
 		log.Close()
 		os.Exit(1)
 	}
@@ -335,6 +335,7 @@ func roleChangeCommand(role string) {
 
 func addVip() {
 	if vipable() {
+		log.Info("[action] Adding VIP")
 		vAddCmd := exec.Command("bash", "-c", fmt.Sprintf("%s %s", conf.VipAddCommand, conf.Vip))
 		vAddCmd.Stdout = Piper{"[VIPAddCommand.stdout]"}
 		vAddCmd.Stderr = Piper{"[VIPAddCommand.stderr]"}
@@ -347,6 +348,7 @@ func addVip() {
 
 func removeVip() {
 	if vipable() {
+		log.Info("[action] Removing VIP")
 		vRemoveCmd := exec.Command("bash", "-c", fmt.Sprintf("%s %s", conf.VipAddCommand, conf.Vip))
 		vRemoveCmd.Stdout = Piper{"[VIPRemoveCommand.stdout]"}
 		vRemoveCmd.Stderr = Piper{"[VIPRemoveCommand.stderr]"}
