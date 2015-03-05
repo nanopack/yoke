@@ -12,6 +12,12 @@ import (
 	"strings"
 )
 
+//
+type pgConfig struct {
+	listenAddr string
+	master string
+}
+
 // configureHBAConf attempts to open the 'pg_hba.conf' file. Once open it will scan
 // the file line by line looking for replication settings, and overwrite only those
 // settings with the settings required for redundancy on Pagoda Box
@@ -86,7 +92,7 @@ host    replication     postgres        %s/32            trust`, other.Ip)
 // configurePGConf attempts to open the 'postgresql.conf' file. Once open it will
 // scan the file line by line looking for replication settings, and overwrite only
 // those settings with the settings required for redundancy on Pagoda Box
-func configurePGConf(master bool) error {
+func configurePGConf(opts pgConfig) error {
 
 	// open the postgresql.conf
 	file := conf.DataDir + "postgresql.conf"
@@ -131,7 +137,7 @@ func configurePGConf(master bool) error {
 # IMPORTANT: these settings will always be overriden when the server boots. They
 # are set dynamically and so should never change.
 
-listen_addresses = '0.0.0.0'      # what IP address(es) to listen on;
+listen_addresses = '%s'      # what IP address(es) to listen on;
                                   # comma-separated list of addresses;
                                   # defaults to 'localhost'; use '*' for all
                                   # (change requires restart)
@@ -149,11 +155,11 @@ max_wal_senders = 10              # max number of walsender processes
 wal_keep_segments = 5000          # in logfile segments, 16MB each; 0 disables
 hot_standby = on                  # "on" allows queries during recovery
                                   # (change requires restart)
-`, conf.PGPort)
+`, opts.listenAddr, conf.PGPort)
 
 	// if this node is currenty 'master' then write one additional configuration
 	// into the 'entry'
-	if master {
+	if opts.master {
 		entry += `
 # added only the the node running postgres as 'master'
 synchronous_standby_names = slave # standby servers that provide sync rep
