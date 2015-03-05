@@ -163,14 +163,14 @@ func startMaster() {
 			if behind > 0 {
 				log.Info("[action] Sync is catching up (name:%s,address:%s,state:%s,sync:%s,behind:%d)", name, addr, state, sync, behind)
 			} else {
+				log.Debug("[action] db synced")
+				addVip()
+				roleChangeCommand("master")
 				return
 			}
 		}
 		time.Sleep(time.Second)
 	}
-	log.Debug("[action] db synced")
-	addVip()
-	roleChangeCommand("master")
 }
 
 // Starts the database as a slave node after waiting for master to come online
