@@ -170,16 +170,28 @@ func performAction() {
 		performActionFromMaster(self, other)
 	case "slave":
 		performActionFromSlave(self, other)
-	case "dead(master)", "dead(slave)":
+	case "dead(master)", "dead(slave)", "dead(single)":
 		performActionFromDead(self, other)
 	}
 }
 
 // Breakdown of the performAction for when we are single
 func performActionFromSingle(self, other *Status) {
-	if other != nil {
-		// i was in single but the other node came back online
-		// I should be safe to assume master
+	mon, _ := Whois("monitor")
+	switch {
+	case other == nil && mon == nil:
+		// kill
+		updateStatusRole("dead(single)")
+		log.Info("[decision] performActionFromSingle: im alone: going dead(single)")
+		actions <- "kill"
+	case other == nil:
+		// do nothing
+		log.Info("[decision] performActionFromSingle: other is still gone: doing nothing")
+	case mon == nil:
+		// do nothing
+		log.Info("[decision] performActionFromSingle: other back monitor gone: doing nothing")
+	case other != nil && mon != nil:
+		// go master
 		updateStatusRole("master")
 		log.Info("[decision] performActionFromSingle: other came back online: going master")
 		actions <- "master"
@@ -274,6 +286,10 @@ func performActionFromDead(self, other *Status) {
 	c := Cluster()
 	if other != nil && len(c) == 3 {
 		switch self.DBRole {
+		case "dead(single)":
+			log.Info("[decision] performActionFromDead: other online: going master")
+			updateStatusRole("master")
+			actions <- "master"
 		case "dead(master)":
 			newRole := startType("master")
 			updateStatusRole(newRole)

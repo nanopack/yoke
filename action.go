@@ -92,10 +92,9 @@ func startMaster() {
 
 	_, err = db.Exec("select pg_start_backup('replication')")
 	if err != nil {
-		log.Fatal("[action.startMaster] Couldnt start backup (%s)", err.Error())
-		log.Close()
-		os.Exit(1)
+		log.Error("[action.startMaster] Couldnt start backup (%s)", err.Error())
 	}
+
 	log.Debug("[action] backup started")
 	// rsync my files over to the slave server
 	status.SetState("(master)syncing")
