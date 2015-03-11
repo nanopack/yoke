@@ -106,7 +106,7 @@ func startType(def string) string {
 	switch self.DBRole {
 	case "initialized":
 		return def
-	case "single":
+	case "single", "dead(single)":
 		return "master"
 	case "master", "dead(master)":
 		// check the other node and see if it is single
@@ -115,7 +115,7 @@ func startType(def string) string {
 		other, _ := Whoisnot(self.CRole)
 		log.Debug("[decision] startType: other: %+v", other)
 		// if the other guy has transitioned to single
-		if other.DBRole == "single" {
+		if other.DBRole == "single" || other.DBRole == "dead(single)" {
 			return "slave"
 		}
 		// if the other guy detected i came back online and is already
