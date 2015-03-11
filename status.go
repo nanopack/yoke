@@ -49,13 +49,13 @@ func StatusStart() error {
 	// determine if the current node already has a record in scribble
 	fi, err := os.Stat(conf.StatusDir + "/cluster/" + conf.Role)
 	if err != nil {
-		log.Warn("[(%s) status.StatusStart] Failed to read '%s'\n%s\n", conf.Role, conf.StatusDir+"/"+conf.Role, err)
+		log.Warn("[(%s) status.StatusStart] Failed to read '%s'\n%s", conf.Role, conf.StatusDir+"/"+conf.Role, err)
 	}
 
 	// if no record found that matches the current node; create a new record in
 	// scribble
 	if fi == nil {
-		log.Warn("[(%s) status.StatusStart] 404 Not found: No record found for '%s'\n", conf.Role, conf.Role)
+		log.Warn("[(%s) status.StatusStart] 404 Not found: No record found for '%s'", conf.Role, conf.Role)
 
 		//
 		status = &Status{
@@ -68,7 +68,7 @@ func StatusStart() error {
 			UpdatedAt: time.Now(),
 		}
 
-		log.Debug("[(%s) status.StatusStart] Creating record for '%s'\n", status.CRole, conf.Role)
+		log.Debug("[(%s) status.StatusStart] Creating record for '%s'", status.CRole, conf.Role)
 		save(status)
 
 		// record found; set nodes status information
@@ -76,7 +76,7 @@ func StatusStart() error {
 		status = Whoami()
 	}
 
-	log.Debug("[(%s) status] Node Status: %+v\n", status.CRole, status)
+	log.Debug("[(%s) status] Node Status: %#v\n", status.CRole, status)
 
 	// register our Status struct with RPC
 	rpc.Register(status)
@@ -86,7 +86,7 @@ func StatusStart() error {
 	// fire up an RPC (tcp) server
 	l, err := net.Listen("tcp", ":"+strconv.FormatInt(int64(conf.AdvertisePort+1), 10))
 	if err != nil {
-		log.Error("[(%s) status] Unable to start server!\n%v\n", status.CRole, err)
+		log.Error("[(%s) status] Unable to start server!\n%s\n", status.CRole, err)
 		return err
 	}
 
@@ -96,7 +96,7 @@ func StatusStart() error {
 		// accept connections on the RPC server
 		for {
 			if conn, err := l.Accept(); err != nil {
-				log.Error("[(%s) status] RPC server - failed to accept connection!\n%s%n", status.CRole, err.Error())
+				log.Error("[(%s) status] RPC server - failed to accept connection!\n%s", status.CRole, err.Error())
 			} else {
 				log.Debug("[(%s) status] RPC server - new connection established!\n", status.CRole)
 
@@ -112,7 +112,7 @@ func StatusStart() error {
 // Whoami attempts to pull a matching record from scribble for the local node
 // returned from memberlist
 func Whoami() *Status {
-	log.Debug("[(%s) status.Whoami] list.LocalNode() - %+v", status.CRole, list.LocalNode())
+	log.Debug("[(%s) status.Whoami] list.LocalNode() - %#v", status.CRole, list.LocalNode())
 
 	s := &Status{}
 
@@ -154,7 +154,7 @@ func Whois(role string) (*Status, error) {
 	// create an RPC client that will connect to the matching node
 	client, err := rpc.Dial("tcp", conn)
 	if err != nil {
-		log.Error("[(%s) status.Whois] RPC Client unable to dial!\n%s\n", status.CRole, err.Error())
+		log.Error("[(%s) status.Whois] RPC Client unable to dial!\n%s", status.CRole, err)
 		return nil, err
 	}
 
@@ -165,7 +165,7 @@ func Whois(role string) (*Status, error) {
 
 	//
 	if err := client.Call("Status.RPCWhois", role, s); err != nil {
-		log.Error("[(%s) status.Whois] RPC Client unable to call!\n%s\n", status.CRole, err.Error())
+		log.Error("[(%s) status.Whois] RPC Client unable to call!\n%s", status.CRole, err)
 		return nil, err
 	}
 
@@ -193,22 +193,22 @@ func Whoisnot(not string) (*Status, error) {
 
 // Cluster iterates over all the nodes in member list, running a Whois(), and
 // storing each corresponding Status into a slice and returning the collection
-func Cluster() []*Status {
+func Cluster() []Status {
 	log.Debug("[(%s) status.Cluster] Retrieving cluster stats...", status.CRole)
 
-	var members = []*Status{}
+	var members = &[]Status{}
 
 	if err := status.RPCCluster("", members); err != nil {
-		//
+		return []Status{}
 	}
 
-	return members
+	return *members
 }
 
 // SetDBRole takes a 'role' string and attempts to set the Status.DBRole, and then
 // update the record via scribble
 func (s *Status) SetDBRole(role string) {
-	log.Debug("[(%s) status.SetDBRole] setting role '%s' on node '%s'\n", status.CRole, role, s.CRole)
+	log.Debug("[(%s) status.SetDBRole] setting role '%s' on node '%s'", status.CRole, role, s.CRole)
 
 	s.DBRole = role
 
@@ -223,7 +223,7 @@ func (s *Status) SetDBRole(role string) {
 // SetState takes a 'state' string and attempts to set the Status.State, and then
 // update the record via scribble
 func (s *Status) SetState(state string) {
-	log.Debug("[(%s) status.SetState] setting '%s' on '%s'\n", status.CRole, state, s.CRole)
+	log.Debug("[(%s) status.SetState] setting '%s' on '%s'", status.CRole, state, s.CRole)
 
 	s.State = state
 
@@ -236,7 +236,7 @@ func (s *Status) SetState(state string) {
 // RPCWhois is the response to an RPC call made from Whois requesting the status
 // information for the provided 'role'
 func (s *Status) RPCWhois(role string, status *Status) error {
-	log.Debug("[(%s) status.RPCWhois] '%s' requesting '%s''s status...", status.CRole, s.CRole, role)
+	log.Debug("[(%s) status.RPCWhois] '%s' requesting '%s's' status...", status.CRole, s.CRole, role)
 
 	// iterate through each node in memberlist looking for a node whos name matches
 	// the desired 'role'
@@ -255,7 +255,7 @@ func (s *Status) RPCWhois(role string, status *Status) error {
 }
 
 // RPCCluster
-func (s *Status) RPCCluster(source string, members []*Status) error {
+func (s *Status) RPCCluster(source string, members *[]Status) error {
 	log.Debug("[(%s) status.RPCCluster] Requesting cluster stats...", status.CRole)
 
 	cluster := "cluster members - "
@@ -266,16 +266,16 @@ func (s *Status) RPCCluster(source string, members []*Status) error {
 		// retrieve each nodes Status
 		s, err := Whois(m.Name)
 		if err != nil {
-			log.Warn("[(%s) status.Cluster] Failed to retrieve status for '%s'!\n%s\n", status.CRole, m.Name, err)
+			log.Warn("[(%s) status.Cluster] Failed to retrieve status for '%s'!\n%s", status.CRole, m.Name, err)
 
 			// append each status into our slice of statuses
 		} else {
-			members = append(members, s)
+			*members = append(*members, *s)
 			cluster += fmt.Sprintf("(%s:%s) ", s.CRole, s.Ip)
 		}
 	}
 
-	log.Info("[(%s) status.Cluster] %s", cluster)
+	log.Info("[(%s) status.Cluster] %s", status.CRole, cluster)
 
 	return nil
 }
@@ -284,7 +284,7 @@ func (s *Status) RPCCluster(source string, members []*Status) error {
 func (s *Status) Demote(source string, status *Status) error {
 	log.Debug("[(%s) status.Demote] Advising demote...", status.CRole)
 
-	advice <- "demote"
+	go func() { advice <- "demote" }()
 
 	return nil
 }

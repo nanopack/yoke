@@ -4,7 +4,7 @@ import (
 	"time"
 )
 
-var lastKnownCluster []*Status
+var lastKnownCluster []Status
 
 // Starts a goroutine that makes all the decisions
 // about who is to become master/slave/single and at what times

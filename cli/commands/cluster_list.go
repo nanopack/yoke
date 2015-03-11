@@ -4,6 +4,7 @@ import (
   "flag"
   "fmt"
   "net/rpc"
+  "os"
   "time"
 )
 
@@ -54,41 +55,31 @@ func (c *ClusterListCommand) Run(opts []string) {
     fmt.Println("Failed to parse flags!", err)
   }
 
-  fmt.Println("CONNECTION!", fmt.Sprintf("%s:%s", fHost, fPort))
-
   // create an RPC client that will connect to the matching node
   client, err := rpc.Dial("tcp", fmt.Sprintf("%s:%s", fHost, fPort))
   if err != nil {
     fmt.Println("Failed to dial!", err)
+    os.Exit(1)
   }
 
   //
   defer client.Close()
 
-  fmt.Printf("CLIENT! %#v", client)
-
-  s := &Status{}
-
-  if err := client.Call("Status.RPCWhois", "secondary", s); err != nil {
-    fmt.Println("Failed to call!", err)
-  }
-
-  fmt.Printf("SECONDARY! %#v\n", s)
-
-  var members = []*Status{}
+  var members = &[]Status{}
 
   //
   if err := client.Call("Status.RPCCluster", "", members); err != nil {
     fmt.Println("Failed to call!", err)
+    os.Exit(1)
   }
+
 
   //
   fmt.Println(`
-Members:
---------------------------------------------------------------------------------`)
-
-  for _, member := range members {
-    fmt.Printf("MEMBER: %#v", member)
+Cluster Role |   Cluster IP    |       State        |  Postgres Role  |  Postgres Port  |      Last Updated
+-----------------------------------------------------------------------------------------------------------------`)
+  for _, member := range *members {
+    fmt.Printf("%-12s | %-15s | %-18s | %-15s | %-15d | %-25s\n", member.CRole, member.Ip, member.State, member.DBRole, member.PGPort, member.UpdatedAt.Format("01.02.06 (15:04:05) MST"))
   }
 
   fmt.Println("")
