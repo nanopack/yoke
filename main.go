@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
-	"os/signal"
 	"os/exec"
+	"os/signal"
 	"syscall"
 )
 
@@ -19,7 +19,6 @@ func main() {
 	handle(StatusStart())
 	handle(DecisionStart())
 	handle(ActionStart())
-
 
 	// signal Handle
 	c := make(chan os.Signal, 1)

@@ -1,7 +1,7 @@
 package commands
 
 import (
-  "github.com/pagodabox-tools/cli/ui"
+	"github.com/pagodabox-tools/cli/ui"
 )
 
 // HelpCommand satisfies the Command interface for obtaining user info
@@ -9,7 +9,7 @@ type HelpCommand struct{}
 
 // Help prints detailed help text for the user command
 func (c *HelpCommand) Help() {
-  ui.CPrint(`
+	ui.CPrint(`
 Description:
   Prints help text for entire CLI
 
@@ -24,7 +24,7 @@ Usage:
 
 // Run prints out the help text for the entire CLI
 func (c *HelpCommand) Run(opts []string) {
-  ui.CPrint(`
+	ui.CPrint(`
 Description:
   This CLI should provide a few methods to make monitoring your yoke cluster easier
 

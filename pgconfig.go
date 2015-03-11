@@ -15,7 +15,7 @@ import (
 //
 type pgConfig struct {
 	listenAddr string
-	master bool
+	master     bool
 }
 
 // configureHBAConf attempts to open the 'pg_hba.conf' file. Once open it will scan

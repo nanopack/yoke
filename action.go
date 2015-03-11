@@ -72,7 +72,7 @@ func startMaster() {
 
 	// set postgresql.conf as not master
 	status.SetState("(master)configuring")
-	configurePGConf(pgConfig{master:false, listenAddr:"0.0.0.0"})
+	configurePGConf(pgConfig{master: false, listenAddr: "0.0.0.0"})
 	// set pg_hba.conf
 	configureHBAConf()
 	// delete recovery.conf
@@ -132,7 +132,7 @@ func startMaster() {
 	log.Debug("[action] backup complete")
 
 	// set postgresql.conf as master
-	configurePGConf(pgConfig{master:true, listenAddr:"0.0.0.0"})
+	configurePGConf(pgConfig{master: true, listenAddr: "0.0.0.0"})
 
 	// start refresh/restart server
 	log.Debug("[action] restarting DB")
@@ -195,7 +195,7 @@ func startSlave() {
 	}
 	// set postgresql.conf as not master
 	status.SetState("(slave)configuring")
-	configurePGConf(pgConfig{master:false, listenAddr:"0.0.0.0"})
+	configurePGConf(pgConfig{master: false, listenAddr: "0.0.0.0"})
 	// set pg_hba.conf
 	configureHBAConf()
 	// set recovery.conf
@@ -212,7 +212,7 @@ func startSingle() {
 	log.Info("[action] starting DB as single")
 	status.SetState("(single)configuring")
 	// set postgresql.conf as not master
-	configurePGConf(pgConfig{master:false, listenAddr:"0.0.0.0"})
+	configurePGConf(pgConfig{master: false, listenAddr: "0.0.0.0"})
 	// set pg_hba.conf
 	configureHBAConf()
 	// delete recovery.conf

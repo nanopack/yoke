@@ -17,7 +17,6 @@ func (c ClusterWriter) Write(d []byte) (int, error) {
 	return len(d), nil
 }
 
-
 // ClusterStart
 func ClusterStart() error {
 	log.Info("[cluster.ClusterStart]")
