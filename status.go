@@ -20,7 +20,7 @@ import (
 	"github.com/nanobox-core/scribble"
 )
 
-// Status represents the Status of node in the cluser
+// Status represents the Status of a node in the cluser
 type Status struct {
 	CRole     string    // the nodes 'role' in the cluster (primary, secondary, monitor)
 	DataDir   string    // directory of the postgres database

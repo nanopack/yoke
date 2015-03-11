@@ -14,12 +14,11 @@ Description:
   Prints help text for entire CLI
 
 Usage:
-  pagoda
-  pagoda -h
-  pagoda --help
-  pagoda help
+  cli
+  cli help
+  cli --help
 
-  ex. pagoda help
+  ex. cli help
   `)
 }
 
@@ -31,18 +30,18 @@ Description:
 
   All commands have a short [-*] and a verbose [--*] option when passing flags.
 
-  You can pass -h, --help, or help to any command to receive detailed information
+  You can pass help, or --help to any command to receive detailed information
   about that command.
 
 Usage:
-  pagoda (<COMMAND>:<ACTION> OR <ALIAS>) [GLOBAL FLAG] <POSITIONAL> [SUB FLAGS]
+  cli (<COMMAND>:<ACTION> OR <ALIAS>) [GLOBAL FLAG] <POSITIONAL> [SUB FLAGS]
 
 Options:
-  -h, --help, help
+  help, --help
     Run anytime to receive detailed information about a command.
 
 Available Commands:
-  list            : List all your applications.
-  demote          : Display info about an application.
+  list   : Returns status information for all nodes in the cluster
+  demote : Advises a node to 'demote'
   `)
 }

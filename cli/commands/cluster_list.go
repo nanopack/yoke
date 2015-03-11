@@ -8,7 +8,7 @@ import (
   "time"
 )
 
-// Status represents the Status of node in the cluser
+// Status represents the Status of a node in the cluser
 type Status struct {
   CRole     string    // the nodes 'role' in the cluster (primary, secondary, monitor)
   DataDir   string    // directory of the postgres database
@@ -19,24 +19,24 @@ type Status struct {
   UpdatedAt time.Time // the last time the node state was updated
 }
 
-// ClusterListCommand satisfies the Command interface for listing a user's apps
+// ClusterListCommand satisfies the Command interface for listing nodes in yoke
 type ClusterListCommand struct{}
 
-// Help prints detailed help text for the app list command
+// Help prints detailed help text for the cluster list command
 func (c *ClusterListCommand) Help() {
   fmt.Printf(`
 Description:
-  Lists all the members (nodes) in the cluster.
+  Returns status information for all nodes in the cluster
 
 Usage:
-  yoke list
-  yoke cluster:list
+  cli list
+  cli cluster:list
 
-  ex. yoke list
+  ex. cli list
   `)
 }
 
-// Run displays select information about all of a user's apps
+// Run displays select information about all of the nodes in a cluster
 func (c *ClusterListCommand) Run(opts []string) {
 
   // flags
@@ -44,7 +44,7 @@ func (c *ClusterListCommand) Run(opts []string) {
   flags.Usage = func() { c.Help() }
 
   var fHost string
-  flags.StringVar(&fHost, "o", "localhost", "")
+  flags.StringVar(&fHost, "h", "localhost", "")
   flags.StringVar(&fHost, "host", "localhost", "")
 
   var fPort string
@@ -52,13 +52,13 @@ func (c *ClusterListCommand) Run(opts []string) {
   flags.StringVar(&fPort, "port", "4401", "")
 
   if err := flags.Parse(opts); err != nil {
-    fmt.Println("Failed to parse flags!", err)
+    fmt.Println("[cli.ClusterList.run] Failed to parse flags!", err)
   }
 
   // create an RPC client that will connect to the matching node
   client, err := rpc.Dial("tcp", fmt.Sprintf("%s:%s", fHost, fPort))
   if err != nil {
-    fmt.Println("Failed to dial!", err)
+    fmt.Println("[cli.ClusterList.run] Failed to dial!", err)
     os.Exit(1)
   }
 
@@ -69,7 +69,7 @@ func (c *ClusterListCommand) Run(opts []string) {
 
   //
   if err := client.Call("Status.RPCCluster", "", members); err != nil {
-    fmt.Println("Failed to call!", err)
+    fmt.Println("[cli.ClusterList.run] Failed to call!", err)
     os.Exit(1)
   }
 

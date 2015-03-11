@@ -6,19 +6,19 @@ import (
   "net/rpc"
 )
 
-// MemberDemoteCommand satisfies the Command interface for rebuilding an app
+// MemberDemoteCommand satisfies the Command interface for demoting a node
 type MemberDemoteCommand struct{}
 
-// Help prints detailed help text for the app rebuild command
+// Help prints detailed help text for the member demote command
 func (c *MemberDemoteCommand) Help() {
   fmt.Printf(`
 Description:
-  Sends a 'demote' suggestion action
+  Advises a node to 'demote'
 
 Usage:
-  yoke demote [-m member]
+  cli demote [-m member]
 
-  ex. pagoda demote -m asdf
+  ex. cli demote -m asdf
   `)
 }
 
@@ -30,7 +30,7 @@ func (c *MemberDemoteCommand) Run(opts []string) {
   flags.Usage = func() { c.Help() }
 
   var fHost string
-  flags.StringVar(&fHost, "o", "localhost", "")
+  flags.StringVar(&fHost, "h", "localhost", "")
   flags.StringVar(&fHost, "host", "localhost", "")
 
   var fPort string
@@ -38,13 +38,13 @@ func (c *MemberDemoteCommand) Run(opts []string) {
   flags.StringVar(&fPort, "port", "4401", "")
 
   if err := flags.Parse(opts); err != nil {
-    fmt.Println("Failed to parse flags!", err)
+    fmt.Println("[cli.MemberDemote.Run] Failed to parse flags!", err)
   }
 
   // create an RPC client that will connect to the matching node
   client, err := rpc.Dial("tcp", fmt.Sprintf("%s:%s", fHost, fPort))
   if err != nil {
-    fmt.Println("Failed to dial!", err)
+    fmt.Println("[cli.MemberDemote.Run] Failed to dial!", err)
   }
 
   //
@@ -52,7 +52,7 @@ func (c *MemberDemoteCommand) Run(opts []string) {
 
   //
   if err := client.Call("Status.Demote", "", nil); err != nil {
-    fmt.Println("Failed to call!", err)
+    fmt.Println("[cli.MemberDemote.Run] Failed to call!", err)
   }
 
   fmt.Printf("'%s' advised to demote...", fHost)

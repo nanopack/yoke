@@ -26,7 +26,7 @@ func main() {
 	switch command {
 
 	// check for help shortcuts
-	case "-h", "--help", "help":
+	case "--help", "help":
 		help()
 
 	// we didn't find a 'shortcut' flag, so we'll continue parsing the remaining
@@ -45,7 +45,7 @@ func main() {
 				switch opts[0] {
 
 				// Check for help shortcuts on commands
-				case "-h", "--help", "help":
+				case "--help", "help":
 					commands.Commands[command].Help()
 					os.Exit(0)
 				}
@@ -56,7 +56,7 @@ func main() {
 
 			// no valid command found
 		} else {
-			fmt.Printf("'%s' is not a valid command. Type 'yoke' for available commands and usage.\n", command)
+			fmt.Printf("'%s' is not a valid command. Type 'cli' for available commands and usage.\n", command)
 			os.Exit(1)
 		}
 	}
