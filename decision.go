@@ -19,6 +19,8 @@ func DecisionStart() error {
 		log.Debug("[decision] myself %+v", self)
 		if self.CRole == "monitor" {
 			log.Debug("[decision] im a monitor.. i dont make decisions")
+			status.SetDBRole("monitor")
+			status.SetState("running")
 			return
 		}
 		// start the database up
