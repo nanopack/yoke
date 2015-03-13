@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/rpc"
 	"os"
+	"regexp"
 	"time"
 )
 
@@ -73,12 +74,24 @@ func (c *ClusterListCommand) Run(opts []string) {
 		os.Exit(1)
 	}
 
+	reFindErrorBody := regexp.MustCompile(`^\((.*)\)(.*)$`)
+
 	//
 	fmt.Println(`
-Cluster Role |   Cluster IP    |       State        |  Postgres Role  |  Postgres Port  |      Last Updated
------------------------------------------------------------------------------------------------------------------`)
+Cluster Role |   Cluster IP    |     State     |    Status    |  Postgres Role  |  Postgres Port  |      Last Updated
+---------------------------------------------------------------------------------------------------------------------------`)
 	for _, member := range *members {
-		fmt.Printf("%-12s | %-15s | %-18s | %-15s | %-15d | %-25s\n", member.CRole, member.Ip, member.State, member.DBRole, member.PGPort, member.UpdatedAt.Format("01.02.06 (15:04:05) MST"))
+
+		state := "--"
+		status := "--"
+
+		subMatch := reFindErrorBody.FindStringSubmatch(member.State)
+		if subMatch != nil {
+			state = subMatch[1]
+			status = subMatch[2]
+		}
+
+		fmt.Printf("%-12s | %-15s | %-13s | %-12s | %-15s | %-15d | %-25s\n", member.CRole, member.Ip, state, status, member.DBRole, member.PGPort, member.UpdatedAt.Format("01.02.06 (15:04:05) MST"))
 	}
 
 	fmt.Println("")
