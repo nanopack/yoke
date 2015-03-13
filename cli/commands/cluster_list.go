@@ -83,7 +83,7 @@ Cluster Role |   Cluster IP    |     State     |    Status    |  Postgres Role  
 	for _, member := range *members {
 
 		state := "--"
-		status := "--"
+		status := "running"
 
 		subMatch := reFindErrorBody.FindStringSubmatch(member.State)
 		if subMatch != nil {

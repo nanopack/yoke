@@ -47,15 +47,15 @@ func StatusStart() error {
 	status = &Status{}
 
 	// determine if the current node already has a record in scribble
-	fi, err := os.Stat(conf.StatusDir + "/cluster/" + conf.Role)
+	fi, err := os.Stat(conf.StatusDir + "cluster/" + conf.Role)
 	if err != nil {
-		log.Warn("[(%s) status.StatusStart] Failed to read '%s'\n%s", conf.Role, conf.StatusDir+"/"+conf.Role, err)
+		log.Warn("[(%s) status.StatusStart] Failed to %s", conf.Role, err)
 	}
 
 	// if no record found that matches the current node; create a new record in
 	// scribble
 	if fi == nil {
-		log.Warn("[(%s) status.StatusStart] 404 Not found: No record found for '%s'", conf.Role, conf.Role)
+		log.Warn("[(%s) status.StatusStart] 404 Not found: Creating record for '%s'", conf.Role, conf.Role)
 
 		//
 		status = &Status{
@@ -68,7 +68,6 @@ func StatusStart() error {
 			UpdatedAt: time.Now(),
 		}
 
-		log.Debug("[(%s) status.StatusStart] Creating record for '%s'", status.CRole, conf.Role)
 		save(status)
 
 		// record found; set nodes status information
@@ -81,14 +80,16 @@ func StatusStart() error {
 	// register our Status struct with RPC
 	rpc.Register(status)
 
-	log.Info("[(%s) status] Starting RPC server...\n", status.CRole)
+	fmt.Printf("[(%s) status] Starting RPC server... ", status.CRole)
 
 	// fire up an RPC (tcp) server
-	l, err := net.Listen("tcp", ":"+strconv.FormatInt(int64(conf.AdvertisePort+1), 10))
+	l, err := net.Listen("tcp", ":" + strconv.FormatInt(int64(conf.AdvertisePort+1), 10))
 	if err != nil {
 		log.Error("[(%s) status] Unable to start server!\n%s\n", status.CRole, err)
 		return err
 	}
+
+	fmt.Printf("success (listening on port %s)\n", strconv.FormatInt(int64(conf.AdvertisePort+1))
 
 	// daemonize the server
 	go func(l net.Listener) {
