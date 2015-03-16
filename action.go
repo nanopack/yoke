@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	// "strings"
+	"os/user"
+	"strings"
 	"syscall"
 	"time"
 
@@ -82,7 +83,7 @@ func startMaster() {
 	startDB()
 
 	// connect to DB and tell it to start backup
-	db, err := sql.Open("postgres", fmt.Sprintf("user=postgres sslmode=disable host=localhost port=%d", conf.PGPort))
+	db, err := sql.Open("postgres", fmt.Sprintf("user=%s sslmode=disable host=localhost port=%d", SystemUser(), conf.PGPort))
 	if err != nil {
 		log.Fatal("[action.startMaster] Couldnt establish Database connection (%s)", err.Error())
 		log.Close()
@@ -362,4 +363,20 @@ func removeVip() {
 
 func vipable() bool {
 	return conf.Vip != "" && conf.VipAddCommand != "" && conf.VipRemoveCommand != ""
+}
+
+func SystemUser() string {
+	username := "postgres"
+	usr, err := user.Current()
+	if err != nil {
+		cmd := exec.Command("bash", "-c", "whoami")
+		bytes, err := cmd.Output()
+		if err == nil {
+			str := string(bytes)
+			return strings.TrimSpace(str)
+		}
+	}
+
+	username = usr.Username
+	return username
 }

@@ -64,6 +64,7 @@ func configureHBAConf() error {
 
 	// if the other node is present, write redundancy into the 'entry' (otherwise
 	// just leave it out)
+
 	if other != nil {
 		entry += fmt.Sprintf(`#~-----------------------------------------------------------------------------
 # YOKE CONFIG
@@ -76,7 +77,7 @@ func configureHBAConf() error {
 # IMPORTANT: these settings will always be overriden when the server boots. They
 # are set dynamically and so should never change.
 
-host    replication     postgres        %s/32            trust`, other.Ip)
+host    replication     %s        %s/32            trust`, SystemUser(), other.Ip)
 	}
 
 	// write the 'entry' to the file
