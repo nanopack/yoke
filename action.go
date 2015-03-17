@@ -83,7 +83,7 @@ func startMaster() {
 	startDB()
 
 	// connect to DB and tell it to start backup
-	db, err := sql.Open("postgres", fmt.Sprintf("user=%s sslmode=disable host=localhost port=%d", SystemUser(), conf.PGPort))
+	db, err := sql.Open("postgres", fmt.Sprintf("user=%s database=postgres sslmode=disable host=localhost port=%d", SystemUser(), conf.PGPort))
 	if err != nil {
 		log.Fatal("[action.startMaster] Couldnt establish Database connection (%s)", err.Error())
 		log.Close()
