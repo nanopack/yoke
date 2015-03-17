@@ -89,7 +89,7 @@ func StatusStart() error {
 		return err
 	}
 
-	fmt.Printf("success (listening on port %s)\n", strconv.FormatInt(int64(conf.AdvertisePort+1))
+	fmt.Printf("success (listening on port %s)\n", strconv.FormatInt(int64(conf.AdvertisePort+1), 10))
 
 	// daemonize the server
 	go func(l net.Listener) {
