@@ -83,7 +83,7 @@ func StatusStart() error {
 	fmt.Printf("[(%s) status] Starting RPC server... ", status.CRole)
 
 	// fire up an RPC (tcp) server
-	l, err := net.Listen("tcp", ":" + strconv.FormatInt(int64(conf.AdvertisePort+1), 10))
+	l, err := net.Listen("tcp", ":"+strconv.FormatInt(int64(conf.AdvertisePort+1), 10))
 	if err != nil {
 		log.Error("[(%s) status] Unable to start server!\n%s\n", status.CRole, err)
 		return err
