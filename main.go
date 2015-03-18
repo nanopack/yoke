@@ -22,13 +22,13 @@ func main() {
 
 	// signal Handle
 	c := make(chan os.Signal, 1)
-	signal.Notify(c, syscall.SIGINT, os.Kill, syscall.SIGQUIT, syscall.SIGHUP)
+	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM, os.Kill, syscall.SIGQUIT, syscall.SIGHUP)
 
 	// Block until a signal is received.
 	for {
 		s := <-c
 		switch s {
-		case syscall.SIGINT, os.Kill, syscall.SIGQUIT:
+		case syscall.SIGINT, os.Kill, syscall.SIGQUIT, syscall.SIGTERM:
 			// kill the database then quit
 			log.Info("Signal Recieved: %s", s.String())
 			if conf.Role == "monitor" {
