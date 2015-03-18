@@ -251,6 +251,15 @@ func performActionFromSlave(self, other *Status) {
 		return
 	}
 	if other != nil && other.DBRole == "dead(master)" {
+		
+		// before i can become a single i need to make sure i was actually synced
+		if self.State != "(slave)running" {
+			updateStatusRole("dead(slave)")
+			log.Info("[decision] performActionFromSlave: other is dead but I wasnt running: going dead")
+			actions <- "kill"
+			return
+		}
+		
 		// my master has died and i need to transition into single mode
 		updateStatusRole("single")
 		log.Info("[decision] performActionFromSlave: other is dead: going single")
@@ -267,6 +276,15 @@ func performActionFromSlave(self, other *Status) {
 	}
 	mon, _ := Whois("monitor")
 	if mon != nil {
+
+		// before i can become a single i need to make sure i was actually synced
+		if self.State != "(slave)running" {
+			updateStatusRole("dead(slave)")
+			log.Info("[decision] performActionFromSlave: other is dead but I wasnt running: going dead")
+			actions <- "kill"
+			return
+		}
+
 		// the other member died but i can still talk to the monitor
 		// i can safely become a single
 		updateStatusRole("single")

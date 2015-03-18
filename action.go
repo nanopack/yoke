@@ -205,6 +205,20 @@ func startSlave() {
 	status.SetState("(slave)starting")
 	log.Debug("[action] starting database")
 	startDB()
+
+	// go into a waiting for sync signal from the master
+	// this should allow us to detect if we can safely become master
+	status.SetState("(slave)syncing")
+	for {
+		other, err := Whoisnot(self.CRole)
+		if err != nil {
+			log.Fatal("I have lost communication with the other server, I cannot start without it")
+		}
+		if other.State == "(master)running" {
+			break
+		}
+		time.Sleep(time.Second)
+	}	
 	status.SetState("(slave)running")
 }
 
