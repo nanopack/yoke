@@ -2,6 +2,7 @@ package main
 
 import (
 	"time"
+	"fmt"
 )
 
 var lastKnownCluster []Status
@@ -138,9 +139,14 @@ func startType(def string) string {
 // new members, lost members, or changes to member states
 func clusterChanges() bool {
 	c := Cluster()
+	str := "[decision] Cluster Members Changed: "
+	for _, member := range c {
+		str += fmt.Sprintf("(%s:%s)", member.CRole, member.Ip)
+	}
 	if len(lastKnownCluster) != len(c) {
 		log.Debug("[decision] The cluster size changed from %d to %d", len(lastKnownCluster), len(c))
 		lastKnownCluster = Cluster()
+		log.Info(str)
 		return true
 	}
 	for _, member := range lastKnownCluster {
@@ -148,11 +154,13 @@ func clusterChanges() bool {
 		if err != nil {
 			log.Debug("[decision] The remote member died while i was trying to pull its updates")
 			lastKnownCluster = Cluster()
+			log.Info(str)
 			return true
 		}
 		if member.DBRole != remote.DBRole {
 			log.Debug("[decision] The cluster members(%s) role changed from %s to %s", member.CRole, member.DBRole, remote.DBRole)
 			lastKnownCluster = Cluster()
+			log.Info(str)
 			return true
 		}
 	}

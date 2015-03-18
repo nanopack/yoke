@@ -276,7 +276,7 @@ func (s *Status) RPCCluster(source string, members *[]Status) error {
 		}
 	}
 
-	log.Info("[(%s) status.Cluster] %s", status.CRole, cluster)
+	log.Debug("[(%s) status.Cluster] %s", status.CRole, cluster)
 
 	return nil
 }
