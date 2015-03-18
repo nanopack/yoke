@@ -49,10 +49,10 @@ func configureHBAConf() error {
 	// file, skipping ('removing') any line that deals with redundancy.
 	for scanner.Scan() {
 
-		// stop scanning if a special prefix is encountered. This ensures there are
-		// no duplicate Pagoda Box comment blocks
+		// stop scanning if a special prefix is encountered. 
+		// This ensures we dont write the pghba more then once.
 		if strings.HasPrefix(scanner.Text(), "#~") {
-			break
+			return
 		}
 
 		// dont care about submatches, just if the string matches, 'skipping' any lines
