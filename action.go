@@ -52,6 +52,8 @@ func ActionStart() error {
 func doAction(act string) {
 	switch act {
 	case "kill":
+		removeVip()
+		roleChangeCommand("dead")
 		killDB()
 	case "master":
 		startMaster()
@@ -261,6 +263,7 @@ func killDB() {
 		cmd = nil
 		return
 	}
+
 	// if it is running kill it and wait for it to go down
 	status.SetState("(kill)signaling")
 	err := cmd.Process.Signal(syscall.SIGINT)
