@@ -23,7 +23,7 @@ func main() {
 
 	// signal Handle
 	c := make(chan os.Signal, 1)
-	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM, os.Kill, syscall.SIGQUIT, syscall.SIGHUP, syscall.SIGPOLL)
+	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM, os.Kill, syscall.SIGQUIT, syscall.SIGHUP, syscall.SIGALRM)
 
 	// Block until a signal is received.
 	for {
@@ -43,7 +43,7 @@ func main() {
 			}
 			log.Close()
 			os.Exit(0)
-		case syscall.SIGPOLL:
+		case syscall.SIGALRM:
 			stacktrace := make([]byte, 8192)
 			length := runtime.Stack(stacktrace, true)
 			fmt.Println(string(stacktrace[:length]))
