@@ -44,6 +44,7 @@ func main() {
 			log.Close()
 			os.Exit(0)
 		case syscall.SIGALRM:
+			log.Info("Printing Stack Trace")
 			stacktrace := make([]byte, 8192)
 			length := runtime.Stack(stacktrace, true)
 			fmt.Println(string(stacktrace[:length]))
