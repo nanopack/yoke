@@ -14,7 +14,6 @@ import (
 	"net"
 	"net/rpc"
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/nanobox-core/scribble"
@@ -83,13 +82,13 @@ func StatusStart() error {
 	fmt.Printf("[(%s) status] Starting RPC server... ", status.CRole)
 
 	// fire up an RPC (tcp) server
-	l, err := net.Listen("tcp", ":"+strconv.FormatInt(int64(conf.AdvertisePort+1), 10))
+	l, err := net.Listen("tcp", fmt.Sprintf(":%d",conf.AdvertisePort+1))
 	if err != nil {
 		log.Error("[(%s) status] Unable to start server!\n%s\n", status.CRole, err)
 		return err
 	}
 
-	fmt.Printf("success (listening on port %s)\n", strconv.FormatInt(int64(conf.AdvertisePort+1), 10))
+	fmt.Printf("success (listening on port %d)\n", conf.AdvertisePort+1)
 
 	// daemonize the server
 	go func(l net.Listener) {
@@ -146,7 +145,7 @@ func Whois(role string) (*Status, error) {
 	// find a matching node for the desired 'role'
 	for _, m := range list.Members() {
 		if m.Name == role {
-			conn = fmt.Sprintf("%s:%s", m.Addr, strconv.FormatInt(int64(m.Port+1), 10))
+			conn = fmt.Sprintf("%s:%d", m.Addr, m.Port)
 		}
 	}
 
@@ -244,7 +243,7 @@ func (s *Status) RPCEnsureWhois(asking string, v *Status) error {
 	// find a matching node for the desired 'role'
 	for _, m := range list.Members() {
 		if m.Name == asking {
-			conn = fmt.Sprintf("%s:%s", m.Addr, strconv.FormatInt(int64(m.Port+1), 10))
+			conn = fmt.Sprintf("%s:%d", m.Addr, m.Port)
 		}
 	}
 
@@ -260,8 +259,9 @@ func (s *Status) RPCEnsureWhois(asking string, v *Status) error {
 	//
 	defer client.Close()
 
+	tmp := &Status{}
 	// 'pingback' to the requesting node to ensure duplex communication
-	if err := client.Call("Status.RPCWhois", asking, v); err != nil {
+	if err := client.Call("Status.RPCWhois", asking, tmp); err != nil {
 		log.Error("[(%s) status.RPCEnsureWhois] RPC Client unable to call!\n%s", s.CRole, err)
 		return err
 	}
@@ -296,7 +296,7 @@ func (s *Status) RPCCluster(source string, v *[]Status) error {
 		// retrieve each nodes Status
 		s, err := Whois(m.Name)
 		if err != nil {
-			log.Warn("[(%s) status.Cluster] Failed to retrieve status for '%s'!\n%s", s.CRole, m.Name, err)
+			log.Warn("[(%s) status.Cluster] Failed to retrieve status for '%s'!\n%s", status.CRole, m.Name, err)
 
 			// append each status into our slice of statuses
 		} else {

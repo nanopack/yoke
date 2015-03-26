@@ -52,6 +52,8 @@ func ActionStart() error {
 func doAction(act string) {
 	switch act {
 	case "kill":
+		// the killDB method doenst always want to remove the vip
+		// only when it gets the action from the decision system
 		removeVip()
 		roleChangeCommand("dead")
 		killDB()
