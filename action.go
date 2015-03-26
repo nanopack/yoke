@@ -263,7 +263,7 @@ func killDB() {
 	}
 	// if it is running kill it and wait for it to go down
 	status.SetState("(kill)signaling")
-	err := cmd.Process.Signal(syscall.SIGQUIT)
+	err := cmd.Process.Signal(syscall.SIGINT)
 	if err != nil {
 		log.Error("[action] Kill Signal error: %s", err.Error())
 	}
