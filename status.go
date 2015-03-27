@@ -163,7 +163,8 @@ func Whois(role string) (*Status, error) {
 
 	v := &Status{}
 
-	//
+	// request that the whois confirms full duplex communication before requesting
+	// status by ensuring communication to self
 	if err := client.Call("Status.RPCEnsureWhois", status.CRole, v); err != nil {
 		log.Error("[(%s) status.Whois] RPC Client unable to call!\n%s", status.CRole, err)
 		return nil, err
