@@ -15,8 +15,8 @@ import (
 	"net/rpc"
 	"os"
 	"time"
-
 	"github.com/nanobox-core/scribble"
+	"errors"
 )
 
 // Status represents the Status of a node in the cluser
@@ -145,14 +145,14 @@ func Whois(role string) (*Status, error) {
 	// find a matching node for the desired 'role'
 	for _, m := range list.Members() {
 		if m.Name == role {
-			conn = fmt.Sprintf("%s:%d", m.Addr, m.Port)
+			conn = fmt.Sprintf("%s:%d", m.Addr, m.Port+1)
 		}
 	}
 
 	log.Debug("[(%s) status.Whois] connection - %s", status.CRole, conn)
 
 	// create an RPC client that will connect to the matching node
-	client, err := rpc.Dial("tcp", conn)
+	client, err := rpcClient(conn)
 	if err != nil {
 		log.Error("[(%s) status.Whois] RPC Client unable to dial!\n%s", status.CRole, err)
 		return nil, err
@@ -161,16 +161,24 @@ func Whois(role string) (*Status, error) {
 	//
 	defer client.Close()
 
-	v := &Status{}
+	reply := &Status{}
 
-	// request that the whois confirms full duplex communication before requesting
-	// status by ensuring communication to self
-	if err := client.Call("Status.RPCEnsureWhois", status.CRole, v); err != nil {
-		log.Error("[(%s) status.Whois] RPC Client unable to call!\n%s", status.CRole, err)
-		return nil, err
+	//
+	c := make(chan error, 1)
+	go func() { c <- client.Call("Status.RPCEnsureWhois", status.CRole, reply) } ()
+	select {
+	  case err := <-c:
+	    return reply, err
+	  case <-time.After(15 * time.Second):
+	    return nil, errors.New("Timeout waiting for method call")
 	}
 
-	return v, nil
+	// if err := client.Call("Status.RPCEnsureWhois", status.CRole, reply); err != nil {
+	// 	log.Error("[(%s) status.Whois] RPC Client unable to call!\n%s", status.CRole, err)
+	// 	return nil, err
+	// }
+
+	return reply, nil
 }
 
 // Whoisnot takes a 'role' string and attempts to find the 'other' node that does
@@ -244,14 +252,14 @@ func (s *Status) RPCEnsureWhois(asking string, v *Status) error {
 	// find a matching node for the desired 'role'
 	for _, m := range list.Members() {
 		if m.Name == asking {
-			conn = fmt.Sprintf("%s:%d", m.Addr, m.Port)
+			conn = fmt.Sprintf("%s:%d", m.Addr, m.Port+1)
 		}
 	}
 
-	log.Debug("[(%s) status.RPCEnsureWhois] connection - %s", s.CRole, conn)
+	log.Debug("[(%s) status.RPCEnsureWhois] connection - %s", status.CRole, conn)
 
 	// create an RPC client that will connect to the matching node
-	client, err := rpc.Dial("tcp", conn)
+	client, err := rpcClient(conn)
 	if err != nil {
 		log.Error("[(%s) status.RPCEnsureWhois] RPC Client unable to dial!\n%s", s.CRole, err)
 		return err
@@ -262,13 +270,25 @@ func (s *Status) RPCEnsureWhois(asking string, v *Status) error {
 
 	tmp := &Status{}
 	// 'pingback' to the requesting node to ensure duplex communication
-	if err := client.Call("Status.RPCWhois", asking, tmp); err != nil {
-		log.Error("[(%s) status.RPCEnsureWhois] RPC Client unable to call!\n%s", s.CRole, err)
-		return err
+	c := make(chan error, 1)
+	go func() { c <- client.Call("Status.RPCWhois", status.CRole, tmp) } ()
+	select {
+	  case err := <-c:
+	  	if err != nil {
+	  		return err
+	  	}
+	  	return s.RPCWhois(asking, v)
+	  case <-time.After(10 * time.Second):
+	    return errors.New("Timeout waiting for method RPCWhois")
 	}
 
+	// if err := client.Call("Status.RPCWhois", asking, tmp); err != nil {
+	// 	log.Error("[(%s) status.RPCEnsureWhois] RPC Client unable to call!\n%s", s.CRole, err)
+	// 	return err
+	// }
+
 	// return status
-	return s.RPCWhois(asking, v)
+	return errors.New("Execution failed!")
 }
 
 // RPCWhois is the response to an RPC call made from Whois requesting the status
@@ -318,6 +338,23 @@ func (s *Status) Demote(source string, v *Status) error {
 	go func() { advice <- "demote" }()
 
 	return nil
+}
+
+func rpcClient(conn string) (*rpc.Client, error) {
+	c := make(chan error, 1)
+	var client *rpc.Client
+	var err error
+
+	go func() {
+		client, err = rpc.Dial("tcp", conn)
+	  c <- err
+	 }()
+	select {
+	  case err := <-c:
+	    return client, err
+	  case <-time.After(15 * time.Second):
+	    return nil, errors.New("Timeout Waiting for rpc.Dial")
+	}
 }
 
 // get retrieves a Status from scribble by 'role'

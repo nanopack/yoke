@@ -51,11 +51,13 @@ func DecisionStart() error {
 				} else {
 					log.Info("[decision] got some advice:" + adv)
 					// what do i do with other advice?
+					log.Debug("Advice triggered check")
 					if clusterChanges() {
 						performAction()
 					}
 				}
 			case <-timer:
+				log.Debug("timer triggered check")
 				if clusterChanges() {
 					performAction()
 				}
