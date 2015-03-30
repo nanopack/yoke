@@ -82,13 +82,13 @@ func StatusStart() error {
 	fmt.Printf("[(%s) status] Starting RPC server... ", status.CRole)
 
 	// fire up an RPC (tcp) server
-	l, err := net.Listen("tcp", fmt.Sprintf(":%d",conf.AdvertisePort+1))
+	l, err := net.Listen("tcp", fmt.Sprintf(":%d",conf.AdvertisePort))
 	if err != nil {
 		log.Error("[(%s) status] Unable to start server!\n%s\n", status.CRole, err)
 		return err
 	}
 
-	fmt.Printf("success (listening on port %d)\n", conf.AdvertisePort+1)
+	fmt.Printf("success (listening on port %d)\n", conf.AdvertisePort)
 
 	// daemonize the server
 	go func(l net.Listener) {
@@ -112,7 +112,7 @@ func StatusStart() error {
 // Whoami attempts to pull a matching record from scribble for the local node
 // returned from memberlist
 func Whoami() *Status {
-	log.Debug("[(%s) status.Whoami] %#v", status.CRole, list.LocalNode())
+	log.Debug("[status.Whoami] %s", status.CRole)
 
 	v := &Status{}
 
@@ -120,7 +120,7 @@ func Whoami() *Status {
 	for i := 0; i < 10; i++ {
 
 		// attempt to pull a record from scribble for the current node
-		if err := get(list.LocalNode().Name, v); err == nil {
+		if err := get(conf.Role, v); err == nil {
 			return v
 		} else {
 			log.Warn("[(%s) status.Whoami] Unable to retrieve record! retrying... (%s)", status.CRole, err)
@@ -140,13 +140,9 @@ func Whoami() *Status {
 func Whois(role string) (*Status, error) {
 	log.Debug("[(%s) status.Whois] Who is '%s'?", status.CRole, role)
 
-	var conn string
-
-	// find a matching node for the desired 'role'
-	for _, m := range list.Members() {
-		if m.Name == role {
-			conn = fmt.Sprintf("%s:%d", m.Addr, m.Port+1)
-		}
+	conn := getConn(role)
+	if conn == "" {
+		return nil, errors.New("I could not find a connection string for role("+role+")")
 	}
 
 	log.Debug("[(%s) status.Whois] connection - %s", status.CRole, conn)
@@ -168,6 +164,9 @@ func Whois(role string) (*Status, error) {
 	go func() { c <- client.Call("Status.RPCEnsureWhois", status.CRole, reply) } ()
 	select {
 	  case err := <-c:
+	  	if err != nil {
+	  		return nil, err
+	  	}
 	    return reply, err
 	  case <-time.After(15 * time.Second):
 	    return nil, errors.New("Timeout waiting for method call")
@@ -207,7 +206,7 @@ func Cluster() []Status {
 
 	var members = &[]Status{}
 
-	if err := status.RPCCluster("", members); err != nil {
+	if err := status.RPCCluster(conf.Role, members); err != nil {
 		return []Status{}
 	}
 
@@ -247,13 +246,9 @@ func (s *Status) SetState(state string) {
 func (s *Status) RPCEnsureWhois(asking string, v *Status) error {
 	log.Debug("[(%s) status.RPCEnsureWhois] '%s' requesting '%s's' status...", s.CRole, asking, s.CRole)
 
-	var conn string
-
-	// find a matching node for the desired 'role'
-	for _, m := range list.Members() {
-		if m.Name == asking {
-			conn = fmt.Sprintf("%s:%d", m.Addr, m.Port+1)
-		}
+	conn := getConn(asking)
+	if conn == "" {
+		return errors.New("I could not find a connection string for role("+asking+")")
 	}
 
 	log.Debug("[(%s) status.RPCEnsureWhois] connection - %s", status.CRole, conn)
@@ -309,25 +304,27 @@ func (s *Status) RPCWhois(asking string, v *Status) error {
 func (s *Status) RPCCluster(source string, v *[]Status) error {
 	log.Debug("[(%s) status.RPCCluster] Requesting cluster stats...", s.CRole)
 
-	cluster := "cluster members - "
-
-	// iterate over all nodes in member list
-	for _, m := range list.Members() {
-
-		// retrieve each nodes Status
-		s, err := Whois(m.Name)
+	errHandle := func(s *Status, err error) *Status {
 		if err != nil {
-			log.Warn("[(%s) status.Cluster] Failed to retrieve status for '%s'!\n%s", status.CRole, m.Name, err)
-
-			// append each status into our slice of statuses
-		} else {
-			*v = append(*v, *s)
-			cluster += fmt.Sprintf("(%s:%s) ", s.CRole, s.Ip)
+			log.Warn("[(%s) status.Cluster] Failed to retrieve status!\n%s", status.CRole, err)
 		}
+		return s
 	}
 
-	log.Debug("[(%s) status.Cluster] %s", s.CRole, cluster)
-
+	self := Whoami()
+	*v = append(*v, *s)
+	switch self.CRole {
+	case "monitor":
+		if s := errHandle(Whois("primary")); s != nil { *v = append(*v, *s)}
+		if s := errHandle(Whois("secondary")); s != nil { *v = append(*v, *s)}
+	case "primary":
+		if s := errHandle(Whois("monitor")); s != nil { *v = append(*v, *s)}
+		if s := errHandle(Whois("secondary")); s != nil { *v = append(*v, *s)}
+	case "secondary":
+		if s := errHandle(Whois("monitor")); s != nil { *v = append(*v, *s)}
+		if s := errHandle(Whois("primary")); s != nil { *v = append(*v, *s)}
+	}
+	
 	return nil
 }
 
@@ -352,9 +349,21 @@ func rpcClient(conn string) (*rpc.Client, error) {
 	select {
 	  case err := <-c:
 	    return client, err
-	  case <-time.After(15 * time.Second):
+	  case <-time.After(2 * time.Second):
 	    return nil, errors.New("Timeout Waiting for rpc.Dial")
 	}
+}
+
+func getConn(role string) string {
+	switch role {
+	case "monitor":
+		return conf.Monitor
+	case "primary":
+		return conf.Primary
+	case "secondary":
+		return conf.Secondary
+	}
+	return ""
 }
 
 // get retrieves a Status from scribble by 'role'

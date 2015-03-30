@@ -77,7 +77,7 @@ func waitForClusterFull() {
 			return
 		}
 
-		log.Info("[decision] waiting for members (cluster(%d), list(%d))\n", len(c), len(list.Members()))
+		log.Info("[decision] waiting for members (cluster(%d))\n", len(c))
 		time.Sleep(time.Second)
 	}
 }
@@ -147,7 +147,7 @@ func clusterChanges() bool {
 	}
 	if len(lastKnownCluster) != len(c) {
 		log.Debug("[decision] The cluster size changed from %d to %d", len(lastKnownCluster), len(c))
-		lastKnownCluster = Cluster()
+		lastKnownCluster = c
 		log.Info(str)
 		return true
 	}
@@ -155,13 +155,13 @@ func clusterChanges() bool {
 		remote, err := Whois(member.CRole)
 		if err != nil {
 			log.Debug("[decision] The remote member died while i was trying to pull its updates")
-			lastKnownCluster = Cluster()
+			lastKnownCluster = c
 			log.Info(str)
 			return true
 		}
 		if member.DBRole != remote.DBRole {
 			log.Debug("[decision] The cluster members(%s) role changed from %s to %s", member.CRole, member.DBRole, remote.DBRole)
-			lastKnownCluster = Cluster()
+			lastKnownCluster = c
 			log.Info(str)
 			return true
 		}

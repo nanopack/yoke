@@ -34,8 +34,8 @@ func (c *MemberDemoteCommand) Run(opts []string) {
 	flags.StringVar(&fHost, "host", "localhost", "")
 
 	var fPort string
-	flags.StringVar(&fPort, "p", "4401", "")
-	flags.StringVar(&fPort, "port", "4401", "")
+	flags.StringVar(&fPort, "p", "4400", "")
+	flags.StringVar(&fPort, "port", "4400", "")
 
 	if err := flags.Parse(opts); err != nil {
 		fmt.Println("[cli.MemberDemote.Run] Failed to parse flags!", err)

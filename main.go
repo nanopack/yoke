@@ -16,7 +16,6 @@ func main() {
 	log.Info("killing old postgres if there is one")
 	killOldPostgres()
 
-	handle(ClusterStart())
 	handle(StatusStart())
 	handle(DecisionStart())
 	handle(ActionStart())

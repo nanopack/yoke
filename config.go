@@ -2,9 +2,9 @@ package main
 
 import (
 	"os"
+	"net"
 	"strconv"
 	"strings"
-
 	"github.com/jcelliott/lumber"
 	"github.com/vaughan0/go-ini"
 )
@@ -17,7 +17,9 @@ type Config struct {
 	AdvertiseIp       string
 	AdvertisePort     int
 	PGPort            int
-	Peers             []string
+	Monitor   				string
+	Primary   				string
+	Secondary 				string
 	DataDir           string
 	StatusDir         string
 	SyncCommand       string
@@ -48,10 +50,8 @@ func init() {
 
 	//
 	conf = Config{
-		Role:            "monitor",
 		AdvertisePort:   4400,
 		PGPort:          5432,
-		Peers:           []string{},
 		DataDir:         "/data/",
 		StatusDir:       "./status/",
 		SyncCommand:     "rsync -a --delete {{local_dir}} {{slave_ip}}:{{slave_dir}}",
@@ -73,9 +73,6 @@ func init() {
 
 	// no conversion required for strings.
 	if role, ok := file.Get("config", "role"); ok {
-		if role != "monitor" && role != "primary" && role != "secondary" {
-			panic("That Role is NOT OK!")
-		}
 		conf.Role = role
 	}
 
@@ -90,6 +87,16 @@ func init() {
 
 	if sDir, ok := file.Get("config", "status_dir"); ok {
 		conf.StatusDir = sDir
+	}
+
+	if sMonitor, ok := file.Get("config", "monitor"); ok {
+		conf.Monitor = sMonitor
+	}
+	if sPrimary, ok := file.Get("config", "primary"); ok {
+		conf.Primary = sPrimary
+	}
+	if sSecondary, ok := file.Get("config", "secondary"); ok {
+		conf.Secondary = sSecondary
 	}
 
 	if !strings.HasSuffix(conf.StatusDir, "/") {
@@ -118,16 +125,9 @@ func init() {
 		conf.RoleChangeCommand = rcCommand
 	}
 
-	if conf.AdvertiseIp == "" || conf.AdvertiseIp == "0.0.0.0" {
-		log.Fatal("advertise_ip (" + conf.AdvertiseIp + ") is not a valid ip")
-		log.Close()
-		os.Exit(1)
-	}
-
 	parseInt(&conf.AdvertisePort, file, "config", "advertise_port")
 	parseInt(&conf.PGPort, file, "config", "pg_port")
 	parseInt(&conf.DecisionTimeout, file, "config", "decision_timeout")
-	parseArr(&conf.Peers, file, "config", "peers")
 
 	if logLevel, ok := file.Get("config", "log_level"); ok {
 		switch logLevel {
@@ -145,7 +145,101 @@ func init() {
 			log.Level(lumber.FATAL)
 		}
 	}
+	confirmPeers()
+	confirmRole()
+	confirmAdvertiseIp()
+	confirmAdvertisePort()
 
+}
+
+func confirmPeers() {
+	if conf.Monitor == "" || conf.Primary == "" || conf.Secondary == "" {
+		log.Fatal("I need connection Credentials for monitor, primary and secondary")
+		log.Close()
+		os.Exit(1)
+	}
+}
+
+func confirmRole() {
+	if conf.Role == "" {
+		conf.Role = getRole()
+	}
+	if conf.Role != "monitor" && conf.Role != "primary" && conf.Role != "secondary" {
+		log.Fatal("I could not find the appropriate role (role:'%s').", conf.Role)
+		log.Close()
+		os.Exit(1)
+	}
+
+}
+
+func confirmAdvertiseIp() {
+	if conf.AdvertiseIp == "" || conf.AdvertiseIp == "0.0.0.0" {
+		getAdvertiseData()
+	}
+	if conf.AdvertiseIp == "" || conf.AdvertiseIp == "0.0.0.0" {
+		log.Fatal("I could not find the appropriate AdvertiseIP (ip:'%s').", conf.AdvertiseIp)
+		log.Close()
+		os.Exit(1)
+	}
+}
+
+func confirmAdvertisePort() {
+	if conf.AdvertisePort == 0 {
+		log.Fatal("I could not find the appropriate Port to listen on (port:'0').")
+		log.Close()
+		os.Exit(1)
+	}
+}
+
+
+func getRole() string {
+	ifaces, err := net.Interfaces()
+	if err != nil {
+		return ""
+	}
+	// handle err
+	for _, i := range ifaces {
+    addrs, _ := i.Addrs()
+    // handle err
+    for _, addr := range addrs {
+    	str := strings.Split(addr.String(), "/")[0]
+      switch {
+      case strings.HasPrefix(conf.Monitor, str):
+        return "monitor"
+      case strings.HasPrefix(conf.Primary, str):
+        return "primary"
+      case strings.HasPrefix(conf.Monitor, str):
+        return "secondary"
+      }
+    }
+	}
+	return ""
+}
+
+func getAdvertiseData() {
+	if conf.AdvertiseIp == "" || conf.AdvertiseIp == "0.0.0.0" || conf.AdvertisePort == 0 {
+		log.Info(conf.AdvertiseIp)
+		var self string
+		switch conf.Role {
+		case "monitor":
+			self = conf.Monitor
+		case "primary":
+			self = conf.Primary
+		case "secondary":
+			self = conf.Secondary
+		}
+		log.Info(self)
+		connArr := strings.Split(self, ":")
+		if len(connArr) == 2 {
+			conf.AdvertiseIp = connArr[0]
+
+			i, err := strconv.ParseInt(connArr[1], 10, 64)
+			if err == nil {
+				conf.AdvertisePort = int(i)
+			}
+		}
+
+	}	
 }
 
 //
