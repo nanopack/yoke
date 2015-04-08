@@ -10,13 +10,13 @@
 package main
 
 import (
+	"errors"
 	"fmt"
+	"github.com/nanobox-core/scribble"
 	"net"
 	"net/rpc"
 	"os"
 	"time"
-	"github.com/nanobox-core/scribble"
-	"errors"
 )
 
 // Status represents the Status of a node in the cluser
@@ -82,7 +82,7 @@ func StatusStart() error {
 	fmt.Printf("[(%s) status] Starting RPC server... ", status.CRole)
 
 	// fire up an RPC (tcp) server
-	l, err := net.Listen("tcp", fmt.Sprintf(":%d",conf.AdvertisePort))
+	l, err := net.Listen("tcp", fmt.Sprintf(":%d", conf.AdvertisePort))
 	if err != nil {
 		log.Error("[(%s) status] Unable to start server!\n%s\n", status.CRole, err)
 		return err
@@ -142,7 +142,7 @@ func Whois(role string) (*Status, error) {
 
 	conn := getConn(role)
 	if conn == "" {
-		return nil, errors.New("I could not find a connection string for role("+role+")")
+		return nil, errors.New("I could not find a connection string for role(" + role + ")")
 	}
 
 	log.Debug("[(%s) status.Whois] connection - %s", status.CRole, conn)
@@ -161,21 +161,16 @@ func Whois(role string) (*Status, error) {
 
 	//
 	c := make(chan error, 1)
-	go func() { c <- client.Call("Status.RPCEnsureWhois", status.CRole, reply) } ()
+	go func() { c <- client.Call("Status.RPCEnsureWhois", status.CRole, reply) }()
 	select {
-	  case err := <-c:
-	  	if err != nil {
-	  		return nil, err
-	  	}
-	    return reply, err
-	  case <-time.After(15 * time.Second):
-	    return nil, errors.New("Timeout waiting for method call")
+	case err := <-c:
+		if err != nil {
+			return nil, err
+		}
+		return reply, err
+	case <-time.After(15 * time.Second):
+		return nil, errors.New("Timeout waiting for method call")
 	}
-
-	// if err := client.Call("Status.RPCEnsureWhois", status.CRole, reply); err != nil {
-	// 	log.Error("[(%s) status.Whois] RPC Client unable to call!\n%s", status.CRole, err)
-	// 	return nil, err
-	// }
 
 	return reply, nil
 }
@@ -201,13 +196,48 @@ func Whoisnot(not string) (*Status, error) {
 
 // Cluster iterates over all the nodes in member list, running a Whois(), and
 // storing each corresponding Status into a slice and returning the collection
-func Cluster() []Status {
-	log.Debug("[(%s) status.Cluster] Retrieving cluster stats...", status.CRole)
-
+func Cluster(who ...string) []Status {
 	var members = &[]Status{}
 
-	if err := status.RPCCluster(conf.Role, members); err != nil {
-		return []Status{}
+	if len(who) == 0 {
+		log.Debug("[(%s) status.Cluster] Retrieving cluster stats (local)...", status.CRole)
+
+		if err := status.RPCCluster(conf.Role, members); err != nil {
+			log.Error("[(%s) status.Cluster] Retrieving cluster stats (%s)", status.CRole, err.Error())
+		}
+		return *members
+	}
+
+	for _, role := range who {
+
+		conn := getConn(role)
+		if conn == "" {
+			continue
+		}
+		log.Debug("[(%s) status.Cluster] connection - %s", status.CRole, conn)
+
+		// create an RPC client that will connect to the matching node
+		client, err := rpcClient(conn)
+		if err != nil {
+			log.Error("[(%s) status.Cluster] RPC Client unable to dial!\n%s", status.CRole, err)
+			continue
+		}
+		//
+		defer client.Close()
+
+		//
+		membs := &[]Status{}
+		c := make(chan error, 1)
+		go func() { c <- client.Call("Status.RPCCluster", status.CRole, membs) }()
+		select {
+		case err := <-c:
+			if err != nil {
+				continue
+			}
+			*members = append(*members, *membs...)
+		case <-time.After(30 * time.Second):
+			continue
+		}
 	}
 
 	return *members
@@ -248,7 +278,7 @@ func (s *Status) RPCEnsureWhois(asking string, v *Status) error {
 
 	conn := getConn(asking)
 	if conn == "" {
-		return errors.New("I could not find a connection string for role("+asking+")")
+		return errors.New("I could not find a connection string for role(" + asking + ")")
 	}
 
 	log.Debug("[(%s) status.RPCEnsureWhois] connection - %s", status.CRole, conn)
@@ -266,15 +296,15 @@ func (s *Status) RPCEnsureWhois(asking string, v *Status) error {
 	tmp := &Status{}
 	// 'pingback' to the requesting node to ensure duplex communication
 	c := make(chan error, 1)
-	go func() { c <- client.Call("Status.RPCWhois", status.CRole, tmp) } ()
+	go func() { c <- client.Call("Status.RPCWhois", status.CRole, tmp) }()
 	select {
-	  case err := <-c:
-	  	if err != nil {
-	  		return err
-	  	}
-	  	return s.RPCWhois(asking, v)
-	  case <-time.After(10 * time.Second):
-	    return errors.New("Timeout waiting for method RPCWhois")
+	case err := <-c:
+		if err != nil {
+			return err
+		}
+		return s.RPCWhois(asking, v)
+	case <-time.After(10 * time.Second):
+		return errors.New("Timeout waiting for method RPCWhois")
 	}
 
 	// if err := client.Call("Status.RPCWhois", asking, tmp); err != nil {
@@ -315,16 +345,28 @@ func (s *Status) RPCCluster(source string, v *[]Status) error {
 	*v = append(*v, *s)
 	switch self.CRole {
 	case "monitor":
-		if s := errHandle(Whois("primary")); s != nil { *v = append(*v, *s)}
-		if s := errHandle(Whois("secondary")); s != nil { *v = append(*v, *s)}
+		if s := errHandle(Whois("primary")); s != nil {
+			*v = append(*v, *s)
+		}
+		if s := errHandle(Whois("secondary")); s != nil {
+			*v = append(*v, *s)
+		}
 	case "primary":
-		if s := errHandle(Whois("monitor")); s != nil { *v = append(*v, *s)}
-		if s := errHandle(Whois("secondary")); s != nil { *v = append(*v, *s)}
+		if s := errHandle(Whois("monitor")); s != nil {
+			*v = append(*v, *s)
+		}
+		if s := errHandle(Whois("secondary")); s != nil {
+			*v = append(*v, *s)
+		}
 	case "secondary":
-		if s := errHandle(Whois("monitor")); s != nil { *v = append(*v, *s)}
-		if s := errHandle(Whois("primary")); s != nil { *v = append(*v, *s)}
+		if s := errHandle(Whois("monitor")); s != nil {
+			*v = append(*v, *s)
+		}
+		if s := errHandle(Whois("primary")); s != nil {
+			*v = append(*v, *s)
+		}
 	}
-	
+
 	return nil
 }
 
@@ -344,13 +386,13 @@ func rpcClient(conn string) (*rpc.Client, error) {
 
 	go func() {
 		client, err = rpc.Dial("tcp", conn)
-	  c <- err
-	 }()
+		c <- err
+	}()
 	select {
-	  case err := <-c:
-	    return client, err
-	  case <-time.After(2 * time.Second):
-	    return nil, errors.New("Timeout Waiting for rpc.Dial")
+	case err := <-c:
+		return client, err
+	case <-time.After(2 * time.Second):
+		return nil, errors.New("Timeout Waiting for rpc.Dial")
 	}
 }
 

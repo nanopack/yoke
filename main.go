@@ -5,8 +5,8 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
-	"syscall"
 	"runtime"
+	"syscall"
 )
 
 //

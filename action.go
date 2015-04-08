@@ -119,7 +119,8 @@ func startMaster() {
 	sc := exec.Command("bash", "-c", sync) // cmd[0], cmd[1:]...)
 	sc.Stdout = Piper{"[sync.stdout]"}
 	sc.Stderr = Piper{"[sync.stderr]"}
-	log.Debug("[action] running sync (%s)", sync)
+	log.Info("[action] running sync")
+	log.Debug("[action] sync command(%s)", sync)
 
 	if err = sc.Run(); err != nil {
 		log.Error("[action] sync failed.")
@@ -222,7 +223,7 @@ func startSlave() {
 			break
 		}
 		time.Sleep(time.Second)
-	}	
+	}
 	status.SetState("(slave)running")
 }
 

@@ -1,12 +1,12 @@
 package main
 
 import (
-	"os"
-	"net"
-	"strconv"
-	"strings"
 	"github.com/jcelliott/lumber"
 	"github.com/vaughan0/go-ini"
+	"net"
+	"os"
+	"strconv"
+	"strings"
 )
 
 // Config is the struct of all global configuration data
@@ -17,9 +17,9 @@ type Config struct {
 	AdvertiseIp       string
 	AdvertisePort     int
 	PGPort            int
-	Monitor   				string
-	Primary   				string
-	Secondary 				string
+	Monitor           string
+	Primary           string
+	Secondary         string
 	DataDir           string
 	StatusDir         string
 	SyncCommand       string
@@ -169,7 +169,6 @@ func confirmRole() {
 		log.Close()
 		os.Exit(1)
 	}
-
 }
 
 func confirmAdvertiseIp() {
@@ -191,7 +190,6 @@ func confirmAdvertisePort() {
 	}
 }
 
-
 func getRole() string {
 	ifaces, err := net.Interfaces()
 	if err != nil {
@@ -199,19 +197,19 @@ func getRole() string {
 	}
 	// handle err
 	for _, i := range ifaces {
-    addrs, _ := i.Addrs()
-    // handle err
-    for _, addr := range addrs {
-    	str := strings.Split(addr.String(), "/")[0]
-      switch {
-      case strings.HasPrefix(conf.Monitor, str):
-        return "monitor"
-      case strings.HasPrefix(conf.Primary, str):
-        return "primary"
-      case strings.HasPrefix(conf.Monitor, str):
-        return "secondary"
-      }
-    }
+		addrs, _ := i.Addrs()
+		// handle err
+		for _, addr := range addrs {
+			str := strings.Split(addr.String(), "/")[0]
+			switch {
+			case strings.HasPrefix(conf.Monitor, str):
+				return "monitor"
+			case strings.HasPrefix(conf.Primary, str):
+				return "primary"
+			case strings.HasPrefix(conf.Monitor, str):
+				return "secondary"
+			}
+		}
 	}
 	return ""
 }
@@ -239,7 +237,7 @@ func getAdvertiseData() {
 			}
 		}
 
-	}	
+	}
 }
 
 //
