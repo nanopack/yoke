@@ -14,11 +14,11 @@ Description:
   Prints help text for entire CLI
 
 Usage:
-  cli
-  cli help
-  cli --help
+  yokeadm
+  yokeadm help
+  yokeadm --help
 
-  ex. cli help
+  ex. yokeadm help
   `)
 }
 
@@ -34,7 +34,7 @@ Description:
   about that command.
 
 Usage:
-  cli (<COMMAND>:<ACTION> OR <ALIAS>) [GLOBAL FLAG] <POSITIONAL> [SUB FLAGS]
+  yokeadm (<COMMAND>:<ACTION> OR <ALIAS>) [GLOBAL FLAG] <POSITIONAL> [SUB FLAGS]
 
 Options:
   help, --help
