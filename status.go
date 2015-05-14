@@ -12,7 +12,7 @@ package main
 import (
 	"errors"
 	"fmt"
-	"github.com/nanobox-core/scribble"
+	"github.com/pagodabox/golang-scribble"
 	"net"
 	"net/rpc"
 	"os"
@@ -42,7 +42,11 @@ func StatusStart() error {
 	var err error
 
 	// create a new scribble store
-	store = scribble.New(conf.StatusDir, log)
+	store, err = scribble.New(conf.StatusDir, log)
+	if err != nil {
+		log.Fatal("[(%s) status.StatusStart] Failed to create scribble.Driver. Exiting... %s", conf.Role, err)
+	}
+
 	status = &Status{}
 
 	// determine if the current node already has a record in scribble
@@ -412,7 +416,7 @@ func getConn(role string) string {
 func get(role string, v *Status) error {
 	log.Debug("[(%s) status.get] Attempting to get node '%s'", status.CRole, role)
 
-	t := scribble.Transaction{Operation: "read", Collection: "cluster", RecordID: role, Container: &v}
+	t := scribble.Transaction{Action: "read", Collection: "cluster", ResourceID: role, Container: &v}
 	if err := store.Transact(t); err != nil {
 		return err
 	}
@@ -424,7 +428,7 @@ func get(role string, v *Status) error {
 func save(v *Status) error {
 	log.Debug("[(%s) status.save] Attempting to save node '%s'", status.CRole, status.CRole)
 
-	t := scribble.Transaction{Operation: "write", Collection: "cluster", RecordID: status.CRole, Container: &v}
+	t := scribble.Transaction{Action: "write", Collection: "cluster", ResourceID: status.CRole, Container: &v}
 	if err := store.Transact(t); err != nil {
 		return err
 	}

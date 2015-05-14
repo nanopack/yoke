@@ -44,19 +44,19 @@ Once all configurations are in place, to start yoke simply run:
 NOTE: The file can be named anything, and reside anywhere, all yoke needs is the /path/to/config.ini on startup
 
 
-### CLI
+### YOKEADM
 
 Yoke comes with its own CLI that allows for limited introspection into the cluster.
 
 Building the CLI:
 
-- cd ./cli
+- cd ./yokeadm
 - go build
-- ./cli
+- ./yokeadm
 
 Usage:
 
-    cli (<COMMAND>:<ACTION> OR <ALIAS>) [GLOBAL FLAG] <POSITIONAL> [SUB FLAGS]
+    yokeadm (<COMMAND>:<ACTION> OR <ALIAS>) [GLOBAL FLAG] <POSITIONAL> [SUB FLAGS]
 
 Available Commands:
 
