@@ -152,7 +152,7 @@ archive_command = 'exit 0'        # command to use to archive a logfile segment
                                   # e.g. 'test ! -f /mnt/server/archivedir/\%f && cp \%p /mnt/server/archivedir/\%f'
 max_wal_senders = 10              # max number of walsender processes
                                   # (change requires restart)
-wal_keep_segments = 5000          # in logfile segments, 16MB each; 0 disables
+wal_keep_segments = 16          	# in logfile segments, 16MB each; 0 disables
 hot_standby = on                  # "on" allows queries during recovery
                                   # (change requires restart)
 `, opts.listenAddr, conf.PGPort)
