@@ -42,7 +42,6 @@ func configureHBAConf() error {
 	defer f.Close()
 
 	scanner := bufio.NewScanner(f)
-	reFindConfigOption := regexp.MustCompile(`^\s*#?\s*(local|host)\s*(replication)`)
 	entry := ""
 
 	// scan the file line by line to build an 'entry' to be re-written back to the
@@ -56,7 +55,7 @@ func configureHBAConf() error {
 
 		// dont care about submatches, just if the string matches, 'skipping' any lines
 		// that are custom configurations
-		if reFindConfigOption.FindString(scanner.Text()) == "" {
+		if regexp.MustCompile(`^\s*#?\s*(local|host)\s*(replication)`).FindString(scanner.Text()) == "" {
 			entry += fmt.Sprintf("%s\n", scanner.Text())
 		}
 	}
@@ -103,7 +102,6 @@ func configurePGConf(opts pgConfig) error {
 
 	defer f.Close()
 
-	reFindConfigOption := regexp.MustCompile(`^\s*#?\s*(listen_addresses|port|wal_level|archive_mode|archive_command|max_wal_senders|wal_keep_segments|hot_standby|synchronous_standby_names)\s*=\s*`)
 	scanner := bufio.NewScanner(f)
 	entry := ""
 
@@ -111,7 +109,7 @@ func configurePGConf(opts pgConfig) error {
 	// file, skipping ('removing') any lines that need to be manually configured
 	for scanner.Scan() {
 
-		submatch := reFindConfigOption.FindStringSubmatch(scanner.Text())
+		submatch := regexp.MustCompile(`^\s*#?\s*(listen_addresses|port|wal_level|archive_mode|archive_command|max_wal_senders|wal_keep_segments|hot_standby|synchronous_standby_names)\s*=\s*`).FindStringSubmatch(scanner.Text())
 
 		// stop scanning if a special prefix is encountered. This ensures there are
 		// no duplicate Pagoda Box comment blocks

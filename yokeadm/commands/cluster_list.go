@@ -74,8 +74,6 @@ func (c *ClusterListCommand) Run(opts []string) {
 		os.Exit(1)
 	}
 
-	reFindErrorBody := regexp.MustCompile(`^\((.*)\)(.*)$`)
-
 	//
 	fmt.Println(`
 Cluster Role |   Cluster IP    |     State     |    Status    |  Postgres Role  |  Postgres Port  |      Last Updated
@@ -85,7 +83,7 @@ Cluster Role |   Cluster IP    |     State     |    Status    |  Postgres Role  
 		state := "--"
 		status := "running"
 
-		subMatch := reFindErrorBody.FindStringSubmatch(member.State)
+		subMatch := regexp.MustCompile(`^\((.*)\)(.*)$`).FindStringSubmatch(member.State)
 		if subMatch != nil {
 			state = subMatch[1]
 			status = subMatch[2]
