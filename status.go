@@ -12,7 +12,7 @@ package main
 import (
 	"errors"
 	"fmt"
-	"github.com/pagodabox/golang-scribble"
+	"github.com/nanobox-io/golang-scribble"
 	"net"
 	"net/rpc"
 	"os"

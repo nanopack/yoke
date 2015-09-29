@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/pagodabox/yoke/yokeadm/commands"
+	"github.com/nanoboxyoke/yokeadm/commands"
 )
 
 //

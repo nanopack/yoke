@@ -65,7 +65,7 @@ Available Commands:
 
 ### Documentation
 
-Complete documentation is available on [godoc](http://godoc.org/github.com/pagodabox-tools/yoke).
+Complete documentation is available on [godoc](http://godoc.org/github.com/nanobox-io/yoke).
 
 
 ### Contributing
