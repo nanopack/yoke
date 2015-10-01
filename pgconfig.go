@@ -35,14 +35,14 @@ func configureHBAConf() error {
 	self := Whoami()
 	other, err := Whoisnot(self.CRole)
 	if err != nil {
-		log.Warn("[pg_config.configureHBAConf] Unable to find another!\n%s\n", err)
+		log.Warn("[pgconfig.configureHBAConf] Unable to find another!\n%s\n", err)
 	}
 
 	// open the pg_hba.conf
 	file := conf.DataDir + "pg_hba.conf"
 	f, err := os.Open(file)
 	if err != nil {
-		log.Error("[pg_config.configureHBAConf] Failed to open '%s'!\n%s\n", file, err)
+		log.Error("[pgconfig.configureHBAConf] Failed to open '%s'!\n%s\n", file, err)
 		return err
 	}
 
@@ -88,7 +88,7 @@ host    replication     %s        %s/32            trust`, SystemUser(), other.I
 	// write the 'entry' to the file
 	err = ioutil.WriteFile(file, []byte(entry), 0644)
 	if err != nil {
-		log.Error("[pg_config.configureHBAConf] Failed to write to '%s'!\n%s\n", file, err)
+		log.Error("[pgconfig.configureHBAConf] Failed to write to '%s'!\n%s\n", file, err)
 		return err
 	}
 
@@ -176,7 +176,7 @@ synchronous_standby_names = slave # standby servers that provide sync rep
 	// write 'entry' to the file
 	err = ioutil.WriteFile(file, []byte(entry), 0644)
 	if err != nil {
-		log.Error("[pg_config.configurePGConf] Failed to write to '%s'!\n%s\n", file, err)
+		log.Error("[pgconfig.configurePGConf] Failed to write to '%s'!\n%s\n", file, err)
 	}
 
 	return nil
@@ -192,14 +192,14 @@ func createRecovery() error {
 	self := Whoami()
 	other, err := Whoisnot(self.CRole)
 	if err != nil {
-		log.Fatal("[pg_config.createRecovery] Unable to find another... Exiting!\n%s\n", err)
+		log.Fatal("[pgconfig.createRecovery] Unable to find another... Exiting!\n%s\n", err)
 		os.Exit(1)
 	}
 
 	// open/truncate the recover.conf
 	f, err := os.Create(file)
 	if err != nil {
-		log.Error("[pg_config.createRecovery] Failed to create '%s'!\n%s\n", file, err)
+		log.Error("[pgconfig.createRecovery] Failed to create '%s'!\n%s\n", file, err)
 		return err
 	}
 
@@ -226,7 +226,7 @@ restore_command = 'exit 0'
 
 	// write 'entry' to the file
 	if _, err := f.WriteString(entry); err != nil {
-		log.Error("[pg_config.createRecovery] Failed to write to '%s'!\n%s\n", file, err)
+		log.Error("[pgconfig.createRecovery] Failed to write to '%s'!\n%s\n", file, err)
 		return err
 	}
 
@@ -242,6 +242,6 @@ func destroyRecovery() {
 	// remove 'recovery.conf'
 	err := os.Remove(file)
 	if err != nil {
-		log.Warn("[pg_config.destroyRecovery] No recovery.conf found at '%s'", file)
+		log.Warn("[pgconfig.destroyRecovery] No recovery.conf found at '%s'", file)
 	}
 }
