@@ -1,7 +1,0 @@
-gom 'github.com/hoisie/mustache'
-gom 'github.com/jcelliott/lumber'
-gom 'github.com/lib/pq'
-gom 'github.com/lib/pq/oid'
-gom 'github.com/nanobox-io/golang-hatchet'
-gom 'github.com/nanobox-io/golang-scribble'
-gom 'github.com/vaughan0/go-ini'
