@@ -1,12 +1,20 @@
+// Copyright (c) 2015 Pagoda Box Inc
+//
+// This Source Code Form is subject to the terms of the Mozilla Public License, v.
+// 2.0. If a copy of the MPL was not distributed with this file, You can obtain one
+// at http://mozilla.org/MPL/2.0/.
+//
+
 package commands
 
 import (
-	"flag"
 	"fmt"
 	"net/rpc"
 	"os"
 	"regexp"
 	"time"
+
+	"github.com/spf13/cobra"
 )
 
 // Status represents the Status of a node in the cluser
@@ -20,55 +28,28 @@ type Status struct {
 	UpdatedAt time.Time // the last time the node state was updated
 }
 
-// ClusterListCommand satisfies the Command interface for listing nodes in yoke
-type ClusterListCommand struct{}
+//
+var clusterListCmd = &cobra.Command{
+	Use:   "list",
+	Short: "Returns status information for all nodes in the cluster",
+	Long:  ``,
 
-// Help prints detailed help text for the cluster list command
-func (c *ClusterListCommand) Help() {
-	fmt.Printf(`
-Description:
-  Returns status information for all nodes in the cluster
-
-Usage:
-  cli list
-  cli cluster:list
-
-  ex. cli list
-  `)
+	Run: clusterList,
 }
 
-// Run displays select information about all of the nodes in a cluster
-func (c *ClusterListCommand) Run(opts []string) {
+// clusterList displays select information about all of the nodes in a cluster
+func clusterList(ccmd *cobra.Command, args []string) {
 
-	// flags
-	flags := flag.NewFlagSet("flags", flag.ContinueOnError)
-	flags.Usage = func() { c.Help() }
-
-	var fHost string
-	flags.StringVar(&fHost, "h", "localhost", "")
-	flags.StringVar(&fHost, "host", "localhost", "")
-
-	var fPort string
-	flags.StringVar(&fPort, "p", "4400", "")
-	flags.StringVar(&fPort, "port", "4400", "")
-
-	if err := flags.Parse(opts); err != nil {
-		fmt.Println("[cli.ClusterList.run] Failed to parse flags!", err)
-	}
-
-	// create an RPC client that will connect to the matching node
+	// create an RPC client that will connect to the designated node
 	client, err := rpc.Dial("tcp", fmt.Sprintf("%s:%s", fHost, fPort))
 	if err != nil {
 		fmt.Println("[cli.ClusterList.run] Failed to dial!", err)
 		os.Exit(1)
 	}
-
-	//
 	defer client.Close()
 
+	// issue a request to the designated node for the status of the cluster
 	var members = &[]Status{}
-
-	//
 	if err := client.Call("Status.RPCCluster", "", members); err != nil {
 		fmt.Println("[cli.ClusterList.run] Failed to call!", err)
 		os.Exit(1)
@@ -83,12 +64,13 @@ Cluster Role |   Cluster IP    |     State     |    Status    |  Postgres Role  
 		state := "--"
 		status := "running"
 
-		subMatch := regexp.MustCompile(`^\((.*)\)(.*)$`).FindStringSubmatch(member.State)
-		if subMatch != nil {
+		//
+		if subMatch := regexp.MustCompile(`^\((.*)\)(.*)$`).FindStringSubmatch(member.State); subMatch != nil {
 			state = subMatch[1]
 			status = subMatch[2]
 		}
 
+		//
 		fmt.Printf("%-12s | %-15s | %-13s | %-12s | %-15s | %-15d | %-25s\n", member.CRole, member.Ip, state, status, member.DBRole, member.PGPort, member.UpdatedAt.Format("01.02.06 (15:04:05) MST"))
 	}
 
