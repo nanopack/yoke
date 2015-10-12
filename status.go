@@ -19,11 +19,12 @@ package main
 import (
 	"errors"
 	"fmt"
-	"github.com/nanobox-io/golang-scribble"
 	"net"
 	"net/rpc"
 	"os"
 	"time"
+
+	"github.com/nanobox-io/golang-scribble"
 )
 
 // Status represents the Status of a node in the cluser
