@@ -423,8 +423,7 @@ func getConn(role string) string {
 func get(role string, v *Status) error {
 	log.Debug("[(%s) status.get] Attempting to get node '%s'", status.CRole, role)
 
-	t := scribble.Transaction{Action: "read", Collection: "cluster", ResourceID: role, Container: &v}
-	if err := store.Transact(t); err != nil {
+	if err := store.Read("/cluster/"+role, &v); err != nil {
 		return err
 	}
 
@@ -435,8 +434,7 @@ func get(role string, v *Status) error {
 func save(v *Status) error {
 	log.Debug("[(%s) status.save] Attempting to save node '%s'", status.CRole, status.CRole)
 
-	t := scribble.Transaction{Action: "write", Collection: "cluster", ResourceID: status.CRole, Container: &v}
-	if err := store.Transact(t); err != nil {
+	if err := store.Write("/cluster", status.CRole, &v); err != nil {
 		return err
 	}
 
