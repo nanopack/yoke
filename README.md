@@ -1,6 +1,6 @@
 ## Yoke
 
-Yoke is a postgres redundancy/auto-failover solution
+Yoke is a postgres redundancy/auto-failover solution written in Go!
 
 
 ### Usage
@@ -30,7 +30,7 @@ Each node in the cluster requires it's own config.ini file with the following op
     [vip]
       ip="1.2.3.4"          # Virtual Ip you would like to use
       add_command           # Command to use when adding the vip. This will be called as {{add_command}} {{vip}}
-      remove_command        # Command to use when removeing the vip. This will be called as {{remove_command}} {{vip}}
+      remove_command        # Command to use when removing the vip. This will be called as {{remove_command}} {{vip}}
 
     [role_change]
       command               # When this nodes role changes we will call the command with the new role as its arguement '{{command}} {{(master|slave|single}))'
