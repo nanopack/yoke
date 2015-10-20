@@ -7,5 +7,4 @@ RUN echo deb http://apt.postgresql.org/pub/repos/apt/ trusty-pgdg main >> /etc/a
     apt-get install -y postgresql-9.4
 
 
-ADD ./yoke /usr/bin
-ADD ./yokeadm/yokeadm /usr/bin
+ADD ./bin /usr/bin
