@@ -7,4 +7,4 @@ RUN echo deb http://apt.postgresql.org/pub/repos/apt/ trusty-pgdg main >> /etc/a
     apt-get install -y postgresql-9.4
 
 
-ADD ./bin /usr/bin
+ADD bin/. /usr/bin
