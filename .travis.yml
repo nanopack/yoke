@@ -9,7 +9,8 @@ services:
   - docker
 
 before_install:
-  - go get  -t .
+  - go get -t .
+  - go get -t ./yokeadm
   - go build
   - go build -o ./yokeadm/yokeadm ./yokeadm
   - docker build -t nanobox/yoke .
