@@ -2,9 +2,9 @@
 
 ## set up three docker containers
 
-docker run -d -v ./test:/conf -p 127.0.0.1:5432:5432 --icc=true --name primary nanobox/yoke yoke /conf/primary.conf
-docker run -d -v ./test:/conf -p 127.0.0.1:5433:5432 --icc=true --name secondary nanobox/yoke yoke /conf/secondary.conf
-docker run -d -v ./test:/conf -p 127.0.0.1:5434:5432 --icc=true --name monitor nanobox/yoke yoke /conf/monitor.conf
+docker run -d -v ./test:/conf -p 127.0.0.1:5432:5432 --name primary nanobox/yoke yoke /conf/primary.conf
+docker run -d -v ./test:/conf -p 127.0.0.1:5433:5432 --name secondary nanobox/yoke yoke /conf/secondary.conf
+docker run -d -v ./test:/conf -p 127.0.0.1:5434:5432 --name monitor nanobox/yoke yoke /conf/monitor.conf
 
 function pass() {
   msg=$1
@@ -26,7 +26,7 @@ function fail() {
 
 # Smart data insertion
 pg_query(){
-  psql -U ${DB_USER} -d ${DB_NAME} -h "$1" -et -c "$2"
+  psql -U ${DB_USER} -d ${DB_NAME} -h 127.0.0.1 -p "$1" -et -c "$2"
 }
 
 # check if server is alive
@@ -34,9 +34,9 @@ ping(){
   pg_query "$1" "SELECT 1 as is_alive"
 }
 
-pass "primary is not alive" ping 127.0.0.1:5432
-pass "secondary is not alive" ping 127.0.0.1:5433
-pass "monitor is not alive" ping 127.0.0.1:5434
+pass "primary is not alive" ping 5432
+pass "secondary is not alive" ping 5433
+pass "monitor is not alive" ping 5434
 
 exit
 
