@@ -11,6 +11,6 @@ ENV PATH $PATH:/usr/lib/postgresql/9.4/bin
 ADD bin/. /usr/bin
 
 RUN mkdir -p /var/lib/postgresql/yoke/data
-RUN chown -r postgres /var/lib/postgresql/yoke
+RUN chown -R postgres /var/lib/postgresql/yoke
 
 RUN su postgres -c "`which initdb` -D /var/lib/postgresql/yoke/data"
