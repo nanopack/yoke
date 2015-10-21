@@ -1,14 +1,42 @@
 #!/usr/bin/env bash
 
 ## set up three docker containers
-UUID1=$(cat /proc/sys/kernel/random/uuid)
-UUID2=$(cat /proc/sys/kernel/random/uuid)
-UUID3=$(cat /proc/sys/kernel/random/uuid)
 
-docker run -d -v ./test:/conf --name $UUID1 nanobox/yoke yoke /conf/primary.conf
-docker run -d -v ./test:/conf --name $UUID2 nanobox/yoke yoke /conf/secondary.conf
-docker run -d -v ./test:/conf --name $UUID3 nanobox/yoke yoke /conf/monitor.conf
+docker run -d -v ./test:/conf -p 127.0.0.1:5432:5432 --icc=true --name primary nanobox/yoke yoke /conf/primary.conf
+docker run -d -v ./test:/conf -p 127.0.0.1:5433:5432 --icc=true --name secondary nanobox/yoke yoke /conf/secondary.conf
+docker run -d -v ./test:/conf -p 127.0.0.1:5434:5432 --icc=true --name monitor nanobox/yoke yoke /conf/monitor.conf
 
+function pass() {
+  msg=$1
+  shift
+  if ! "$@"; then
+    echo $msg
+    exit 1
+  fi
+}
+
+function fail() {
+  msg=$1
+  shift
+  if "$@"; then
+    echo $msg
+    exit 1
+  fi
+}
+
+# Smart data insertion
+pg_query(){
+  psql -U ${DB_USER} -d ${DB_NAME} -h "$1" -et -c "$2"
+}
+
+# check if server is alive
+ping(){
+  pg_query "$1" "SELECT 1 as is_alive"
+}
+
+pass "primary is not alive" ping 127.0.0.1:5432
+pass "secondary is not alive" ping 127.0.0.1:5433
+pass "monitor is not alive" ping 127.0.0.1:5434
 
 exit
 
@@ -31,17 +59,6 @@ YKILL_SLEEP=120
 LOGFILE='/var/tmp/data-test.log'
 #########################################
 CREATEDB="CREATE DATABASE ${DB_NAME} WITH TEMPLATE = template0 OWNER = ${DB_USER};\n\\\connect ${DB_NAME}\nCREATE TABLE buckets (    id uuid NOT NULL,    name character varying(100) NOT NULL,    user_id uuid NOT NULL);\nCREATE TABLE objects (    id uuid NOT NULL,    alias character varying(255) NOT NULL,    size bigint,    bucket_id uuid NOT NULL);\nCREATE TABLE users (    id uuid NOT NULL,    key character(10) NOT NULL,    admin boolean DEFAULT false,    maxsize bigint DEFAULT 0);\nALTER TABLE ONLY buckets    ADD CONSTRAINT buckets_pkey PRIMARY KEY (id);\nALTER TABLE ONLY buckets    ADD CONSTRAINT buckets_user_id_name_key UNIQUE (user_id, name);\nALTER TABLE ONLY objects    ADD CONSTRAINT objects_bucket_id_alias_key UNIQUE (bucket_id, alias);\nALTER TABLE ONLY objects    ADD CONSTRAINT objects_pkey PRIMARY KEY (id);\nALTER TABLE ONLY users    ADD CONSTRAINT users_pkey PRIMARY KEY (id);\nALTER TABLE ONLY buckets    ADD CONSTRAINT buckets_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id);\nALTER TABLE ONLY objects    ADD CONSTRAINT objects_bucket_id_fkey FOREIGN KEY (bucket_id) REFERENCES buckets(id);\n"
-
-# Smart data insertion
-pg_query(){
-  psql -U ${DB_USER} -d ${DB_NAME} -h ${DB_HOST} -et -c "${1}"
-
-  # If insert failed, try again
-  while [[ $? -ne 0 ]]; do
-    sleep ${LONG_SLEEP}
-    psql -U ${DB_USER} -d ${DB_NAME} -h ${DB_HOST} -et -c "${1}"
-  done;
-}
 
 # Start chaos monkeys
 start_monkeys(){
