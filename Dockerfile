@@ -12,4 +12,4 @@ ADD bin/. /usr/bin
 
 RUN mkdir -p /var/lib/postgresql/yoke/data
 
-RUN su postgres -c "initdb -D /var/lib/postgresql/yoke/data"
+RUN su postgres -c "`which initdb` -D /var/lib/postgresql/yoke/data"
