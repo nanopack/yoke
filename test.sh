@@ -6,6 +6,15 @@ docker run -d -v ./test:/conf -p 127.0.0.1:5432:5432 --name primary nanobox/yoke
 docker run -d -v ./test:/conf -p 127.0.0.1:5433:5432 --name secondary nanobox/yoke yoke /conf/secondary.conf
 docker run -d -v ./test:/conf -p 127.0.0.1:5434:5432 --name monitor nanobox/yoke yoke /conf/monitor.conf
 
+
+#########################################
+# Configuration
+#########################################
+DB_USER='postgres'
+DB_NAME='datatest'
+#########################################
+
+
 function pass() {
   msg=$1
   shift
@@ -40,14 +49,6 @@ pass "monitor is not alive" ping 5434
 
 exit
 
-
-
-#########################################
-# Configuration
-#########################################
-DB_HOST='192.168.2.100'
-DB_USER='postgres'
-DB_NAME='datatest'
 NUM_USER=10
 NUM_BCKT=10
 NUM_OBJ=50
@@ -57,7 +58,7 @@ PGKILL_SLEEP=45
 PGKILL_SIGNAL='SIGINT'
 YKILL_SLEEP=120
 LOGFILE='/var/tmp/data-test.log'
-#########################################
+
 CREATEDB="CREATE DATABASE ${DB_NAME} WITH TEMPLATE = template0 OWNER = ${DB_USER};\n\\\connect ${DB_NAME}\nCREATE TABLE buckets (    id uuid NOT NULL,    name character varying(100) NOT NULL,    user_id uuid NOT NULL);\nCREATE TABLE objects (    id uuid NOT NULL,    alias character varying(255) NOT NULL,    size bigint,    bucket_id uuid NOT NULL);\nCREATE TABLE users (    id uuid NOT NULL,    key character(10) NOT NULL,    admin boolean DEFAULT false,    maxsize bigint DEFAULT 0);\nALTER TABLE ONLY buckets    ADD CONSTRAINT buckets_pkey PRIMARY KEY (id);\nALTER TABLE ONLY buckets    ADD CONSTRAINT buckets_user_id_name_key UNIQUE (user_id, name);\nALTER TABLE ONLY objects    ADD CONSTRAINT objects_bucket_id_alias_key UNIQUE (bucket_id, alias);\nALTER TABLE ONLY objects    ADD CONSTRAINT objects_pkey PRIMARY KEY (id);\nALTER TABLE ONLY users    ADD CONSTRAINT users_pkey PRIMARY KEY (id);\nALTER TABLE ONLY buckets    ADD CONSTRAINT buckets_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id);\nALTER TABLE ONLY objects    ADD CONSTRAINT objects_bucket_id_fkey FOREIGN KEY (bucket_id) REFERENCES buckets(id);\n"
 
 # Start chaos monkeys
