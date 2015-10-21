@@ -8,3 +8,7 @@ RUN echo deb http://apt.postgresql.org/pub/repos/apt/ trusty-pgdg main >> /etc/a
 
 
 ADD bin/. /usr/bin
+
+RUN mkdir -p /var/lib/postgresql/yoke/data
+
+RUN initdb -D /var/lib/postgresql/yoke/data
