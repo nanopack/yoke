@@ -43,9 +43,11 @@ ping(){
   pg_query "$1" "SELECT 1 as is_alive"
 }
 
-pass "primary is not alive" ping 5432
-pass "secondary is not alive" ping 5433
-pass "monitor is not alive" ping 5434
+docker exec primary yokeadm
+
+pass "primary is not alive" ping 5433
+pass "secondary is not alive" ping 5434
+pass "monitor is not alive" ping 5435
 
 exit
 
