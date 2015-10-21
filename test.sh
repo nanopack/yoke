@@ -2,16 +2,16 @@
 
 ## set up three docker containers
 
-docker run -d -v ./test:/conf -p 127.0.0.1:5432:5432 --name primary nanobox/yoke yoke /conf/primary.conf
-docker run -d -v ./test:/conf -p 127.0.0.1:5433:5432 --name secondary nanobox/yoke yoke /conf/secondary.conf
-docker run -d -v ./test:/conf -p 127.0.0.1:5434:5432 --name monitor nanobox/yoke yoke /conf/monitor.conf
+docker run -d -v ./test:/conf -p 127.0.0.1:5433:5432 --name primary nanobox/yoke yoke /conf/primary.conf
+docker run -d -v ./test:/conf -p 127.0.0.1:5434:5432 --name secondary nanobox/yoke yoke /conf/secondary.conf
+docker run -d -v ./test:/conf -p 127.0.0.1:5435:5432 --name monitor nanobox/yoke yoke /conf/monitor.conf
 
 
 #########################################
 # Configuration
 #########################################
 DB_USER='postgres'
-DB_NAME='datatest'
+DB_NAME='postgres'
 #########################################
 
 
