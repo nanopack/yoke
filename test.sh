@@ -2,10 +2,30 @@
 
 ## set up three docker containers
 
-docker run -d -v ./test:/conf -p 127.0.0.1:5433:5432 --name primary nanobox/yoke yoke /conf/primary.conf
-docker run -d -v ./test:/conf -p 127.0.0.1:5434:5432 --name secondary nanobox/yoke yoke /conf/secondary.conf
-docker run -d -v ./test:/conf -p 127.0.0.1:5435:5432 --name monitor nanobox/yoke yoke /conf/monitor.conf
+docker run -d -p 127.0.0.1:5433:5432 --name primary nanobox/yoke sleep 3600
+docker run -d -p 127.0.0.1:5434:5432 --name secondary nanobox/yoke sleep 3600
+docker run -d -p 127.0.0.1:5435:5432 --name monitor nanobox/yoke sleep 3600
 
+IP_PRIMARY=`docker inspect primary | grep IPAddress | awk '{print $2}' | tr -d '",n' | head -n 1`
+IP_SECONDARY=`docker inspect secondary | grep IPAddress | awk '{print $2}' | tr -d '",n' | head -n 1`
+IP_MONITOR=`docker inspect monitor | grep IPAddress | awk '{print $2}' | tr -d '",n' | head -n 1`
+
+for PAIR in primary:$IP_PRIMARY secondary:$IP_SECONDARY monitor:$IP_MONITOR; do
+  IFS=':' read -r NODE IP <<< $PAIR
+  docker exec $NODE "cat >> /var/lib/postgresql/yoke/conf/$NODE.conf" <<EOF
+  advertise_ip=${IP}
+  primary=${IP_PRIMARY}:4401
+  secondary=${IP_SECONDARY}:4402
+  monitor=${IP_MONITOR}:4403
+  peers=${IP_PRIMARY}:4401,${IP_SECONDARY}:4402,${IP_MONITOR}:4403
+EOF
+done
+
+docker exec -d primary yoke /var/lib/postgresql/yoke/conf/primary.conf
+docker exec -d secondary yoke /var/lib/postgresql/yoke/conf/secondary.conf
+docker exec -d monitor yoke /var/lib/postgresql/yoke/conf/monitor.conf
+
+docker ps
 
 #########################################
 # Configuration
@@ -42,9 +62,6 @@ pg_query(){
 ping(){
   pg_query "$1" "SELECT 1 as is_alive"
 }
-
-docker ps
-docker exec primary yokeadm
 
 pass "primary is not alive" ping 5433
 pass "secondary is not alive" ping 5434
