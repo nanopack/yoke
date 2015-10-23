@@ -129,6 +129,8 @@ func TestOtherDead(test *testing.T) {
 	arbiter.EXPECT().Bounce(other).Return(bounce)
 	bounce.EXPECT().GetDBRole().Return("dead", nil)
 
+	me.EXPECT().GetDBRole().Return("active", nil)
+
 	me.EXPECT().SetDBRole("single")
 	perform.EXPECT().TransitionToSingle(me)
 

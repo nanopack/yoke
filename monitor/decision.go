@@ -136,6 +136,13 @@ func (decider decider) ReCheck() error {
 		decider.me.SetDBRole("backup")
 		decider.performer.TransitionToBackupOf(decider.me, decider.other)
 	case "dead":
+		DBrole, err := decider.me.GetDBRole()
+		if err != nil {
+			return err
+		}
+		if DBrole == "backup" {
+			return ClusterUnaviable
+		}
 		decider.me.SetDBRole("single")
 		decider.performer.TransitionToSingle(decider.me)
 	case "initialized":
