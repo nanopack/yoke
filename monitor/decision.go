@@ -128,7 +128,7 @@ func (decider decider) ReCheck() error {
 		}
 	}
 
-	// we need to handle multiple possible stats that the remote node is in
+	// we need to handle multiple possible states that the remote node is in
 	switch otherDBRole {
 	case "single":
 		fallthrough
