@@ -111,6 +111,17 @@ func (_mr *_MockCandidateRecorder) GetRole() *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "GetRole")
 }
 
+func (_m *MockCandidate) HasSynced() (bool, error) {
+	ret := _m.ctrl.Call(_m, "HasSynced")
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+func (_mr *_MockCandidateRecorder) HasSynced() *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "HasSynced")
+}
+
 func (_m *MockCandidate) Ready() {
 	_m.ctrl.Call(_m, "Ready")
 }

@@ -33,6 +33,7 @@ type (
 		Monitor
 		GetDBRole() (string, error)
 		SetDBRole(string) error
+		HasSynced() (bool, error)
 	}
 
 	Performer interface {
@@ -140,7 +141,12 @@ func (decider decider) ReCheck() error {
 		if err != nil {
 			return err
 		}
-		if DBrole == "backup" {
+		hasSynced, err := decider.me.HasSynced()
+		if err != nil {
+			return err
+		}
+		if DBrole == "backup" && !hasSynced {
+			decider.performer.Stop()
 			return ClusterUnaviable
 		}
 		decider.me.SetDBRole("single")

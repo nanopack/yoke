@@ -130,6 +130,7 @@ func TestOtherDead(test *testing.T) {
 	bounce.EXPECT().GetDBRole().Return("dead", nil)
 
 	me.EXPECT().GetDBRole().Return("active", nil)
+	me.EXPECT().HasSynced().Return(true, nil)
 
 	me.EXPECT().SetDBRole("single")
 	perform.EXPECT().TransitionToSingle(me)
