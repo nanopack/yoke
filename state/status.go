@@ -5,16 +5,7 @@
 // at http://mozilla.org/MPL/2.0/.
 //
 
-// status.go defines a Status struct for each node in the cluster, providing
-// four attributes (CRole, DBRole, State, UpdateAt) as a way of determining each
-// nodes role in the cluster, current state, and the role of the pgqsl running
-// inside each (non-monitor) node.
-//
-// status provides methods for updating the DBRole and State as the clusters
-// environment changes due to outages, and also provides methods of retrieving
-// information about each node in the cluster or about the cluster as a whole.
-
-package main
+package state_test
 
 import (
 	"errors"
@@ -39,8 +30,9 @@ type Status struct {
 }
 
 var (
-	status *Status
-	store  *scribble.Driver
+	Timeout = errors.New("Timeout waiting for method call")
+	status  *Status
+	store   *scribble.Driver
 )
 
 // StatusStart
@@ -173,18 +165,17 @@ func Whois(role string) (*Status, error) {
 
 	//
 	c := make(chan error, 1)
-	go func() { c <- client.Call("Status.RPCEnsureWhois", status.CRole, reply) }()
-	select {
-	case err := <-c:
-		if err != nil {
-			return nil, err
-		}
-		return reply, err
-	case <-time.After(15 * time.Second):
-		return nil, errors.New("Timeout waiting for method call")
-	}
+	call := client.Go(serviceMethod, status.CRole, reply, nil)
 
-	return reply, nil
+	select {
+	case call = <-call.Done:
+		if call.Error != nil {
+			return nil, call.Error
+		}
+		return reply, nil
+	case <-time.After(15 * time.Second):
+		return nil, Timeout
+	}
 }
 
 // Whoisnot takes a 'role' string and attempts to find the 'other' node that does
