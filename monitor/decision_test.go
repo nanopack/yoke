@@ -130,7 +130,6 @@ func TestOtherDead(test *testing.T) {
 	bounce.EXPECT().GetDBRole().Return("dead", nil)
 
 	me.EXPECT().GetDBRole().Return("active", nil)
-	me.EXPECT().HasSynced().Return(true, nil)
 
 	me.EXPECT().SetDBRole("single")
 	perform.EXPECT().TransitionToSingle(me)
@@ -156,6 +155,92 @@ func TestOtherDeadButSingle(test *testing.T) {
 	bounce.EXPECT().GetDBRole().Return("", errors.New("dead"))
 
 	me.EXPECT().GetDBRole().Return("single", nil)
+
+	monitor.NewDecider(me, other, arbiter, perform)
+}
+
+func TestOtherDeadBackup(test *testing.T) {
+	ctrl := gomock.NewController(test)
+	defer ctrl.Finish()
+
+	me := mock_monitor.NewMockCandidate(ctrl)
+	other := mock_monitor.NewMockCandidate(ctrl)
+	bounce := mock_monitor.NewMockCandidate(ctrl)
+	arbiter := mock_monitor.NewMockMonitor(ctrl)
+	perform := mock_monitor.NewMockPerformer(ctrl)
+
+	other.EXPECT().Ready()
+	arbiter.EXPECT().Ready()
+
+	other.EXPECT().GetDBRole().Return("", errors.New("dead"))
+	arbiter.EXPECT().Bounce(other).Return(bounce)
+	bounce.EXPECT().GetDBRole().Return("dead", nil)
+
+	me.EXPECT().GetDBRole().Return("backup", nil)
+	me.EXPECT().HasSynced().Return(true, nil)
+
+	me.EXPECT().SetDBRole("single")
+	perform.EXPECT().TransitionToSingle(me)
+
+	monitor.NewDecider(me, other, arbiter, perform)
+}
+
+func TestOtherDeadBackupNotSync(test *testing.T) {
+	ctrl := gomock.NewController(test)
+	defer ctrl.Finish()
+
+	me := mock_monitor.NewMockCandidate(ctrl)
+	other := mock_monitor.NewMockCandidate(ctrl)
+	bounce := mock_monitor.NewMockCandidate(ctrl)
+	arbiter := mock_monitor.NewMockMonitor(ctrl)
+	perform := mock_monitor.NewMockPerformer(ctrl)
+
+	other.EXPECT().Ready().Times(2)
+	arbiter.EXPECT().Ready().Times(2)
+
+	other.EXPECT().GetDBRole().Return("", errors.New("dead")).Times(2)
+	arbiter.EXPECT().Bounce(other).Return(bounce).Times(2)
+	bounce.EXPECT().GetDBRole().Return("dead", nil).Times(2)
+
+	me.EXPECT().GetDBRole().Return("backup", nil).Times(2)
+	me.EXPECT().HasSynced().Return(false, nil)
+
+	perform.EXPECT().Stop()
+
+	me.EXPECT().HasSynced().Return(true, nil)
+
+	me.EXPECT().SetDBRole("single")
+	perform.EXPECT().TransitionToSingle(me)
+
+	monitor.NewDecider(me, other, arbiter, perform)
+}
+
+func TestOtherTemporaryDead(test *testing.T) {
+	ctrl := gomock.NewController(test)
+	defer ctrl.Finish()
+
+	me := mock_monitor.NewMockCandidate(ctrl)
+	other := mock_monitor.NewMockCandidate(ctrl)
+	bounce := mock_monitor.NewMockCandidate(ctrl)
+	arbiter := mock_monitor.NewMockMonitor(ctrl)
+	perform := mock_monitor.NewMockPerformer(ctrl)
+
+	other.EXPECT().Ready().Times(2)
+	arbiter.EXPECT().Ready().Times(2)
+
+	other.EXPECT().GetDBRole().Return("", errors.New("dead")).Times(2)
+	arbiter.EXPECT().Bounce(other).Return(bounce).Times(2)
+
+	bounce.EXPECT().GetDBRole().Return("", errors.New("dead"))
+
+	me.EXPECT().GetDBRole().Return("active", nil)
+	perform.EXPECT().Stop()
+
+	bounce.EXPECT().GetDBRole().Return("dead", nil)
+	me.EXPECT().GetDBRole().Return("single", nil)
+
+	me.EXPECT().SetDBRole("single")
+	perform.EXPECT().TransitionToSingle(me)
 
 	monitor.NewDecider(me, other, arbiter, perform)
 }

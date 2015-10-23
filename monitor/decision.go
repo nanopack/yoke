@@ -141,13 +141,17 @@ func (decider decider) ReCheck() error {
 		if err != nil {
 			return err
 		}
-		hasSynced, err := decider.me.HasSynced()
-		if err != nil {
-			return err
-		}
-		if DBrole == "backup" && !hasSynced {
-			decider.performer.Stop()
-			return ClusterUnaviable
+		if DBrole == "backup" {
+			// if this node is not synced up to the previous master, then we must wait for the other node to
+			// come online
+			hasSynced, err := decider.me.HasSynced()
+			if err != nil {
+				return err
+			}
+			if !hasSynced {
+				decider.performer.Stop()
+				return ClusterUnaviable
+			}
 		}
 		decider.me.SetDBRole("single")
 		decider.performer.TransitionToSingle(decider.me)
@@ -164,7 +168,7 @@ func (decider decider) ReCheck() error {
 			decider.me.SetDBRole("backup")
 			decider.performer.TransitionToBackupOf(decider.me, decider.other)
 		}
-	default:
+	case "backup":
 		decider.me.SetDBRole("active")
 		decider.performer.TransitionToActive(decider.me)
 	}
