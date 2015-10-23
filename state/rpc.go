@@ -15,7 +15,8 @@ import (
 )
 
 var (
-	Timeout = errors.New("Timeout")
+	Timeout     = errors.New("Timeout")
+	NotSuported = errors.New("not supported")
 )
 
 type (
@@ -25,8 +26,9 @@ type (
 	}
 
 	remoteState struct {
-		client  *rpc.Client
-		timeout time.Duration
+		client   *rpc.Client
+		timeout  time.Duration
+		location string
 	}
 )
 
@@ -66,8 +68,9 @@ func ConnectToRemoteState(network, address string, timeout time.Duration) (State
 	case res <- clientC:
 		if res.err != nil {
 			remote := remoteState{
-				client:  res.client,
-				timeout: timeout,
+				client:   res.client,
+				timeout:  timeout,
+				location: address, // I still need to store off the network
 			}
 			return remote, res.err
 		}
@@ -77,16 +80,39 @@ func ConnectToRemoteState(network, address string, timeout time.Duration) (State
 	}
 }
 
+func (c remoteState) Ready() {
+	for {
+		if c.client.Call("state.Ready", nil, nil) == nil {
+			break
+		}
+		<-time.After(time.Second)
+	}
+}
+
+func (c remoteState) HasSynced() (bool, error) {
+	var synced bool
+	err := c.client.Call("state.HasSyncedRPC", nil, &synced)
+	return synced, err
+}
+
+func (c remoteState) Location() string {
+	return c.location
+}
+
 func (c remoteState) GetRole() (string, error) {
 	var role string
-	c.client.Call("state.GetRoleRPC", nil, &role)
-	return role, nil
+	err := c.client.Call("state.GetRoleRPC", nil, &role)
+	return role, err
 }
 
 func (c remoteState) GetDBRole() (string, error) {
 	var role string
-	c.client.Call("state.GetRoleRPC", nil, &role)
-	return role, nil
+	err := c.client.Call("state.GetRoleRPC", nil, &role)
+	return role, err
+}
+
+func (c remoteState) SetDBRole(role string) error {
+	return NotSupported
 }
 
 func (state *state) GetRoleRPC(reply *string) error {
@@ -96,5 +122,10 @@ func (state *state) GetRoleRPC(reply *string) error {
 
 func (state *state) GetDBRoleRPC(reply *string) error {
 	*reply = state.DBRole
+	return nil
+}
+
+func (state *state) HasSyncedRPC(reply *bool) error {
+	*reply = state.synced
 	return nil
 }

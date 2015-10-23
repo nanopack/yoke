@@ -25,8 +25,9 @@ type (
 
 	Monitor interface {
 		GetRole() (string, error)
-		Bounce(Candidate) Candidate
+		Bounce(string) Candidate
 		Ready()
+		Location() string
 	}
 
 	Candidate interface {
@@ -117,7 +118,8 @@ func (decider decider) ReCheck() error {
 	var err error
 	otherDBRole, err = decider.other.GetDBRole()
 	if err != nil {
-		otherDBRole, err = decider.monitor.Bounce(decider.other).GetDBRole()
+		address := decider.other.Location()
+		otherDBRole, err = decider.monitor.Bounce(address).GetDBRole()
 		if err != nil {
 			// this node can't talk to the other member of the cluster or the monitor
 			// if this node is not in single mode it needs to shut off

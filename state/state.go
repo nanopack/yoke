@@ -18,33 +18,58 @@ type (
 		ExposeRPCEndpoint(string, string) error
 	}
 
-	State interface{}
+	State interface {
+		Ready()
+		GetRole() (string, error)
+		GetDBRole() (string, error)
+		SetDBRole(string) error
+		HasSynced() (bool, error)
+		Location() string
+	}
+
 	state struct {
-		store  Store
-		Role   string
-		DBRole string
-		State  string
+		store    Store
+		synced   bool
+		Role     string
+		DBRole   string
+		Location string
 	}
 )
 
 var states = "states"
 
 // Creates and returns a state that represents a state on the local machine.
-func NewLocalState(role string, store Store) (LocalState, error) {
+func NewLocalState(role, location string, store Store) (LocalState, error) {
 	state := state{}
 
 	// if we can't grab the previous state from the store, lets create a new one
 	if err := store.Read(states, role, &state); err != nil {
 		state = state{
-			Role:  role,
-			store: Store,
+			store:    store,
+			Role:     role,
+			DBRole:   "initialized",
+			synced:   false,
+			Location: location,
 		}
 		// something is wrong if we can't store the new state, so return the error
 		if err := store.Write(states, role, &state); err != nil {
 			return nil, err
 		}
 	}
+	state.synced = false
 	return &state, nil
+}
+
+func (state *state) Ready() {}
+
+func (state *state) HasSynced() (bool, error) {
+	synced = new(*bool)
+	err := state.HasSyncedRPC(synced)
+	return *synced, err
+}
+
+func (state *state) Location() string {
+	return state.Location, nil
 }
 
 func (state *state) GetRole() (string, error) {
