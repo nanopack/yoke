@@ -24,15 +24,16 @@ type (
 		GetDBRole() (string, error)
 		SetDBRole(string) error
 		HasSynced() (bool, error)
+		SetSynced(bool) error
 		Location() string
 	}
 
 	state struct {
-		store    Store
-		synced   bool
-		Role     string
-		DBRole   string
-		Location string
+		store   Store
+		synced  bool
+		Role    string
+		DBRole  string
+		Address string
 	}
 )
 
@@ -40,56 +41,50 @@ var states = "states"
 
 // Creates and returns a state that represents a state on the local machine.
 func NewLocalState(role, location string, store Store) (LocalState, error) {
-	state := state{}
+	newState := state{}
 
 	// if we can't grab the previous state from the store, lets create a new one
-	if err := store.Read(states, role, &state); err != nil {
-		state = state{
-			store:    store,
-			Role:     role,
-			DBRole:   "initialized",
-			synced:   false,
-			Location: location,
+	if err := store.Read(states, role, &newState); err != nil {
+		newState = state{
+			store:   store,
+			Role:    role,
+			DBRole:  "initialized",
+			synced:  false,
+			Address: location,
 		}
-		// something is wrong if we can't store the new state, so return the error
-		if err := store.Write(states, role, &state); err != nil {
+		// something is wrong if we can't newState the new state, so return the error
+		if err = store.Write(states, role, &newState); err != nil {
 			return nil, err
 		}
 	}
-	state.synced = false
-	return &state, nil
+	newState.synced = false
+	return &newState, nil
 }
 
 func (state *state) Ready() {}
 
 func (state *state) HasSynced() (bool, error) {
-	synced = new(*bool)
-	err := state.HasSyncedRPC(synced)
-	return *synced, err
+	return state.synced, nil
+}
+
+func (state *state) SetSynced(synced bool) error {
+	state.synced = synced
+	return nil
 }
 
 func (state *state) Location() string {
-	return state.Location, nil
+	return state.Address
 }
 
 func (state *state) GetRole() (string, error) {
-	role := new(*string)
-	err := state.GetRoleRPC(role)
-	return *role, err
+	return state.Role, nil
 }
 
 func (state *state) GetDBRole() (string, error) {
-	role := new(*string)
-	err := state.GetDBRoleRPC(role)
-	return *role, err
-}
-
-func (state *state) SetState(newState string) error {
-	state.state = newState
-	return state.store.Write(stats, store.Role, state)
+	return state.DBRole, nil
 }
 
 func (state *state) SetDBRole(role string) error {
 	state.DBRole = role
-	return state.store.Write(stats, store.Role, state)
+	return state.store.Write(states, state.Role, state)
 }

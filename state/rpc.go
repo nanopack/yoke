@@ -15,8 +15,8 @@ import (
 )
 
 var (
-	Timeout     = errors.New("Timeout")
-	NotSuported = errors.New("not supported")
+	Timeout      = errors.New("Timeout")
+	NotSupported = errors.New("not supported")
 )
 
 type (
@@ -26,22 +26,26 @@ type (
 	}
 
 	remoteState struct {
-		client   *rpc.Client
 		timeout  time.Duration
 		location string
+		network  string
 	}
+
+	StateRPC struct {
+		state state
+	}
+	Nil struct{}
 )
 
 // Starts the RPC listening server, enables remote communication with local state objects
 func (local state) ExposeRPCEndpoint(network, location string) error {
-
-	if err := rpc.Register(local); err != nil {
-		return err
+	wrap := StateRPC{
+		state: local,
 	}
 
 	server := rpc.NewServer()
 
-	if err := server.Register(stateServer); err != nil {
+	if err := server.Register(&wrap); err != nil {
 		return err
 	}
 
@@ -50,48 +54,52 @@ func (local state) ExposeRPCEndpoint(network, location string) error {
 		return err
 	}
 
-	go server.Accept(lis)
+	go server.Accept(listener)
+	return nil
 }
 
 // Creates and returns a State that represents a state reachable over an rpc connection
-func ConnectToRemoteState(network, address string, timeout time.Duration) (State, error) {
-	clientC := make(rpcDial, 1)
-	go func() {
-		client, err := rpc.Dial(network, address)
-		resChan <- rpcDial{
-			err:    err,
-			client: client,
-		}
-	}()
+func NewRemoteState(network, location string, timeout time.Duration) State {
+	remote := remoteState{
+		timeout:  timeout,
+		network:  network,
+		location: location,
+	}
+	return remote
+}
 
-	select {
-	case res <- clientC:
-		if res.err != nil {
-			remote := remoteState{
-				client:   res.client,
-				timeout:  timeout,
-				location: address, // I still need to store off the network
-			}
-			return remote, res.err
+func (c remoteState) call(method string, in interface{}, out interface{}) error {
+	res := make(chan error, 1)
+	go func() {
+		client, err := rpc.Dial(c.network, c.location)
+		if err != nil {
+			res <- err
+			return
 		}
-		return nil, res.err
-	case <-time.After(timeout):
+		defer client.Close()
+		res <- client.Call(method, in, out)
+	}()
+	select {
+	case err := <-res:
+		return err
+	case <-time.After(c.timeout):
 		return Timeout
 	}
 }
 
 func (c remoteState) Ready() {
-	for {
-		if c.client.Call("state.Ready", nil, nil) == nil {
-			break
-		}
+	for c.call("StateRPC.Ready", Nil{}, &Nil{}) != nil {
 		<-time.After(time.Second)
 	}
 }
 
+func (c remoteState) SetSynced(synced bool) error {
+	return c.call("StateRPC.SetSynced", synced, &Nil{})
+}
+
 func (c remoteState) HasSynced() (bool, error) {
 	var synced bool
-	err := c.client.Call("state.HasSyncedRPC", nil, &synced)
+	err := c.call("StateRPC.HasSynced", Nil{}, &synced)
 	return synced, err
 }
 
@@ -101,13 +109,13 @@ func (c remoteState) Location() string {
 
 func (c remoteState) GetRole() (string, error) {
 	var role string
-	err := c.client.Call("state.GetRoleRPC", nil, &role)
+	err := c.call("StateRPC.GetRole", Nil{}, &role)
 	return role, err
 }
 
 func (c remoteState) GetDBRole() (string, error) {
 	var role string
-	err := c.client.Call("state.GetRoleRPC", nil, &role)
+	err := c.call("StateRPC.GetDBRole", Nil{}, &role)
 	return role, err
 }
 
@@ -115,17 +123,26 @@ func (c remoteState) SetDBRole(role string) error {
 	return NotSupported
 }
 
-func (state *state) GetRoleRPC(reply *string) error {
-	*reply = state.Role
+func (wrap *StateRPC) Ready(a *Nil, b *Nil) error {
 	return nil
 }
 
-func (state *state) GetDBRoleRPC(reply *string) error {
-	*reply = state.DBRole
+func (wrap *StateRPC) GetRole(arg Nil, reply *string) error {
+	*reply = wrap.state.Role
 	return nil
 }
 
-func (state *state) HasSyncedRPC(reply *bool) error {
-	*reply = state.synced
+func (wrap *StateRPC) GetDBRole(arg Nil, reply *string) error {
+	*reply = wrap.state.DBRole
+	return nil
+}
+
+func (wrap *StateRPC) HasSynced(arg Nil, reply *bool) error {
+	*reply = wrap.state.synced
+	return nil
+}
+
+func (wrap *StateRPC) SetSynced(sync bool, arg *Nil) error {
+	wrap.state.synced = sync
 	return nil
 }
