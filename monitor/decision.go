@@ -18,9 +18,8 @@ var (
 )
 
 type (
-	Decider interface {
-		Loop(time.Duration)
-		ReCheck() error
+	Looper interface {
+		Loop(time.Duration) error
 	}
 
 	Monitor interface {
@@ -33,15 +32,10 @@ type (
 	Candidate interface {
 		Monitor
 		GetDBRole() (string, error)
+		GetDataDir() (string, error)
 		SetDBRole(string) error
+		SetSync(bool) error
 		HasSynced() (bool, error)
-	}
-
-	Performer interface {
-		TransitionToActive(Candidate)
-		TransitionToBackupOf(Candidate, Candidate)
-		TransitionToSingle(Candidate)
-		Stop()
 	}
 
 	decider struct {
@@ -54,7 +48,7 @@ type (
 	}
 )
 
-func NewDecider(me Candidate, other Candidate, monitor Monitor, performer Performer) Decider {
+func NewDecider(me Candidate, other Candidate, monitor Monitor, performer Performer) Looper {
 	decider := decider{
 		me:        me,
 		other:     other,
@@ -70,7 +64,7 @@ func NewDecider(me Candidate, other Candidate, monitor Monitor, performer Perfor
 		other.Ready()
 		monitor.Ready()
 
-		err := decider.ReCheck()
+		err := decider.reCheck()
 		switch err {
 		case ClusterUnaviable: // we try again.
 		case nil: // the cluster was successfully rechecked
@@ -83,11 +77,16 @@ func NewDecider(me Candidate, other Candidate, monitor Monitor, performer Perfor
 
 // this is the main loop for monitoring the cluster and making any changes needed to
 // reflect changes in remote nodes in the cluster
-func (decider decider) Loop(check time.Duration) {
+func (decider decider) Loop(check time.Duration) error {
 	timer := time.Tick(check)
 	for range timer {
-		decider.ReCheck()
+		err := decider.reCheck()
+		if err != nil {
+			return err
+			// just print it out? we will probably be able to decide later
+		}
 	}
+	return nil
 }
 
 // this is used to move a active node to a backup node
@@ -96,7 +95,7 @@ func (decider decider) Demote() {
 	defer decider.Unlock()
 
 	decider.me.SetDBRole("backup")
-	decider.performer.TransitionToBackupOf(decider.me, decider.other)
+	decider.performer.TransitionToBackup()
 }
 
 // this is used to move a backup node to an active node
@@ -105,12 +104,12 @@ func (decider decider) Promote() {
 	defer decider.Unlock()
 
 	decider.me.SetDBRole("active")
-	decider.performer.TransitionToActive(decider.me)
+	decider.performer.TransitionToActive()
 }
 
 // Checks the other node in the cluster, falling back to bouncing the check off of the monitor,
 // to see if the states between this node and the remote node match up
-func (decider decider) ReCheck() error {
+func (decider decider) reCheck() error {
 	decider.Lock()
 	defer decider.Unlock()
 
@@ -137,7 +136,7 @@ func (decider decider) ReCheck() error {
 		fallthrough
 	case "active":
 		decider.me.SetDBRole("backup")
-		decider.performer.TransitionToBackupOf(decider.me, decider.other)
+		decider.performer.TransitionToBackup()
 	case "dead":
 		DBrole, err := decider.me.GetDBRole()
 		if err != nil {
@@ -155,8 +154,9 @@ func (decider decider) ReCheck() error {
 				return ClusterUnaviable
 			}
 		}
+
 		decider.me.SetDBRole("single")
-		decider.performer.TransitionToSingle(decider.me)
+		decider.performer.TransitionToSingle()
 	case "initialized":
 		role, err := decider.me.GetRole()
 		if err != nil {
@@ -165,14 +165,14 @@ func (decider decider) ReCheck() error {
 		switch role {
 		case "primary":
 			decider.me.SetDBRole("active")
-			decider.performer.TransitionToActive(decider.me)
+			decider.performer.TransitionToActive()
 		case "secondary":
 			decider.me.SetDBRole("backup")
-			decider.performer.TransitionToBackupOf(decider.me, decider.other)
+			decider.performer.TransitionToBackup()
 		}
 	case "backup":
 		decider.me.SetDBRole("active")
-		decider.performer.TransitionToActive(decider.me)
+		decider.performer.TransitionToActive()
 	}
 	return nil
 }

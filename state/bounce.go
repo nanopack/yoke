@@ -48,7 +48,16 @@ func (c remoteState) Bounce(location string) State {
 }
 
 func (wrap *StateRPC) BounceString(bounce BounceString, reply *string) error {
-	return call("tcp", bounce.Address, bounce.Timeout, bounce.Method, bounce.In, reply)
+	// we need an extra step just incase the next variable gets modified while being used
+	// to encode the reply in a Timeout condition
+	var next string
+	err := call("tcp", bounce.Address, bounce.Timeout, bounce.Method, bounce.In, &next)
+	if err == Timeout {
+		*reply = "dead"
+		return nil
+	}
+	*reply = next
+	return err
 }
 
 func (wrap *StateRPC) BounceBool(bounce BounceBool, reply *bool) error {
@@ -101,6 +110,17 @@ func (bounce Bouncer) HasSynced() (bool, error) {
 
 func (bounce Bouncer) Location() string {
 	return bounce.location
+}
+
+func (bounce Bouncer) GetDataDir() (string, error) {
+	var dataDir string
+	next := BounceString{
+		Address: bounce.location,
+		Timeout: bounce.bounce.timeout,
+		Method:  "StateRPC.GetDataDir",
+	}
+	err := bounce.bounce.call("StateRPC.BounceString", next, &dataDir)
+	return dataDir, err
 }
 
 func (bounce Bouncer) GetRole() (string, error) {

@@ -29,7 +29,7 @@ func (_m *MockMonitor) EXPECT() *_MockMonitorRecorder {
 	return _m.recorder
 }
 
-func (_m *MockMonitor) Bounce(_param0 monitor.Candidate) monitor.Candidate {
+func (_m *MockMonitor) Bounce(_param0 string) monitor.Candidate {
 	ret := _m.ctrl.Call(_m, "Bounce", _param0)
 	ret0, _ := ret[0].(monitor.Candidate)
 	return ret0
@@ -48,6 +48,16 @@ func (_m *MockMonitor) GetRole() (string, error) {
 
 func (_mr *_MockMonitorRecorder) GetRole() *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "GetRole")
+}
+
+func (_m *MockMonitor) Location() string {
+	ret := _m.ctrl.Call(_m, "Location")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+func (_mr *_MockMonitorRecorder) Location() *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "Location")
 }
 
 func (_m *MockMonitor) Ready() {
@@ -79,7 +89,7 @@ func (_m *MockCandidate) EXPECT() *_MockCandidateRecorder {
 	return _m.recorder
 }
 
-func (_m *MockCandidate) Bounce(_param0 monitor.Candidate) monitor.Candidate {
+func (_m *MockCandidate) Bounce(_param0 string) monitor.Candidate {
 	ret := _m.ctrl.Call(_m, "Bounce", _param0)
 	ret0, _ := ret[0].(monitor.Candidate)
 	return ret0
@@ -98,6 +108,17 @@ func (_m *MockCandidate) GetDBRole() (string, error) {
 
 func (_mr *_MockCandidateRecorder) GetDBRole() *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "GetDBRole")
+}
+
+func (_m *MockCandidate) GetDataDir() (string, error) {
+	ret := _m.ctrl.Call(_m, "GetDataDir")
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+func (_mr *_MockCandidateRecorder) GetDataDir() *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "GetDataDir")
 }
 
 func (_m *MockCandidate) GetRole() (string, error) {
@@ -122,6 +143,16 @@ func (_mr *_MockCandidateRecorder) HasSynced() *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "HasSynced")
 }
 
+func (_m *MockCandidate) Location() string {
+	ret := _m.ctrl.Call(_m, "Location")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+func (_mr *_MockCandidateRecorder) Location() *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "Location")
+}
+
 func (_m *MockCandidate) Ready() {
 	_m.ctrl.Call(_m, "Ready")
 }
@@ -138,6 +169,16 @@ func (_m *MockCandidate) SetDBRole(_param0 string) error {
 
 func (_mr *_MockCandidateRecorder) SetDBRole(arg0 interface{}) *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "SetDBRole", arg0)
+}
+
+func (_m *MockCandidate) SetSync(_param0 bool) error {
+	ret := _m.ctrl.Call(_m, "SetSync", _param0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+func (_mr *_MockCandidateRecorder) SetSync(arg0 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "SetSync", arg0)
 }
 
 // Mock of Performer interface
@@ -161,6 +202,16 @@ func (_m *MockPerformer) EXPECT() *_MockPerformerRecorder {
 	return _m.recorder
 }
 
+func (_m *MockPerformer) Loop() error {
+	ret := _m.ctrl.Call(_m, "Loop")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+func (_mr *_MockPerformerRecorder) Loop() *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "Loop")
+}
+
 func (_m *MockPerformer) Stop() {
 	_m.ctrl.Call(_m, "Stop")
 }
@@ -169,26 +220,26 @@ func (_mr *_MockPerformerRecorder) Stop() *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "Stop")
 }
 
-func (_m *MockPerformer) TransitionToActive(_param0 monitor.Candidate) {
-	_m.ctrl.Call(_m, "TransitionToActive", _param0)
+func (_m *MockPerformer) TransitionToActive() {
+	_m.ctrl.Call(_m, "TransitionToActive")
 }
 
-func (_mr *_MockPerformerRecorder) TransitionToActive(arg0 interface{}) *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "TransitionToActive", arg0)
+func (_mr *_MockPerformerRecorder) TransitionToActive() *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "TransitionToActive")
 }
 
-func (_m *MockPerformer) TransitionToBackupOf(_param0 monitor.Candidate, _param1 monitor.Candidate) {
-	_m.ctrl.Call(_m, "TransitionToBackupOf", _param0, _param1)
+func (_m *MockPerformer) TransitionToBackup() {
+	_m.ctrl.Call(_m, "TransitionToBackup")
 }
 
-func (_mr *_MockPerformerRecorder) TransitionToBackupOf(arg0, arg1 interface{}) *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "TransitionToBackupOf", arg0, arg1)
+func (_mr *_MockPerformerRecorder) TransitionToBackup() *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "TransitionToBackup")
 }
 
-func (_m *MockPerformer) TransitionToSingle(_param0 monitor.Candidate) {
-	_m.ctrl.Call(_m, "TransitionToSingle", _param0)
+func (_m *MockPerformer) TransitionToSingle() {
+	_m.ctrl.Call(_m, "TransitionToSingle")
 }
 
-func (_mr *_MockPerformerRecorder) TransitionToSingle(arg0 interface{}) *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "TransitionToSingle", arg0)
+func (_mr *_MockPerformerRecorder) TransitionToSingle() *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "TransitionToSingle")
 }

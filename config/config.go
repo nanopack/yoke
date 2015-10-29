@@ -5,13 +5,15 @@
 // at http://mozilla.org/MPL/2.0/.
 //
 
-package main
+package config
 
 import (
 	"github.com/jcelliott/lumber"
 	"github.com/vaughan0/go-ini"
 	"net"
 	"os"
+	"os/exec"
+	"os/user"
 	"strconv"
 	"strings"
 )
@@ -35,121 +37,110 @@ type Config struct {
 	VipAddCommand     string
 	VipRemoveCommand  string
 	RoleChangeCommand string
+	SystemUser        string
 }
 
 // establish constants
 // these are singleton values that are used throughout
 // the package.
 var (
-	advice  chan string
-	actions chan string
-	conf    Config
-	log     *lumber.ConsoleLogger
-)
-
-// init Initializeds the config file and the other constants
-func init() {
-	advice = make(chan string)
-	actions = make(chan string)
-
-	//
-	log = lumber.NewConsoleLogger(lumber.INFO)
-
-	//
-	conf = Config{
+	Conf = Config{
 		AdvertisePort:   4400,
 		PGPort:          5432,
 		DataDir:         "/data/",
 		StatusDir:       "./status/",
 		SyncCommand:     "rsync -a --delete {{local_dir}} {{slave_ip}}:{{slave_dir}}",
 		DecisionTimeout: 10,
+		SystemUser:      systemUser(),
 	}
+	Log *lumber.ConsoleLogger
+)
+
+// init Initializeds the config file and the other constants
+func Init(path string) {
 
 	//
-	if len(os.Args) < 2 {
-		log.Error("[config.init]: Config file required, run 'yoke path/to/config.ini' to start! Exiting...")
-		os.Exit(1)
-	}
+	Log = lumber.NewConsoleLogger(lumber.INFO)
 
 	//
-	file, err := ini.LoadFile(os.Args[1])
+	file, err := ini.LoadFile(path)
 	if err != nil {
-		log.Error("[config.init]: Failed to load config file!\n%s\n", err)
+		Log.Error("[config.init]: Failed to load config file!\n%s\n", err)
 		os.Exit(1)
 	}
 
 	// no conversion required for strings.
 	if role, ok := file.Get("config", "role"); ok {
-		conf.Role = role
+		Conf.Role = role
 	}
 
 	if dDir, ok := file.Get("config", "data_dir"); ok {
-		conf.DataDir = dDir
+		Conf.DataDir = dDir
 	}
 
 	// make sure the datadir ends with a slash this should make it easier to handle
-	if !strings.HasSuffix(conf.DataDir, "/") {
-		conf.DataDir = conf.DataDir + "/"
+	if !strings.HasSuffix(Conf.DataDir, "/") {
+		Conf.DataDir = Conf.DataDir + "/"
 	}
 
 	if sDir, ok := file.Get("config", "status_dir"); ok {
-		conf.StatusDir = sDir
+		Conf.StatusDir = sDir
 	}
 
 	if sMonitor, ok := file.Get("config", "monitor"); ok {
-		conf.Monitor = sMonitor
+		Conf.Monitor = sMonitor
 	}
 	if sPrimary, ok := file.Get("config", "primary"); ok {
-		conf.Primary = sPrimary
+		Conf.Primary = sPrimary
 	}
 	if sSecondary, ok := file.Get("config", "secondary"); ok {
-		conf.Secondary = sSecondary
+		Conf.Secondary = sSecondary
 	}
 
-	if !strings.HasSuffix(conf.StatusDir, "/") {
-		conf.StatusDir = conf.StatusDir + "/"
+	if !strings.HasSuffix(Conf.StatusDir, "/") {
+		Conf.StatusDir = Conf.StatusDir + "/"
 	}
 
 	if sync, ok := file.Get("config", "sync_command"); ok {
-		conf.SyncCommand = sync
+		Conf.SyncCommand = sync
 	}
 
 	if ip, ok := file.Get("config", "advertise_ip"); ok {
-		conf.AdvertiseIp = ip
+		Conf.AdvertiseIp = ip
 	}
 
 	if vip, ok := file.Get("vip", "ip"); ok {
-		conf.Vip = vip
+		Conf.Vip = vip
 	}
 	if vipAddCommand, ok := file.Get("vip", "add_command"); ok {
-		conf.VipAddCommand = vipAddCommand
+		Conf.VipAddCommand = vipAddCommand
 	}
 	if vipRemoveCommand, ok := file.Get("vip", "remove_command"); ok {
-		conf.VipRemoveCommand = vipRemoveCommand
+		Conf.VipRemoveCommand = vipRemoveCommand
 	}
 
 	if rcCommand, ok := file.Get("role_change", "command"); ok {
-		conf.RoleChangeCommand = rcCommand
+		Conf.RoleChangeCommand = rcCommand
 	}
 
-	parseInt(&conf.AdvertisePort, file, "config", "advertise_port")
-	parseInt(&conf.PGPort, file, "config", "pg_port")
-	parseInt(&conf.DecisionTimeout, file, "config", "decision_timeout")
+	parseInt(&Conf.AdvertisePort, file, "config", "advertise_port")
+	parseInt(&Conf.PGPort, file, "config", "pg_port")
+	parseInt(&Conf.DecisionTimeout, file, "config", "decision_timeout")
 
-	if logLevel, ok := file.Get("config", "log_level"); ok {
+	if logLevel, ok := file.Get("config", "Log_level"); ok {
 		switch logLevel {
 		case "TRACE", "trace":
-			log.Level(lumber.TRACE)
+			Log.Level(lumber.TRACE)
 		case "DEBUG", "debug":
-			log.Level(lumber.DEBUG)
+			Log.Level(lumber.DEBUG)
 		case "INFO", "info":
-			log.Level(lumber.INFO)
+			Log.Level(lumber.INFO)
 		case "WARN", "warn":
-			log.Level(lumber.WARN)
+			Log.Level(lumber.WARN)
 		case "ERROR", "error":
-			log.Level(lumber.ERROR)
+			Log.Level(lumber.ERROR)
 		case "FATAL", "fatal":
-			log.Level(lumber.FATAL)
+			Log.Level(lumber.FATAL)
 		}
 	}
 	confirmPeers()
@@ -160,39 +151,39 @@ func init() {
 }
 
 func confirmPeers() {
-	if conf.Monitor == "" || conf.Primary == "" || conf.Secondary == "" {
-		log.Fatal("I need connection Credentials for monitor, primary and secondary")
-		log.Close()
+	if Conf.Monitor == "" || Conf.Primary == "" || Conf.Secondary == "" {
+		Log.Fatal("I need connection Credentials for monitor, primary and secondary")
+		Log.Close()
 		os.Exit(1)
 	}
 }
 
 func confirmRole() {
-	if conf.Role == "" {
-		conf.Role = getRole()
+	if Conf.Role == "" {
+		Conf.Role = getRole()
 	}
-	if conf.Role != "monitor" && conf.Role != "primary" && conf.Role != "secondary" {
-		log.Fatal("I could not find the appropriate role (role:'%s').", conf.Role)
-		log.Close()
+	if Conf.Role != "monitor" && Conf.Role != "primary" && Conf.Role != "secondary" {
+		Log.Fatal("I could not find the appropriate role (role:'%s').", Conf.Role)
+		Log.Close()
 		os.Exit(1)
 	}
 }
 
 func confirmAdvertiseIp() {
-	if conf.AdvertiseIp == "" || conf.AdvertiseIp == "0.0.0.0" {
+	if Conf.AdvertiseIp == "" || Conf.AdvertiseIp == "0.0.0.0" {
 		getAdvertiseData()
 	}
-	if conf.AdvertiseIp == "" || conf.AdvertiseIp == "0.0.0.0" {
-		log.Fatal("I could not find the appropriate AdvertiseIP (ip:'%s').", conf.AdvertiseIp)
-		log.Close()
+	if Conf.AdvertiseIp == "" || Conf.AdvertiseIp == "0.0.0.0" {
+		Log.Fatal("I could not find the appropriate AdvertiseIP (ip:'%s').", Conf.AdvertiseIp)
+		Log.Close()
 		os.Exit(1)
 	}
 }
 
 func confirmAdvertisePort() {
-	if conf.AdvertisePort == 0 {
-		log.Fatal("I could not find the appropriate Port to listen on (port:'0').")
-		log.Close()
+	if Conf.AdvertisePort == 0 {
+		Log.Fatal("I could not find the appropriate Port to listen on (port:'0').")
+		Log.Close()
 		os.Exit(1)
 	}
 }
@@ -209,11 +200,11 @@ func getRole() string {
 		for _, addr := range addrs {
 			str := strings.Split(addr.String(), "/")[0]
 			switch {
-			case strings.HasPrefix(conf.Monitor, str):
+			case strings.HasPrefix(Conf.Monitor, str):
 				return "monitor"
-			case strings.HasPrefix(conf.Primary, str):
+			case strings.HasPrefix(Conf.Primary, str):
 				return "primary"
-			case strings.HasPrefix(conf.Monitor, str):
+			case strings.HasPrefix(Conf.Monitor, str):
 				return "secondary"
 			}
 		}
@@ -222,25 +213,25 @@ func getRole() string {
 }
 
 func getAdvertiseData() {
-	if conf.AdvertiseIp == "" || conf.AdvertiseIp == "0.0.0.0" || conf.AdvertisePort == 0 {
-		log.Info(conf.AdvertiseIp)
+	if Conf.AdvertiseIp == "" || Conf.AdvertiseIp == "0.0.0.0" || Conf.AdvertisePort == 0 {
+		Log.Info(Conf.AdvertiseIp)
 		var self string
-		switch conf.Role {
+		switch Conf.Role {
 		case "monitor":
-			self = conf.Monitor
+			self = Conf.Monitor
 		case "primary":
-			self = conf.Primary
+			self = Conf.Primary
 		case "secondary":
-			self = conf.Secondary
+			self = Conf.Secondary
 		}
-		log.Info(self)
+		Log.Info(self)
 		connArr := strings.Split(self, ":")
 		if len(connArr) == 2 {
-			conf.AdvertiseIp = connArr[0]
+			Conf.AdvertiseIp = connArr[0]
 
 			i, err := strconv.ParseInt(connArr[1], 10, 64)
 			if err == nil {
-				conf.AdvertisePort = int(i)
+				Conf.AdvertisePort = int(i)
 			}
 		}
 
@@ -252,8 +243,8 @@ func parseInt(val *int, file ini.File, section, name string) {
 	if port, ok := file.Get(section, name); ok {
 		i, err := strconv.ParseInt(port, 10, 64)
 		if err != nil {
-			log.Fatal(name + " is not an int")
-			log.Close()
+			Log.Fatal(name + " is not an int")
+			Log.Close()
 			os.Exit(1)
 		}
 		*val = int(i)
@@ -265,4 +256,20 @@ func parseArr(val *[]string, file ini.File, section, name string) {
 	if peers, ok := file.Get(section, name); ok {
 		*val = strings.Split(peers, ",")
 	}
+}
+
+func systemUser() string {
+	username := "postgres"
+	usr, err := user.Current()
+	if err != nil {
+		cmd := exec.Command("bash", "-c", "whoami")
+		bytes, err := cmd.Output()
+		if err == nil {
+			str := string(bytes)
+			return strings.TrimSpace(str)
+		}
+	}
+
+	username = usr.Username
+	return username
 }

@@ -9,74 +9,98 @@ package main
 
 import (
 	"fmt"
+	"github.com/nanobox-io/golang-scribble"
+	"github.com/nanobox-io/yoke/config"
+	"github.com/nanobox-io/yoke/monitor"
+	"github.com/nanobox-io/yoke/state"
 	"os"
-	"os/exec"
 	"os/signal"
 	"runtime"
 	"syscall"
+	"time"
 )
 
 //
 func main() {
-	log.Info("%#v", conf)
-	// kill postgres server thats running
-	log.Info("killing old postgres if there is one")
-	killOldPostgres()
+	store, err := scribble.New("dir", config.Log)
+	if err != nil {
+		config.Log.Fatal("scribble did not setup correctly %v", err)
+		os.Exit(1)
+	}
 
-	handle(StatusStart())
-	handle(DecisionStart())
-	handle(ActionStart())
+	location := fmt.Sprintf("%v:%d", config.Conf.AdvertiseIp, config.Conf.AdvertisePort)
+	me, err := state.NewLocalState(config.Conf.Role, location, config.Conf.DataDir, store)
+	if err != nil {
+		panic(err)
+	}
+
+	me.ExposeRPCEndpoint("tcp", location)
+
+	var other state.State
+	switch config.Conf.Role {
+	case "primary":
+		location := config.Conf.Secondary
+		other = state.NewRemoteState("tcp", location, time.Second)
+	case "secondary":
+		location := config.Conf.Secondary
+		other = state.NewRemoteState("tcp", location, time.Second)
+	default:
+		// nothing as the monitor does not need to monitor anything
+		// the monitor just acts as a secondary mode of communication in network
+		// splits
+	}
+
+	mon := state.NewRemoteState("tcp", config.Conf.Monitor, time.Second)
+
+	var perform monitor.Performer
+	finished := make(chan error)
+	if other != nil {
+		meCan := me.(monitor.Candidate)
+		otherCan := other.(monitor.Candidate)
+		monMon := mon.(monitor.Monitor)
+
+		perform = monitor.NewPerformer(meCan, otherCan)
+		decide := monitor.NewDecider(meCan, otherCan, monMon, perform)
+
+		go decide.Loop(time.Second * 10)
+		go func() {
+			err := perform.Loop()
+			if err != nil {
+				finished <- err
+			}
+			close(finished)
+		}()
+	}
 
 	// signal Handle
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM, os.Kill, syscall.SIGQUIT, syscall.SIGHUP, syscall.SIGALRM)
+	signals := make(chan os.Signal, 1)
+	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM, os.Kill, syscall.SIGQUIT, syscall.SIGALRM)
 
 	// Block until a signal is received.
 	for {
-		s := <-c
-		switch s {
-		case syscall.SIGINT, os.Kill, syscall.SIGQUIT, syscall.SIGTERM:
-			// kill the database then quit
-			log.Info("Signal Recieved: %s", s.String())
-			if conf.Role == "monitor" {
-				log.Info("shutting down")
-			} else {
-				log.Info("Killing Database")
-				actions <- "kill"
-				// called twice because the first call returns when the job is picked up
-				// the second call returns when the first job is complete
-				actions <- "kill"
+		select {
+		case err := <-finished:
+			// the performer is finished, something triggered a stop.
+			if err != nil {
+				panic(err)
 			}
-			log.Close()
-			os.Exit(0)
-		case syscall.SIGALRM:
-			log.Info("Printing Stack Trace")
-			stacktrace := make([]byte, 8192)
-			length := runtime.Stack(stacktrace, true)
-			fmt.Println(string(stacktrace[:length]))
-		case syscall.SIGHUP:
-			// demote
-			log.Info("Signal Recieved: %s", s.String())
-			log.Info("advising a demotion")
-			advice <- "demote"
+			config.Log.Info("the database was shut down")
+			return
+		case signal := <-signals:
+			switch signal {
+			case syscall.SIGINT, os.Kill, syscall.SIGQUIT, syscall.SIGTERM:
+				if perform != nil {
+					// stop the database, then wait for it to be stopped
+					config.Log.Info("shutting down the database")
+					perform.Stop()
+					perform = nil
+				}
+			case syscall.SIGALRM:
+				config.Log.Info("Printing Stack Trace")
+				stacktrace := make([]byte, 8192)
+				length := runtime.Stack(stacktrace, true)
+				fmt.Println(string(stacktrace[:length]))
+			}
 		}
-	}
-
-}
-
-//
-func handle(err error) {
-	if err != nil {
-		fmt.Println("error: " + err.Error())
-		os.Exit(1)
-	}
-}
-
-func killOldPostgres() {
-	killOld := exec.Command("pg_ctl", "stop", "-D", conf.DataDir, "-m", "fast")
-	killOld.Stdout = Piper{"[KillOLD.stdout]"}
-	killOld.Stderr = Piper{"[KillOLD.stderr]"}
-	if err := killOld.Run(); err != nil {
-		log.Error("[action] KillOLD failed.")
 	}
 }

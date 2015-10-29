@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Pagoda Box Inc
+// Copyright (c) 2015 Nanobox Inc
 //
 // This Source Code Form is subject to the terms of the Mozilla Public License, v.
 // 2.0. If a copy of the MPL was not distributed with this file, You can obtain one
@@ -6,102 +6,86 @@
 //
 
 // pgconfig.go provides methods for configuring a node corresponding to if it is
-// running a 'master' or 'slave' instance of postgres.
+// running a 'primary' or 'backup' instance of postgres.
 
-package main
+package config
 
 import (
 	"bufio"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"regexp"
 	"strings"
 )
 
-//
-type pgConfig struct {
-	listenAddr string
-	master     bool
-}
+var (
+	replicationRegex = regexp.MustCompile(`^\s*#?\s*(local|host)\s*(replication)`)
+	overwriteRegex   = regexp.MustCompile(`^\s*#?\s*(listen_addresses|port|wal_level|archive_mode|archive_command|max_wal_senders|wal_keep_segments|hot_standby|synchronous_standby_names)\s*=\s*`)
+)
 
 // configureHBAConf attempts to open the 'pg_hba.conf' file. Once open it will scan
 // the file line by line looking for replication settings, and overwrite only those
-// settings with the settings required for redundancy on Pagoda Box
-func configureHBAConf() error {
-
-	// get the role of the other node in the cluster that is running an instance
-	// of postgresql
-	self := Whoami()
-	other, err := Whoisnot(self.CRole)
-	if err != nil {
-		log.Warn("[pgconfig.configureHBAConf] Unable to find another!\n%s\n", err)
-	}
+// settings with the settings required for redundancy on Yoke
+func configureHBAConf(ip string) error {
 
 	// open the pg_hba.conf
-	file := conf.DataDir + "pg_hba.conf"
+	file := Conf.DataDir + "pg_hba.conf"
 	f, err := os.Open(file)
 	if err != nil {
-		log.Error("[pgconfig.configureHBAConf] Failed to open '%s'!\n%s\n", file, err)
 		return err
 	}
 
 	defer f.Close()
 
 	scanner := bufio.NewScanner(f)
-	entry := ""
 
 	// scan the file line by line to build an 'entry' to be re-written back to the
 	// file, skipping ('removing') any line that deals with redundancy.
 	for scanner.Scan() {
 
+		line := scanner.Text()
+
 		// stop scanning if a special prefix is encountered.
-		if strings.HasPrefix(scanner.Text(), "#~") {
+		if strings.HasPrefix(line, "#~") {
 			break
 		}
 
 		// dont care about submatches, just if the string matches, 'skipping' any lines
 		// that are custom configurations
-		if regexp.MustCompile(`^\s*#?\s*(local|host)\s*(replication)`).FindString(scanner.Text()) == "" {
-			entry += fmt.Sprintf("%s\n", scanner.Text())
+		if replicationRegex.MatchString(line) {
+			_, err := fmt.Fprintf(f, "%s\n", line)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
-	// if the other node is present, write redundancy into the 'entry' (otherwise
-	// just leave it out)
-
-	if other != nil {
-		entry += fmt.Sprintf(`#~-----------------------------------------------------------------------------
+	// add a replication connection into the hba.conf file so that data can be replicated
+	// to other nodes
+	_, err = fmt.Fprintf(f, `#~-----------------------------------------------------------------------------
 # YOKE CONFIG
 #------------------------------------------------------------------------------
 
 # these configuration options have been removed from their standard location and
-# placed here so that Pagoda Box could override them with the neccessary values
+# placed here so that Yoke could override them with the neccessary values
 # to configure redundancy.
 
 # IMPORTANT: these settings will always be overriden when the server boots. They
 # are set dynamically and so should never change.
 
-host    replication     %s        %s/32            trust`, SystemUser(), other.Ip)
-	}
+host    replication     %s        %s/32            trust
+`, Conf.SystemUser, ip)
 
-	// write the 'entry' to the file
-	err = ioutil.WriteFile(file, []byte(entry), 0644)
-	if err != nil {
-		log.Error("[pgconfig.configureHBAConf] Failed to write to '%s'!\n%s\n", file, err)
-		return err
-	}
-
-	return nil
+	return err
 }
 
 // configurePGConf attempts to open the 'postgresql.conf' file. Once open it will
 // scan the file line by line looking for replication settings, and overwrite only
-// those settings with the settings required for redundancy on Pagoda Box
-func configurePGConf(opts pgConfig) error {
+// those settings with the settings required for redundancy
+func configurePGConf(ip string, port int) error {
 
 	// open the postgresql.conf
-	file := conf.DataDir + "postgresql.conf"
+	file := Conf.DataDir + "postgresql.conf"
 	f, err := os.Open(file)
 	if err != nil {
 		return err
@@ -110,43 +94,45 @@ func configurePGConf(opts pgConfig) error {
 	defer f.Close()
 
 	scanner := bufio.NewScanner(f)
-	entry := ""
 
 	// scan the file line by line to build an 'entry' to be re-written back to the
 	// file, skipping ('removing') any lines that need to be manually configured
 	for scanner.Scan() {
 
-		submatch := regexp.MustCompile(`^\s*#?\s*(listen_addresses|port|wal_level|archive_mode|archive_command|max_wal_senders|wal_keep_segments|hot_standby|synchronous_standby_names)\s*=\s*`).FindStringSubmatch(scanner.Text())
+		line := scanner.Text()
 
 		// stop scanning if a special prefix is encountered. This ensures there are
-		// no duplicate Pagoda Box comment blocks
-		if strings.HasPrefix(scanner.Text(), "#~") {
+		// no duplicate Nanobox comment blocks
+		if strings.HasPrefix(line, "#~") {
 			break
 		}
 
 		// build the 'entry' from all lines that don't match the custom configurations
-		if submatch == nil {
-			entry += fmt.Sprintf("%s\n", scanner.Text())
+		if !overwriteRegex.MatchString(line) {
+			_, err := fmt.Fprintf(f, "%s\n", line)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
 	// write manual configurations into an 'entry'
-	entry += fmt.Sprintf(`#~-----------------------------------------------------------------------------
+	_, err = fmt.Fprintf(f, `#~-----------------------------------------------------------------------------
 # YOKE CONFIG
 #------------------------------------------------------------------------------
 
 # these configuration options have been removed from their standard location and
-# placed here so that Pagoda Box could override them with the neccessary values
+# placed here so that Nanobox could override them with the neccessary values
 # to configure redundancy.
 
 # IMPORTANT: these settings will always be overriden when the server boots. They
 # are set dynamically and so should never change.
 
-listen_addresses = '%s'      # what IP address(es) to listen on;
+listen_addresses = '%s'           # what IP address(es) to listen on;
                                   # comma-separated list of addresses;
                                   # defaults to 'localhost'; use '*' for all
                                   # (change requires restart)
-port = %d                     # (change requires restart)
+port = %d                         # (change requires restart)
 wal_level = hot_standby           # minimal, archive, or hot_standby
                                   # (change requires restart)
 archive_mode = on                 # allows archiving to be done
@@ -160,88 +146,52 @@ max_wal_senders = 10              # max number of walsender processes
 wal_keep_segments = 16          	# in logfile segments, 16MB each; 0 disables
 hot_standby = on                  # "on" allows queries during recovery
                                   # (change requires restart)
-`, opts.listenAddr, conf.PGPort)
-
-	// if this node is currenty 'master' then write one additional configuration
-	// into the 'entry'
-	if opts.master {
-		entry += `
-# added only the the node running postgres as 'master'
-synchronous_standby_names = slave # standby servers that provide sync rep
+synchronous_standby_names = '*'   # standby servers that provide sync rep
                                   # comma-separated list of application_name
-                                  # from standby(s); '*' = all
-`
-	}
+                                  # from standby(s); '*' = any
+`, ip, port)
 
-	// write 'entry' to the file
-	err = ioutil.WriteFile(file, []byte(entry), 0644)
-	if err != nil {
-		log.Error("[pgconfig.configurePGConf] Failed to write to '%s'!\n%s\n", file, err)
-	}
-
-	return nil
+	return err
 }
 
 // createRecovery creates a 'recovery.conf' file with the necessary settings
-// required for redundancy on Pagoda Box. This method is called on the node that
-// is being configured to run the 'slave' instance of postgres
-func createRecovery() error {
+// required for redundancy on Yoke. This method is called on the node that
+// is being configured to run the 'backup' instance of postgres
+func createRecovery(ip string, port int) error {
 
-	file := conf.DataDir + "recovery.conf"
-
-	self := Whoami()
-	other, err := Whoisnot(self.CRole)
-	if err != nil {
-		log.Fatal("[pgconfig.createRecovery] Unable to find another... Exiting!\n%s\n", err)
-		os.Exit(1)
-	}
+	file := Conf.DataDir + "recovery.conf"
 
 	// open/truncate the recover.conf
 	f, err := os.Create(file)
 	if err != nil {
-		log.Error("[pgconfig.createRecovery] Failed to create '%s'!\n%s\n", file, err)
 		return err
 	}
+	defer f.Close()
 
 	// write manual configuration an 'entry'
-	entry := fmt.Sprintf(`#~-----------------------------------------------------------------------------
+	_, err = fmt.Fprintf(f, `#~-----------------------------------------------------------------------------
 # YOKE CONFIG
 #------------------------------------------------------------------------------
 
-# IMPORTANT: this config file is dynamically generated by Pagoda Box for redundancy
+# IMPORTANT: this config file is dynamically generated by Yoke for redundancy
 # any changes made here will be overriden.
 
 # When standby_mode is enabled, the PostgreSQL server will work as a standby. It
 # tries to connect to the primary according to the connection settings
 # primary_conninfo, and receives XLOG records continuously.
 standby_mode = on
-primary_conninfo = 'host=%s port=%d application_name=slave'
+primary_conninfo = 'host=%s port=%d application_name=backup'
 
 # restore_command specifies the shell command that is executed to copy log files
 # back from archival storage. This parameter is *required* for an archive
 # recovery, but optional for streaming replication. The given command satisfies
 # the requirement without doing anything.
 restore_command = 'exit 0'
-`, other.Ip, other.PGPort)
 
-	// write 'entry' to the file
-	if _, err := f.WriteString(entry); err != nil {
-		log.Error("[pgconfig.createRecovery] Failed to write to '%s'!\n%s\n", file, err)
-		return err
-	}
+# the presence of this file will stop this this node from recovering from the
+# remote node.
+trigger_file = '/data/var/db/postgresql/i-am-primary'
+`, ip, port)
 
-	return nil
-}
-
-// destroyRecovery attempts to destroy the 'recovery.conf'. This method is called
-// on a node that is being configured to run the 'master' instance of postgres
-func destroyRecovery() {
-
-	file := conf.DataDir + "recovery.conf"
-
-	// remove 'recovery.conf'
-	err := os.Remove(file)
-	if err != nil {
-		log.Warn("[pgconfig.destroyRecovery] No recovery.conf found at '%s'", file)
-	}
+	return err
 }

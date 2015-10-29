@@ -1,409 +1,419 @@
-// // Copyright (c) 2015 Pagoda Box Inc
-// //
-// // This Source Code Form is subject to the terms of the Mozilla Public License, v.
-// // 2.0. If a copy of the MPL was not distributed with this file, You can obtain one
-// // at http://mozilla.org/MPL/2.0/.
-// //
+// Copyright (c) 2015 Pagoda Box Inc
+//
+// This Source Code Form is subject to the terms of the Mozilla Public License, v.
+// 2.0. If a copy of the MPL was not distributed with this file, You can obtain one
+// at http://mozilla.org/MPL/2.0/.
+//
 
 package monitor
 
-// import (
-// 	"database/sql"
-// 	"fmt"
-// 	"os"
-// 	"os/exec"
-// 	"os/user"
-// 	"strings"
-// 	"syscall"
-// 	"time"
+import (
+	"bufio"
+	"database/sql"
+	"errors"
+	"fmt"
+	"github.com/hoisie/mustache"
+	_ "github.com/lib/pq"
+	"github.com/nanobox-io/yoke/config"
+	"io"
+	"net"
+	"os"
+	"os/exec"
+	"sync"
+	"syscall"
+	"time"
+)
 
-// 	"github.com/hoisie/mustache"
-// 	_ "github.com/lib/pq"
-// )
+var (
+	Done = errors.New("done")
+)
 
-// // Piper is build to Pipe data from exec.Cmd objects to our logger
-// type Piper struct {
-// 	Prefix string
-// 	// just need a couple methods
-// }
+type (
+	Performer interface {
+		TransitionToActive()
+		TransitionToBackup()
+		TransitionToSingle()
+		Stop()
+		Loop() error
+	}
 
-// // Write is just a fulfillment of the io.Writer interface
-// func (p Piper) Write(d []byte) (int, error) {
-// 	log.Info("%s %s", p.Prefix, d)
-// 	return len(d), nil
-// }
+	performer struct {
+		sync.Mutex
+		step  map[string]bool
+		me    Candidate
+		other Candidate
+		err   chan error
+		cmd   *exec.Cmd
+	}
+)
 
-// var cmd *exec.Cmd
+func NewPrefix(prefix string) io.Writer {
+	read, write := io.Pipe()
+	scan := bufio.NewScanner(read)
+	go func() {
+		for scan.Scan() {
+			fmt.Printf("%v %v\n", prefix, scan.Text())
+		}
+	}()
+	return write
+}
 
-// var running bool
+func NewPerformer(me Candidate, other Candidate) *performer {
+	perform := performer{
+		step: map[string]bool{
+			"trigger": true, // this should only be there if the trigger file exists
+		},
+		me:    me,
+		other: other,
+		err:   make(chan error),
+	}
 
-// // Listen on the action channel and perform the action
-// func ActionStart() error {
-// 	log.Info("[action.ActionStart]")
+	return &perform
+}
 
-// 	running = false
-// 	go func() {
-// 		for {
-// 			select {
-// 			case act := <-actions:
-// 				log.Info("[action] new action: " + act)
-// 				doAction(act)
-// 			}
-// 		}
-// 	}()
+func (performer *performer) Loop() error {
+	if err := performer.Initialize(); err != nil {
+		return err
+	}
+	return <-performer.err
+}
 
-// 	return nil
-// }
+func (performer *performer) Stop() {
+	performer.Lock()
+	defer performer.Unlock()
 
-// // switch through the actions and perform the requested action
-// func doAction(act string) {
-// 	switch act {
-// 	case "kill":
-// 		// the killDB method doenst always want to remove the vip
-// 		// only when it gets the action from the decision system
-// 		removeVip()
-// 		roleChangeCommand("dead")
-// 		killDB()
-// 	case "master":
-// 		startMaster()
-// 	case "slave":
-// 		startSlave()
-// 	case "single":
-// 		startSingle()
-// 	default:
-// 		fmt.Println("i dont know what to do with this action: " + act)
-// 	}
-// }
+	performer.Stop()
+	performer.err <- nil
+}
 
-// // Starts the database as a master node and sends its data file to the slave
-// func startMaster() {
-// 	log.Debug("[action] start master")
-// 	// make sure we have a database in the data folder
-// 	initDB()
-// 	log.Debug("[action] db init'ed")
+func (performer *performer) TransitionToSingle() {
+	performer.Lock()
+	defer performer.Unlock()
 
-// 	// set postgresql.conf as not master
-// 	status.SetState("(master)configuring")
-// 	configurePGConf(pgConfig{master: false, listenAddr: "0.0.0.0"})
-// 	// set pg_hba.conf
-// 	configureHBAConf()
-// 	// delete recovery.conf
-// 	destroyRecovery()
-// 	// start the database
-// 	status.SetState("(master)starting")
-// 	startDB()
+	err := performer.Single()
+	if err != nil {
+		performer.err <- err
+	}
+}
 
-// 	// connect to DB and tell it to start backup
-// 	db, err := sql.Open("postgres", fmt.Sprintf("user=%s database=postgres sslmode=disable host=localhost port=%d", SystemUser(), conf.PGPort))
-// 	if err != nil {
-// 		log.Fatal("[action.startMaster] Couldnt establish Database connection (%s)", err.Error())
-// 		log.Close()
-// 		os.Exit(1)
-// 	}
-// 	defer db.Close()
+func (performer *performer) TransitionToActive() {
+	performer.Lock()
+	defer performer.Unlock()
 
-// 	_, err = db.Exec("select pg_start_backup('replication')")
-// 	if err != nil {
-// 		log.Error("[action.startMaster] Couldnt start backup (%s)", err.Error())
-// 	}
+	err := performer.Active()
+	if err != nil {
+		performer.err <- err
+	}
+}
 
-// 	log.Debug("[action] backup started")
-// 	// rsync my files over to the slave server
-// 	status.SetState("(master)syncing")
+func (performer *performer) TransitionToBackup() {
+	performer.Lock()
+	defer performer.Unlock()
 
-// 	self := Whoami()
-// 	other, _ := Whoisnot(self.CRole)
+	err := performer.Backup()
+	if err != nil {
+		performer.err <- err
+	}
+}
 
-// 	for other == nil {
-// 		log.Error("The other member shutdown while I was trying to sync my data. retrying...")
-// 		other, _ = Whoisnot(self.CRole)
-// 		time.Sleep(time.Second)
-// 	}
+func (performer *performer) stop() {
+	if !performer.step["started"] {
+		// do any steps needed to stop postgres
+		performer.step["started"] = false
+	}
+}
 
-// 	// rsync -a {{local_dir}} {{slave_ip}}:{{slave_dir}}
-// 	sync := mustache.Render(conf.SyncCommand, map[string]string{"local_dir": conf.DataDir, "slave_ip": other.Ip, "slave_dir": other.DataDir})
-// 	// cmd := strings.Split(sync, " ")
-// 	sc := exec.Command("bash", "-c", sync) // cmd[0], cmd[1:]...)
-// 	sc.Stdout = Piper{"[sync.stdout]"}
-// 	sc.Stderr = Piper{"[sync.stderr]"}
-// 	log.Info("[action] running sync")
-// 	log.Debug("[action] sync command(%s)", sync)
+func (performer *performer) Initialize() error {
+	_, err := os.Stat(config.Conf.DataDir)
+	switch {
+	case os.IsNotExist(err):
+		init := exec.Command("initdb", config.Conf.DataDir)
+		init.Stdout = NewPrefix("[initdb.stdout]")
+		init.Stderr = NewPrefix("[initdb.stderr]")
+		if err = init.Run(); err != nil {
+			return err
+		}
+	}
+	return err
+}
 
-// 	if err = sc.Run(); err != nil {
-// 		log.Error("[action] sync failed.")
-// 		log.Debug("[sync.error] message: %s", err.Error())
-// 	}
+// The Single state.
+func (performer *performer) Single() error {
+	// backups or actives can transition to single
+	// it just means that the other node went down
+	role, err := performer.me.GetDBRole()
+	if err != nil {
+		return err
+	}
+	if role == "single" {
+		return nil
+	}
+	performer.me.SetDBRole("single")
 
-// 	// connect to DB and tell it to stop backup
-// 	_, err = db.Exec("select pg_stop_backup()")
-// 	if err != nil {
-// 		log.Fatal("[action.startMaster] Couldnt stop backup (%s)", err.Error())
-// 		log.Close()
-// 		os.Exit(1)
-// 	}
+	config.Log.Info("[action] starting DB as single")
 
-// 	log.Debug("[action] backup complete")
+	// disable syncronus transaction commits.
+	if err := performer.setSync(false, nil); err != nil {
+		return err
+	}
 
-// 	// set postgresql.conf as master
-// 	configurePGConf(pgConfig{master: true, listenAddr: "0.0.0.0"})
+	if err := performer.replicate(false); err != nil {
+		return err
+	}
 
-// 	// start refresh/restart server
-// 	log.Debug("[action] restarting DB")
-// 	restartDB()
+	config.Log.Info("[action] running DB as single")
 
-// 	// make sure slave is connected and in sync
-// 	status.SetState("(master)waiting")
-// 	defer status.SetState("(master)running")
+	addVip()
+	roleChangeCommand("single")
 
-// 	log.Debug("[action] db wait for sync")
+	return nil
+}
 
-// 	for {
-// 		rows, err := db.Query("SELECT application_name, client_addr, state, sync_state, pg_xlog_location_diff(pg_current_xlog_location(), sent_location) FROM pg_stat_replication")
-// 		if err != nil {
+func (performer *performer) sync(command string) error {
+	sc := exec.Command("bash", "-c", command)
+	sc.Stdout = NewPrefix("[pre-sync.stdout]")
+	sc.Stderr = NewPrefix("[pre-sync.stderr]")
+	config.Log.Info("[action] running pre-sync")
+	config.Log.Debug("[action] pre-sync command(%s)", command)
 
-// 		}
-// 		for rows.Next() {
-// 			var name string
-// 			var addr string
-// 			var state string
-// 			var sync string
-// 			var behind int64
-// 			err = rows.Scan(&name, &addr, &state, &sync, &behind)
-// 			if err != nil {
-// 				panic(err)
-// 			}
-// 			if behind > 0 {
-// 				log.Info("[action] Sync is catching up (name:%s,address:%s,state:%s,sync:%s,behind:%d)", name, addr, state, sync, behind)
-// 			} else {
-// 				log.Debug("[action] db synced")
-// 				addVip()
-// 				roleChangeCommand("master")
-// 				return
-// 			}
-// 		}
-// 		time.Sleep(time.Second)
-// 	}
-// }
+	return sc.Run()
+}
 
-// // Starts the database as a slave node after waiting for master to come online
-// func startSlave() {
-// 	// wait for master server to be running
-// 	removeVip()
-// 	roleChangeCommand("slave")
-// 	status.SetState("(slave)waiting")
-// 	log.Debug("[action] wait for master")
-// 	self := Whoami()
-// 	for {
-// 		other, err := Whoisnot(self.CRole)
-// 		if err != nil {
-// 			log.Fatal("I have lost communication with the other server, I cannot start without it")
-// 			status.SetState("(slave)master_lost")
-// 			log.Close()
-// 			os.Exit(1)
-// 		}
-// 		if other.State == "(master)running" || other.State == "(master)waiting" {
-// 			break
-// 		}
-// 		time.Sleep(time.Second)
-// 	}
-// 	// set postgresql.conf as not master
-// 	status.SetState("(slave)configuring")
-// 	configurePGConf(pgConfig{master: false, listenAddr: "0.0.0.0"})
-// 	// set pg_hba.conf
-// 	configureHBAConf()
-// 	// set recovery.conf
-// 	createRecovery()
-// 	// start the database
-// 	status.SetState("(slave)starting")
-// 	log.Debug("[action] starting database")
-// 	startDB()
+func (performer *performer) replicate(enabled bool) error {
+	if performer.step["trigger"] == enabled {
+		return nil
+	}
+	performer.step["trigger"] = enabled
 
-// 	// go into a waiting for sync signal from the master
-// 	// this should allow us to detect if we can safely become master
-// 	status.SetState("(slave)syncing")
-// 	for {
-// 		other, err := Whoisnot(self.CRole)
-// 		if err != nil {
-// 			log.Fatal("I have lost communication with the other server, I cannot start without it")
-// 		}
-// 		if other.State == "(master)running" {
-// 			break
-// 		}
-// 		time.Sleep(time.Second)
-// 	}
-// 	status.SetState("(slave)running")
-// }
+	trigger := "/data/var/db/postgresql/i-am-primary"
+	switch enabled {
+	case true:
+		return os.Remove(trigger)
+	default:
+		// this is a trigger file, it should stop this node from replicating from a
+		// remote node,
+		f, err := os.Create(trigger)
+		if err != nil {
+			return err
+		}
+		f.Close()
+		return nil
+	}
+}
 
-// // Starts the database as a single node
-// func startSingle() {
-// 	log.Info("[action] starting DB as single")
-// 	status.SetState("(single)configuring")
-// 	// set postgresql.conf as not master
-// 	configurePGConf(pgConfig{master: false, listenAddr: "0.0.0.0"})
-// 	// set pg_hba.conf
-// 	configureHBAConf()
-// 	// delete recovery.conf
-// 	destroyRecovery()
-// 	// start the database
-// 	status.SetState("(single)starting")
-// 	startDB()
-// 	status.SetState("(single)running")
-// 	log.Info("[action] running DB as single")
-// 	addVip()
-// 	roleChangeCommand("single")
-// }
+func pgConnect() (*sql.DB, error) {
+	return sql.Open("postgres", fmt.Sprintf("user=%s database=postgres sslmode=disable host=localhost port=%d", config.Conf.SystemUser, config.Conf.PGPort))
+}
 
-// // this will kill the database that is running. reguardless of its current state
-// func killDB() {
-// 	log.Debug("[action] KillingDB")
+func (performer *performer) setSync(enabled bool, db *sql.DB) error {
+	if db == nil {
+		db, err := pgConnect()
+		if err != nil {
+			return err
+		}
+		defer db.Close()
+	}
+	var sync string
+	switch enabled {
+	case true:
+		sync = "on"
+	default:
+		sync = "off"
+	}
+	_, err := db.Exec(fmt.Sprintf("ALTER USER %v SET synchronous_commit=%v", config.Conf.SystemUser, sync))
+	return err
 
-// 	// done in a defer because we might return early
-// 	defer func() {
-// 		status.SetState("(kill)down")
-// 	}()
-// 	// return if it was never created or up
-// 	if cmd == nil {
-// 		log.Debug("[action] nothing to kill")
-// 		return
-// 	}
+}
 
-// 	// db is no longer running
-// 	if running == false {
-// 		log.Debug("[action] already dead")
-// 		cmd = nil
-// 		return
-// 	}
+// The Active state.
+func (performer *performer) Active() error {
+	role, err := performer.me.GetDBRole()
+	if err != nil {
+		return err
+	}
+	switch role {
+	case "active":
+		return nil
+	case "backup":
+		// backups must transition to single before they can become active.
+		panic("something went seriously wrong, backups cannot transition to active.")
+	}
 
-// 	// if it is running kill it and wait for it to go down
-// 	status.SetState("(kill)signaling")
-// 	err := cmd.Process.Signal(syscall.SIGINT)
-// 	if err != nil {
-// 		log.Error("[action] Kill Signal error: %s", err.Error())
-// 	}
+	if err := performer.replicate(false); err != nil {
+		return err
+	}
 
-// 	// waiting for shutdown
-// 	status.SetState("(kill)waiting")
+	performer.startDB()
 
-// 	for running == true {
-// 		log.Debug("[action] waiting to die")
-// 		time.Sleep(time.Second)
-// 	}
-// 	cmd = nil
-// }
+	// do an initial copy of files which might be corrupt because they are not consistant
+	// this will be fixed later. we do this now so that a majority of the data will make it across without
+	// having to pause the Durablility (ACID compliance) of postgres
+	config.Log.Debug("[action] pre-backup started")
+	dataDir, err := performer.other.GetDataDir()
+	if err != nil {
+		return err
+	}
+	location := performer.other.Location()
+	ip, _, err := net.SplitHostPort(location)
+	if err != nil {
+		return err
+	}
+	sync := mustache.Render(config.Conf.SyncCommand, map[string]string{"local_dir": config.Conf.DataDir, "slave_ip": ip, "slave_dir": dataDir})
 
-// func startDB() {
-// 	// if we still happen to have a cmd running kill it
-// 	if cmd != nil {
-// 		killDB()
-// 	}
-// 	log.Debug("[action] starting db")
-// 	cmd = exec.Command("postgres", "-D", conf.DataDir)
-// 	cmd.Stdout = Piper{"[postgres.stdout]"}
-// 	cmd.Stderr = Piper{"[postgres.stderr]"}
-// 	cmd.Start()
-// 	log.Debug("[action] db started")
-// 	running = true
-// 	go waiter(cmd)
-// 	time.Sleep(10 * time.Second)
-// 	if running == false {
-// 		log.Fatal("I just started the database and it is not running")
-// 		log.Close()
-// 		os.Exit(1)
-// 	}
-// }
+	if err := performer.sync(sync); err != nil {
+		return err
+	}
 
-// func restartDB() {
-// 	killDB()
-// 	startDB()
-// }
+	db, err := pgConnect()
+	if err != nil {
+		return err
+	}
+	defer db.Close()
 
-// func initDB() {
-// 	if _, err := os.Stat(conf.DataDir + "/postgresql.conf"); os.IsNotExist(err) {
-// 		init := exec.Command("initdb", conf.DataDir)
-// 		init.Stdout = Piper{"[initdb.stdout]"}
-// 		init.Stderr = Piper{"[initdb.stderr]"}
+	// this informs postgres to make the files on disk consistant for copying,
+	// all changes are kept in memory from this point on
+	_, err = db.Exec("select pg_start_backup('replication')")
+	if err != nil {
+		return err
+	}
 
-// 		if err = init.Run(); err != nil {
-// 			log.Fatal("[action] initdb failed. Are you missing your postgresql.conf")
-// 			log.Close()
-// 			os.Exit(1)
-// 		}
-// 	}
-// }
+	config.Log.Debug("[action] backup started")
 
-// func waiter(c *exec.Cmd) {
-// 	log.Debug("[action] Waiter waiting")
-// 	err := c.Wait()
-// 	if err != nil {
-// 		log.Error("[action] Waiter Error: %s", err.Error())
-// 	}
+	if err := performer.sync(sync); err != nil {
+		// stop the backup, if it fails, there is nothing we can do so we return the original error
+		db.Exec("select pg_stop_backup()")
 
-// 	// I should check to see if i exited and was not supposed to
-// 	self := Whoami()
-// 	if self.State == "(master)running" || self.State == "(slave)running" || self.State == "(single)running" {
-// 		log.Fatal("the database exited and it wasnt supposed to")
-// 		log.Close()
-// 		os.Exit(1)
-// 	}
+		// something went wrong, we are the master still, so lets wait for the slave to reconnect
+		return nil
+	}
 
-// 	log.Debug("[action] Waiter done")
-// 	running = false
-// }
+	// connect to DB and tell it to stop backup
+	if _, err = db.Exec("select pg_stop_backup()"); err != nil {
+		return err
+	}
 
-// func roleChangeCommand(role string) {
-// 	if conf.RoleChangeCommand != "" {
-// 		rcc := exec.Command("bash", "-c", fmt.Sprintf("%s %s", conf.RoleChangeCommand, role))
-// 		rcc.Stdout = Piper{"[RoleChangeCommand.stdout]"}
-// 		rcc.Stderr = Piper{"[RoleChangeCommand.stderr]"}
-// 		if err := rcc.Run(); err != nil {
-// 			log.Error("[action] RoleChangeCommand failed.")
-// 			log.Debug("[RoleChangeCommand.error] message: %s", err.Error())
-// 		}
-// 	}
-// }
+	config.Log.Debug("[action] backup complete")
 
-// func addVip() {
-// 	if vipable() {
-// 		log.Info("[action] Adding VIP")
-// 		vAddCmd := exec.Command("bash", "-c", fmt.Sprintf("%s %s", conf.VipAddCommand, conf.Vip))
-// 		vAddCmd.Stdout = Piper{"[VIPAddCommand.stdout]"}
-// 		vAddCmd.Stderr = Piper{"[VIPAddCommand.stderr]"}
-// 		if err := vAddCmd.Run(); err != nil {
-// 			log.Error("[action] VIPAddCommand failed.")
-// 			log.Debug("[VIPAddCommand.error] message: %s", err.Error())
-// 		}
-// 	}
-// }
+	// if we were unsucessfull at setting the sync flag on the other node
+	// then we need to start all over
+	if performer.other.SetSync(true) != nil {
+		return nil
+	}
 
-// func removeVip() {
-// 	if vipable() {
-// 		log.Info("[action] Removing VIP")
-// 		vRemoveCmd := exec.Command("bash", "-c", fmt.Sprintf("%s %s", conf.VipRemoveCommand, conf.Vip))
-// 		vRemoveCmd.Stdout = Piper{"[VIPRemoveCommand.stdout]"}
-// 		vRemoveCmd.Stderr = Piper{"[VIPRemoveCommand.stderr]"}
-// 		if err := vRemoveCmd.Run(); err != nil {
-// 			log.Error("[action] VIPRemoveCommand failed.")
-// 			log.Debug("[VIPRemoveCommand.error] message: %s", err.Error())
-// 		}
-// 	}
-// }
+	// enable syncronus transaction commits.
+	if err := performer.setSync(true, db); err != nil {
+		return err
+	}
 
-// func vipable() bool {
-// 	return conf.Vip != "" && conf.VipAddCommand != "" && conf.VipRemoveCommand != ""
-// }
+	addVip()
+	roleChangeCommand("master")
 
-// func SystemUser() string {
-// 	username := "postgres"
-// 	usr, err := user.Current()
-// 	if err != nil {
-// 		cmd := exec.Command("bash", "-c", "whoami")
-// 		bytes, err := cmd.Output()
-// 		if err == nil {
-// 			str := string(bytes)
-// 			return strings.TrimSpace(str)
-// 		}
-// 	}
+	performer.me.SetDBRole("active")
+	return nil
+}
 
-// 	username = usr.Username
-// 	return username
-// }
+// The Backup state.
+func (performer *performer) Backup() error {
+	role, err := performer.me.GetDBRole()
+	if err != nil {
+		return err
+	}
+	if role == "backup" {
+		return nil
+	}
+	removeVip()
+
+	// TODO figure out if the recover.conf file needs to be regenerated.
+
+	// wait for master server to be running
+	for {
+		ready, err := performer.me.HasSynced()
+		if err != nil {
+			return err
+		}
+		if ready {
+			break
+		}
+		time.Sleep(time.Second)
+	}
+
+	config.Log.Debug("[action] starting database")
+	performer.startDB()
+	roleChangeCommand("backup")
+	return performer.me.SetDBRole("backup")
+}
+
+// this will kill the database that is running. reguardless of its current state
+func (performer *performer) killDB() {
+	config.Log.Debug("[action] KillingDB")
+
+	if performer.cmd == nil {
+		config.Log.Debug("[action] nothing to kill")
+		return
+	}
+
+	err := performer.cmd.Process.Signal(syscall.SIGINT)
+	if err != nil {
+		config.Log.Error("[action] Kill Signal error: %s", err.Error())
+	}
+}
+
+func (performer *performer) startDB() {
+	config.Log.Debug("[action] starting db")
+	cmd := exec.Command("postgres", "-D", config.Conf.DataDir)
+	cmd.Stdout = NewPrefix("[postgres.stdout]")
+	cmd.Stderr = NewPrefix("[postgres.stderr]")
+	cmd.Start()
+	performer.cmd = cmd
+	go performer.waitForExit()
+	config.Log.Debug("[action] db started")
+}
+
+func (performer *performer) waitForExit() {
+	err := performer.cmd.Wait()
+	if err != nil {
+		performer.err <- err
+	}
+}
+
+func roleChangeCommand(role string) {
+	if config.Conf.RoleChangeCommand != "" {
+		rcc := exec.Command("bash", "-c", fmt.Sprintf("%s %s", config.Conf.RoleChangeCommand, role))
+		rcc.Stdout = NewPrefix("[RoleChangeCommand.stdout]")
+		rcc.Stderr = NewPrefix("[RoleChangeCommand.stderr]")
+		if err := rcc.Run(); err != nil {
+			config.Log.Error("[action] RoleChangeCommand failed.")
+			config.Log.Debug("[RoleChangeCommand.error] message: %s", err.Error())
+		}
+	}
+}
+
+func addVip() {
+	if vipable() {
+		config.Log.Info("[action] Adding VIP")
+		vAddCmd := exec.Command("bash", "-c", fmt.Sprintf("%s %s", config.Conf.VipAddCommand, config.Conf.Vip))
+		vAddCmd.Stdout = NewPrefix("[VIPAddCommand.stdout]")
+		vAddCmd.Stderr = NewPrefix("[VIPAddCommand.stderr]")
+		if err := vAddCmd.Run(); err != nil {
+			config.Log.Error("[action] VIPAddCommand failed.")
+			config.Log.Debug("[VIPAddCommand.error] message: %s", err.Error())
+		}
+	}
+}
+
+func removeVip() {
+	if vipable() {
+		config.Log.Info("[action] Removing VIP")
+		vRemoveCmd := exec.Command("bash", "-c", fmt.Sprintf("%s %s", config.Conf.VipRemoveCommand, config.Conf.Vip))
+		vRemoveCmd.Stdout = NewPrefix("[VIPRemoveCommand.stdout]")
+		vRemoveCmd.Stderr = NewPrefix("[VIPRemoveCommand.stderr]")
+		if err := vRemoveCmd.Run(); err != nil {
+			config.Log.Error("[action] VIPRemoveCommand failed.")
+			config.Log.Debug("[VIPRemoveCommand.error] message: %s", err.Error())
+		}
+	}
+}
+
+func vipable() bool {
+	return config.Conf.Vip != "" && config.Conf.VipAddCommand != "" && config.Conf.VipRemoveCommand != ""
+}

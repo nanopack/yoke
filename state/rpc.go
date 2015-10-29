@@ -113,6 +113,12 @@ func (c remoteState) Location() string {
 	return c.location
 }
 
+func (c remoteState) GetDataDir() (string, error) {
+	var dataDir string
+	err := c.call("StateRPC.GetDataDir", "", &dataDir)
+	return dataDir, err
+}
+
 func (c remoteState) GetRole() (string, error) {
 	var role string
 	err := c.call("StateRPC.GetRole", "", &role)
@@ -130,6 +136,11 @@ func (c remoteState) SetDBRole(role string) error {
 }
 
 func (wrap *StateRPC) Ready(a Nil, b *Nil) error {
+	return nil
+}
+
+func (wrap *StateRPC) GetDataDir(arg string, reply *string) error {
+	*reply = wrap.state.DataDir
 	return nil
 }
 

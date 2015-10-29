@@ -30,7 +30,7 @@ func TestPrimary(test *testing.T) {
 	other.EXPECT().GetDBRole().Return("initialized", nil)
 	me.EXPECT().GetRole().Return("primary", nil)
 	me.EXPECT().SetDBRole("active")
-	perform.EXPECT().TransitionToActive(me)
+	perform.EXPECT().TransitionToActive()
 
 	monitor.NewDecider(me, other, arbiter, perform)
 }
@@ -50,7 +50,7 @@ func TestSecondary(test *testing.T) {
 	other.EXPECT().GetDBRole().Return("initialized", nil)
 	me.EXPECT().GetRole().Return("secondary", nil)
 	me.EXPECT().SetDBRole("backup")
-	perform.EXPECT().TransitionToBackupOf(me, other)
+	perform.EXPECT().TransitionToBackup()
 
 	monitor.NewDecider(me, other, arbiter, perform)
 }
@@ -69,7 +69,7 @@ func TestSingle(test *testing.T) {
 
 	other.EXPECT().GetDBRole().Return("single", nil)
 	me.EXPECT().SetDBRole("backup")
-	perform.EXPECT().TransitionToBackupOf(me, other)
+	perform.EXPECT().TransitionToBackup()
 
 	monitor.NewDecider(me, other, arbiter, perform)
 }
@@ -88,7 +88,7 @@ func TestActive(test *testing.T) {
 
 	other.EXPECT().GetDBRole().Return("active", nil)
 	me.EXPECT().SetDBRole("backup")
-	perform.EXPECT().TransitionToBackupOf(me, other)
+	perform.EXPECT().TransitionToBackup()
 
 	monitor.NewDecider(me, other, arbiter, perform)
 }
@@ -107,7 +107,7 @@ func TestBackup(test *testing.T) {
 
 	other.EXPECT().GetDBRole().Return("backup", nil)
 	me.EXPECT().SetDBRole("active")
-	perform.EXPECT().TransitionToActive(me)
+	perform.EXPECT().TransitionToActive()
 
 	monitor.NewDecider(me, other, arbiter, perform)
 }
@@ -126,13 +126,14 @@ func TestOtherDead(test *testing.T) {
 	arbiter.EXPECT().Ready()
 
 	other.EXPECT().GetDBRole().Return("", errors.New("dead"))
-	arbiter.EXPECT().Bounce(other).Return(bounce)
+	other.EXPECT().Location().Return("127.0.0.1:1234")
+	arbiter.EXPECT().Bounce("127.0.0.1:1234").Return(bounce)
 	bounce.EXPECT().GetDBRole().Return("dead", nil)
 
 	me.EXPECT().GetDBRole().Return("active", nil)
 
 	me.EXPECT().SetDBRole("single")
-	perform.EXPECT().TransitionToSingle(me)
+	perform.EXPECT().TransitionToSingle()
 
 	monitor.NewDecider(me, other, arbiter, perform)
 }
@@ -151,7 +152,8 @@ func TestOtherDeadButSingle(test *testing.T) {
 	arbiter.EXPECT().Ready()
 
 	other.EXPECT().GetDBRole().Return("", errors.New("dead"))
-	arbiter.EXPECT().Bounce(other).Return(bounce)
+	other.EXPECT().Location().Return("127.0.0.1:1234")
+	arbiter.EXPECT().Bounce("127.0.0.1:1234").Return(bounce)
 	bounce.EXPECT().GetDBRole().Return("", errors.New("dead"))
 
 	me.EXPECT().GetDBRole().Return("single", nil)
@@ -173,14 +175,15 @@ func TestOtherDeadBackup(test *testing.T) {
 	arbiter.EXPECT().Ready()
 
 	other.EXPECT().GetDBRole().Return("", errors.New("dead"))
-	arbiter.EXPECT().Bounce(other).Return(bounce)
+	other.EXPECT().Location().Return("127.0.0.1:1234")
+	arbiter.EXPECT().Bounce("127.0.0.1:1234").Return(bounce)
 	bounce.EXPECT().GetDBRole().Return("dead", nil)
 
 	me.EXPECT().GetDBRole().Return("backup", nil)
 	me.EXPECT().HasSynced().Return(true, nil)
 
 	me.EXPECT().SetDBRole("single")
-	perform.EXPECT().TransitionToSingle(me)
+	perform.EXPECT().TransitionToSingle()
 
 	monitor.NewDecider(me, other, arbiter, perform)
 }
@@ -199,7 +202,8 @@ func TestOtherDeadBackupNotSync(test *testing.T) {
 	arbiter.EXPECT().Ready().Times(2)
 
 	other.EXPECT().GetDBRole().Return("", errors.New("dead")).Times(2)
-	arbiter.EXPECT().Bounce(other).Return(bounce).Times(2)
+	other.EXPECT().Location().Return("127.0.0.1:1234").Times(2)
+	arbiter.EXPECT().Bounce("127.0.0.1:1234").Return(bounce).Times(2)
 	bounce.EXPECT().GetDBRole().Return("dead", nil).Times(2)
 
 	me.EXPECT().GetDBRole().Return("backup", nil).Times(2)
@@ -210,7 +214,7 @@ func TestOtherDeadBackupNotSync(test *testing.T) {
 	me.EXPECT().HasSynced().Return(true, nil)
 
 	me.EXPECT().SetDBRole("single")
-	perform.EXPECT().TransitionToSingle(me)
+	perform.EXPECT().TransitionToSingle()
 
 	monitor.NewDecider(me, other, arbiter, perform)
 }
@@ -229,7 +233,8 @@ func TestOtherTemporaryDead(test *testing.T) {
 	arbiter.EXPECT().Ready().Times(2)
 
 	other.EXPECT().GetDBRole().Return("", errors.New("dead")).Times(2)
-	arbiter.EXPECT().Bounce(other).Return(bounce).Times(2)
+	other.EXPECT().Location().Return("127.0.0.1:1234").Times(2)
+	arbiter.EXPECT().Bounce("127.0.0.1:1234").Return(bounce).Times(2)
 
 	bounce.EXPECT().GetDBRole().Return("", errors.New("dead"))
 
@@ -240,7 +245,7 @@ func TestOtherTemporaryDead(test *testing.T) {
 	me.EXPECT().GetDBRole().Return("single", nil)
 
 	me.EXPECT().SetDBRole("single")
-	perform.EXPECT().TransitionToSingle(me)
+	perform.EXPECT().TransitionToSingle()
 
 	monitor.NewDecider(me, other, arbiter, perform)
 }

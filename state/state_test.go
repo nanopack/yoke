@@ -27,14 +27,14 @@ func TestLocal(test *testing.T) {
 	store.EXPECT().Read("states", "something", gomock.Any()).Return(fakeErr).Times(2)
 	store.EXPECT().Write("states", "something", gomock.Any()).Return(fakeErr)
 
-	out, err := state.NewLocalState("something", "wherever", store)
+	out, err := state.NewLocalState("something", "wherever", "//here", store)
 	if err == nil {
 		test.Log("should have gotten an error", out, err)
 		test.FailNow()
 	}
 
 	store.EXPECT().Write("states", "something", gomock.Any()).Return(nil)
-	local, err := state.NewLocalState("something", "wherever", store)
+	local, err := state.NewLocalState("something", "wherever", "//here", store)
 	if err != nil {
 		test.Log(err)
 		test.FailNow()
@@ -74,7 +74,7 @@ func TestRpc(test *testing.T) {
 
 	store.EXPECT().Read("states", "something", gomock.Any()).Return(fakeErr)
 	store.EXPECT().Write("states", "something", gomock.Any()).Return(nil)
-	local, err := state.NewLocalState("something", "wherever", store)
+	local, err := state.NewLocalState("something", "wherever", "//here", store)
 	if err != nil {
 		test.Log(err)
 		test.FailNow()
@@ -112,7 +112,7 @@ func TestBounce(test *testing.T) {
 
 	store.EXPECT().Read("states", "here", gomock.Any()).Return(fakeErr)
 	store.EXPECT().Write("states", "here", gomock.Any()).Return(nil)
-	local, err := state.NewLocalState("here", "right here", store)
+	local, err := state.NewLocalState("here", "right here", "//other", store)
 	if err != nil {
 		test.Log(err)
 		test.FailNow()
@@ -126,7 +126,7 @@ func TestBounce(test *testing.T) {
 
 	store.EXPECT().Read("states", "something", gomock.Any()).Return(fakeErr)
 	store.EXPECT().Write("states", "something", gomock.Any()).Return(nil)
-	remote, err := state.NewLocalState("something", "wherever", store)
+	remote, err := state.NewLocalState("something", "wherever", "//here", store)
 	if err != nil {
 		test.Log(err)
 		test.FailNow()
@@ -210,6 +210,17 @@ func testState(client state.State, store *mock_state.MockStore, test *testing.T)
 
 	if !synced {
 		test.Log("it should have been in sync")
+		test.Fail()
+	}
+
+	dir, err := client.GetDataDir()
+	if err != nil {
+		test.Log(err)
+		test.FailNow()
+	}
+
+	if dir != "//here" {
+		test.Logf("got wrong data dir '%v'", dir)
 		test.Fail()
 	}
 
