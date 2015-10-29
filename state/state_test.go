@@ -16,7 +16,7 @@ import (
 	"time"
 )
 
-var err = errors.New("general")
+var fakeErr = errors.New("general")
 
 func TestLocal(test *testing.T) {
 	ctrl := gomock.NewController(test)
@@ -24,8 +24,8 @@ func TestLocal(test *testing.T) {
 
 	store := mock_state.NewMockStore(ctrl)
 
-	store.EXPECT().Read("states", "something", gomock.Any()).Return(err).Times(2)
-	store.EXPECT().Write("states", "something", gomock.Any()).Return(err)
+	store.EXPECT().Read("states", "something", gomock.Any()).Return(fakeErr).Times(2)
+	store.EXPECT().Write("states", "something", gomock.Any()).Return(fakeErr)
 
 	out, err := state.NewLocalState("something", "wherever", store)
 	if err == nil {
@@ -72,7 +72,7 @@ func TestRpc(test *testing.T) {
 
 	store := mock_state.NewMockStore(ctrl)
 
-	store.EXPECT().Read("states", "something", gomock.Any()).Return(err)
+	store.EXPECT().Read("states", "something", gomock.Any()).Return(fakeErr)
 	store.EXPECT().Write("states", "something", gomock.Any()).Return(nil)
 	local, err := state.NewLocalState("something", "wherever", store)
 	if err != nil {
@@ -104,6 +104,66 @@ func TestRpc(test *testing.T) {
 	}
 }
 
+func TestBounce(test *testing.T) {
+	ctrl := gomock.NewController(test)
+	defer ctrl.Finish()
+
+	store := mock_state.NewMockStore(ctrl)
+
+	store.EXPECT().Read("states", "here", gomock.Any()).Return(fakeErr)
+	store.EXPECT().Write("states", "here", gomock.Any()).Return(nil)
+	local, err := state.NewLocalState("here", "right here", store)
+	if err != nil {
+		test.Log(err)
+		test.FailNow()
+	}
+
+	err = local.ExposeRPCEndpoint("tcp", "127.0.0.1:2345")
+	if err != nil {
+		test.Log(err)
+		test.FailNow()
+	}
+
+	store.EXPECT().Read("states", "something", gomock.Any()).Return(fakeErr)
+	store.EXPECT().Write("states", "something", gomock.Any()).Return(nil)
+	remote, err := state.NewLocalState("something", "wherever", store)
+	if err != nil {
+		test.Log(err)
+		test.FailNow()
+	}
+
+	testState(remote, store, test)
+	test.Logf("now for the remote")
+
+	// this needs to be reset
+	remote.SetSynced(false)
+
+	err = remote.ExposeRPCEndpoint("tcp", "127.0.0.1:3456")
+	if err != nil {
+		test.Log(err)
+		test.FailNow()
+	}
+
+	client := state.NewRemoteState("tcp", "127.0.0.1:2345", time.Second)
+
+	bounced := client.Bounce("127.0.0.1:3456")
+
+	testState(bounced, store, test)
+
+	// now for tests specific to remote states
+
+	err = bounced.SetDBRole("testing")
+	if err == nil {
+		test.Log("should not have been able to update the db state from remote")
+		test.Fail()
+	}
+
+	if bounced.Location() != "127.0.0.1:3456" {
+		test.Log("wrong location was returned")
+		test.Fail()
+	}
+}
+
 func testState(client state.State, store *mock_state.MockStore, test *testing.T) {
 	role, err := client.GetRole()
 	if err != nil {
@@ -111,7 +171,7 @@ func testState(client state.State, store *mock_state.MockStore, test *testing.T)
 		test.FailNow()
 	}
 	if role != "something" {
-		test.Log("wrong role was returned")
+		test.Logf("wrong role was returned '%v'", role)
 		test.Fail()
 	}
 
@@ -121,7 +181,7 @@ func testState(client state.State, store *mock_state.MockStore, test *testing.T)
 		test.FailNow()
 	}
 	if dbRole != "initialized" {
-		test.Log("wrong dbrole was returned", dbRole)
+		test.Logf("wrong dbrole was returned '%v'", dbRole)
 		test.Fail()
 	}
 

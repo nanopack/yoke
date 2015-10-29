@@ -34,6 +34,7 @@ type (
 	StateRPC struct {
 		state state
 	}
+
 	Nil struct{}
 )
 
@@ -68,10 +69,10 @@ func NewRemoteState(network, location string, timeout time.Duration) State {
 	return remote
 }
 
-func (c remoteState) call(method string, in interface{}, out interface{}) error {
+func call(network, location string, timeout time.Duration, method string, in interface{}, out interface{}) error {
 	res := make(chan error, 1)
 	go func() {
-		client, err := rpc.Dial(c.network, c.location)
+		client, err := rpc.Dial(network, location)
 		if err != nil {
 			res <- err
 			return
@@ -82,9 +83,13 @@ func (c remoteState) call(method string, in interface{}, out interface{}) error 
 	select {
 	case err := <-res:
 		return err
-	case <-time.After(c.timeout):
+	case <-time.After(timeout):
 		return Timeout
 	}
+}
+
+func (c remoteState) call(method string, in interface{}, out interface{}) error {
+	return call(c.network, c.location, c.timeout, method, in, out)
 }
 
 func (c remoteState) Ready() {
@@ -94,12 +99,13 @@ func (c remoteState) Ready() {
 }
 
 func (c remoteState) SetSynced(synced bool) error {
-	return c.call("StateRPC.SetSynced", synced, &Nil{})
+	var out bool
+	return c.call("StateRPC.SetSynced", synced, &out)
 }
 
 func (c remoteState) HasSynced() (bool, error) {
 	var synced bool
-	err := c.call("StateRPC.HasSynced", Nil{}, &synced)
+	err := c.call("StateRPC.HasSynced", true, &synced)
 	return synced, err
 }
 
@@ -109,13 +115,13 @@ func (c remoteState) Location() string {
 
 func (c remoteState) GetRole() (string, error) {
 	var role string
-	err := c.call("StateRPC.GetRole", Nil{}, &role)
+	err := c.call("StateRPC.GetRole", "", &role)
 	return role, err
 }
 
 func (c remoteState) GetDBRole() (string, error) {
 	var role string
-	err := c.call("StateRPC.GetDBRole", Nil{}, &role)
+	err := c.call("StateRPC.GetDBRole", "", &role)
 	return role, err
 }
 
@@ -123,26 +129,26 @@ func (c remoteState) SetDBRole(role string) error {
 	return NotSupported
 }
 
-func (wrap *StateRPC) Ready(a *Nil, b *Nil) error {
+func (wrap *StateRPC) Ready(a Nil, b *Nil) error {
 	return nil
 }
 
-func (wrap *StateRPC) GetRole(arg Nil, reply *string) error {
+func (wrap *StateRPC) GetRole(arg string, reply *string) error {
 	*reply = wrap.state.Role
 	return nil
 }
 
-func (wrap *StateRPC) GetDBRole(arg Nil, reply *string) error {
+func (wrap *StateRPC) GetDBRole(arg string, reply *string) error {
 	*reply = wrap.state.DBRole
 	return nil
 }
 
-func (wrap *StateRPC) HasSynced(arg Nil, reply *bool) error {
+func (wrap *StateRPC) HasSynced(arg bool, reply *bool) error {
 	*reply = wrap.state.synced
 	return nil
 }
 
-func (wrap *StateRPC) SetSynced(sync bool, arg *Nil) error {
+func (wrap *StateRPC) SetSynced(sync bool, out *bool) error {
 	wrap.state.synced = sync
 	return nil
 }

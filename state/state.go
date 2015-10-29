@@ -26,6 +26,7 @@ type (
 		HasSynced() (bool, error)
 		SetSynced(bool) error
 		Location() string
+		Bounce(location string) State
 	}
 
 	state struct {
@@ -62,6 +63,11 @@ func NewLocalState(role, location string, store Store) (LocalState, error) {
 }
 
 func (state *state) Ready() {}
+
+func (state *state) Bounce(location string) State {
+	// this should really return an error of some sort...
+	return nil
+}
 
 func (state *state) HasSynced() (bool, error) {
 	return state.synced, nil
