@@ -9,6 +9,7 @@ package monitor
 
 import (
 	"errors"
+	"github.com/nanobox-io/yoke/state"
 	"sync"
 	"time"
 )
@@ -22,33 +23,17 @@ type (
 		Loop(time.Duration) error
 	}
 
-	Monitor interface {
-		GetRole() (string, error)
-		Bounce(string) Candidate
-		Ready()
-		Location() string
-	}
-
-	Candidate interface {
-		Monitor
-		GetDBRole() (string, error)
-		GetDataDir() (string, error)
-		SetDBRole(string) error
-		SetSynced(bool) error
-		HasSynced() (bool, error)
-	}
-
 	decider struct {
 		sync.Mutex
 
-		me        Candidate
-		other     Candidate
-		monitor   Monitor
+		me        state.State
+		other     state.State
+		monitor   state.State
 		performer Performer
 	}
 )
 
-func NewDecider(me Candidate, other Candidate, monitor Monitor, performer Performer) Looper {
+func NewDecider(me, other, monitor state.State, performer Performer) Looper {
 	decider := decider{
 		me:        me,
 		other:     other,

@@ -12,6 +12,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/nanobox-io/yoke/monitor"
 	"github.com/nanobox-io/yoke/monitor/mock"
+	"github.com/nanobox-io/yoke/state/mock"
 	"testing"
 )
 
@@ -19,9 +20,9 @@ func TestPrimary(test *testing.T) {
 	ctrl := gomock.NewController(test)
 	defer ctrl.Finish()
 
-	me := mock_monitor.NewMockCandidate(ctrl)
-	other := mock_monitor.NewMockCandidate(ctrl)
-	arbiter := mock_monitor.NewMockMonitor(ctrl)
+	me := mock_state.NewMockState(ctrl)
+	other := mock_state.NewMockState(ctrl)
+	arbiter := mock_state.NewMockState(ctrl)
 	perform := mock_monitor.NewMockPerformer(ctrl)
 
 	other.EXPECT().Ready()
@@ -39,9 +40,9 @@ func TestSecondary(test *testing.T) {
 	ctrl := gomock.NewController(test)
 	defer ctrl.Finish()
 
-	me := mock_monitor.NewMockCandidate(ctrl)
-	other := mock_monitor.NewMockCandidate(ctrl)
-	arbiter := mock_monitor.NewMockMonitor(ctrl)
+	me := mock_state.NewMockState(ctrl)
+	other := mock_state.NewMockState(ctrl)
+	arbiter := mock_state.NewMockState(ctrl)
 	perform := mock_monitor.NewMockPerformer(ctrl)
 
 	other.EXPECT().Ready()
@@ -59,9 +60,9 @@ func TestSingle(test *testing.T) {
 	ctrl := gomock.NewController(test)
 	defer ctrl.Finish()
 
-	me := mock_monitor.NewMockCandidate(ctrl)
-	other := mock_monitor.NewMockCandidate(ctrl)
-	arbiter := mock_monitor.NewMockMonitor(ctrl)
+	me := mock_state.NewMockState(ctrl)
+	other := mock_state.NewMockState(ctrl)
+	arbiter := mock_state.NewMockState(ctrl)
 	perform := mock_monitor.NewMockPerformer(ctrl)
 
 	other.EXPECT().Ready()
@@ -78,9 +79,9 @@ func TestActive(test *testing.T) {
 	ctrl := gomock.NewController(test)
 	defer ctrl.Finish()
 
-	me := mock_monitor.NewMockCandidate(ctrl)
-	other := mock_monitor.NewMockCandidate(ctrl)
-	arbiter := mock_monitor.NewMockMonitor(ctrl)
+	me := mock_state.NewMockState(ctrl)
+	other := mock_state.NewMockState(ctrl)
+	arbiter := mock_state.NewMockState(ctrl)
 	perform := mock_monitor.NewMockPerformer(ctrl)
 
 	other.EXPECT().Ready()
@@ -97,9 +98,9 @@ func TestBackup(test *testing.T) {
 	ctrl := gomock.NewController(test)
 	defer ctrl.Finish()
 
-	me := mock_monitor.NewMockCandidate(ctrl)
-	other := mock_monitor.NewMockCandidate(ctrl)
-	arbiter := mock_monitor.NewMockMonitor(ctrl)
+	me := mock_state.NewMockState(ctrl)
+	other := mock_state.NewMockState(ctrl)
+	arbiter := mock_state.NewMockState(ctrl)
 	perform := mock_monitor.NewMockPerformer(ctrl)
 
 	other.EXPECT().Ready()
@@ -116,10 +117,10 @@ func TestOtherDead(test *testing.T) {
 	ctrl := gomock.NewController(test)
 	defer ctrl.Finish()
 
-	me := mock_monitor.NewMockCandidate(ctrl)
-	other := mock_monitor.NewMockCandidate(ctrl)
-	bounce := mock_monitor.NewMockCandidate(ctrl)
-	arbiter := mock_monitor.NewMockMonitor(ctrl)
+	me := mock_state.NewMockState(ctrl)
+	other := mock_state.NewMockState(ctrl)
+	bounce := mock_state.NewMockState(ctrl)
+	arbiter := mock_state.NewMockState(ctrl)
 	perform := mock_monitor.NewMockPerformer(ctrl)
 
 	other.EXPECT().Ready()
@@ -142,10 +143,10 @@ func TestOtherDeadButSingle(test *testing.T) {
 	ctrl := gomock.NewController(test)
 	defer ctrl.Finish()
 
-	me := mock_monitor.NewMockCandidate(ctrl)
-	other := mock_monitor.NewMockCandidate(ctrl)
-	bounce := mock_monitor.NewMockCandidate(ctrl)
-	arbiter := mock_monitor.NewMockMonitor(ctrl)
+	me := mock_state.NewMockState(ctrl)
+	other := mock_state.NewMockState(ctrl)
+	bounce := mock_state.NewMockState(ctrl)
+	arbiter := mock_state.NewMockState(ctrl)
 	perform := mock_monitor.NewMockPerformer(ctrl)
 
 	other.EXPECT().Ready()
@@ -165,10 +166,10 @@ func TestOtherDeadBackup(test *testing.T) {
 	ctrl := gomock.NewController(test)
 	defer ctrl.Finish()
 
-	me := mock_monitor.NewMockCandidate(ctrl)
-	other := mock_monitor.NewMockCandidate(ctrl)
-	bounce := mock_monitor.NewMockCandidate(ctrl)
-	arbiter := mock_monitor.NewMockMonitor(ctrl)
+	me := mock_state.NewMockState(ctrl)
+	other := mock_state.NewMockState(ctrl)
+	bounce := mock_state.NewMockState(ctrl)
+	arbiter := mock_state.NewMockState(ctrl)
 	perform := mock_monitor.NewMockPerformer(ctrl)
 
 	other.EXPECT().Ready()
@@ -192,10 +193,10 @@ func TestOtherDeadBackupNotSync(test *testing.T) {
 	ctrl := gomock.NewController(test)
 	defer ctrl.Finish()
 
-	me := mock_monitor.NewMockCandidate(ctrl)
-	other := mock_monitor.NewMockCandidate(ctrl)
-	bounce := mock_monitor.NewMockCandidate(ctrl)
-	arbiter := mock_monitor.NewMockMonitor(ctrl)
+	me := mock_state.NewMockState(ctrl)
+	other := mock_state.NewMockState(ctrl)
+	bounce := mock_state.NewMockState(ctrl)
+	arbiter := mock_state.NewMockState(ctrl)
 	perform := mock_monitor.NewMockPerformer(ctrl)
 
 	other.EXPECT().Ready().Times(2)
@@ -223,10 +224,10 @@ func TestOtherTemporaryDead(test *testing.T) {
 	ctrl := gomock.NewController(test)
 	defer ctrl.Finish()
 
-	me := mock_monitor.NewMockCandidate(ctrl)
-	other := mock_monitor.NewMockCandidate(ctrl)
-	bounce := mock_monitor.NewMockCandidate(ctrl)
-	arbiter := mock_monitor.NewMockMonitor(ctrl)
+	me := mock_state.NewMockState(ctrl)
+	other := mock_state.NewMockState(ctrl)
+	bounce := mock_state.NewMockState(ctrl)
+	arbiter := mock_state.NewMockState(ctrl)
 	perform := mock_monitor.NewMockPerformer(ctrl)
 
 	other.EXPECT().Ready().Times(2)

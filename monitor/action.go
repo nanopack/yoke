@@ -15,6 +15,7 @@ import (
 	"github.com/hoisie/mustache"
 	_ "github.com/lib/pq"
 	"github.com/nanobox-io/yoke/config"
+	"github.com/nanobox-io/yoke/state"
 	"io"
 	"net"
 	"os"
@@ -40,8 +41,8 @@ type (
 	performer struct {
 		sync.Mutex
 		step  map[string]bool
-		me    Candidate
-		other Candidate
+		me    state.State
+		other state.State
 		err   chan error
 		cmd   *exec.Cmd
 	}
@@ -58,7 +59,7 @@ func NewPrefix(prefix string) io.Writer {
 	return write
 }
 
-func NewPerformer(me Candidate, other Candidate) *performer {
+func NewPerformer(me state.State, other state.State) *performer {
 	perform := performer{
 		step: map[string]bool{
 			"trigger": true, // this should only be there if the trigger file exists

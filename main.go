@@ -61,12 +61,9 @@ func main() {
 	var perform monitor.Performer
 	finished := make(chan error)
 	if other != nil {
-		meCan := me.(monitor.Candidate)
-		otherCan := other.(monitor.Candidate)
-		monMon := mon.(monitor.Monitor)
 
-		perform = monitor.NewPerformer(meCan, otherCan)
-		decide := monitor.NewDecider(meCan, otherCan, monMon, perform)
+		perform = monitor.NewPerformer(me, other)
+		decide := monitor.NewDecider(me, other, mon, perform)
 
 		go decide.Loop(time.Second * 10)
 		go func() {
