@@ -65,7 +65,7 @@ func main() {
 		perform = monitor.NewPerformer(me, other)
 		decide := monitor.NewDecider(me, other, mon, perform)
 
-		go decide.Loop(time.Second * 10)
+		go decide.Loop(time.Second * 2)
 		go func() {
 			err := perform.Loop()
 			if err != nil {

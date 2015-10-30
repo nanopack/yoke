@@ -50,7 +50,6 @@ func NewLocalState(role, location, dataDir string, store Store) (LocalState, err
 	if err := store.Read(states, role, &newState); err != nil {
 		newState = state{
 			DataDir: dataDir,
-			store:   store,
 			Role:    role,
 			DBRole:  "initialized",
 			synced:  false,
@@ -61,6 +60,7 @@ func NewLocalState(role, location, dataDir string, store Store) (LocalState, err
 			return nil, err
 		}
 	}
+	newState.store = store
 	newState.synced = false
 	return &newState, nil
 }
