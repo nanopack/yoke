@@ -7,6 +7,10 @@
 
 package state
 
+import (
+	"io"
+)
+
 type (
 	Store interface {
 		Read(string, string, interface{}) error
@@ -15,7 +19,7 @@ type (
 
 	LocalState interface {
 		State
-		ExposeRPCEndpoint(string, string) error
+		ExposeRPCEndpoint(string, string) (io.Closer, error)
 	}
 
 	State interface {

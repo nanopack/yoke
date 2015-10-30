@@ -9,6 +9,7 @@ package state
 
 import (
 	"errors"
+	"io"
 	"net"
 	"net/rpc"
 	"time"
@@ -39,7 +40,7 @@ type (
 )
 
 // Starts the RPC listening server, enables remote communication with local state objects
-func (local *state) ExposeRPCEndpoint(network, location string) error {
+func (local *state) ExposeRPCEndpoint(network, location string) (io.Closer, error) {
 	wrap := StateRPC{
 		state: local,
 	}
@@ -47,16 +48,16 @@ func (local *state) ExposeRPCEndpoint(network, location string) error {
 	server := rpc.NewServer()
 
 	if err := server.Register(&wrap); err != nil {
-		return err
+		return nil, err
 	}
 
 	listener, err := net.Listen(network, location)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	go server.Accept(listener)
-	return nil
+	return listener, nil
 }
 
 // Creates and returns a State that represents a state reachable over an rpc connection

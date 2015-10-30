@@ -75,7 +75,7 @@ func main() {
 	finished := make(chan error)
 	if other != nil {
 
-		perform = monitor.NewPerformer(me, other)
+		perform = monitor.NewPerformer(me, other, config.Conf)
 
 		go func() {
 			decide := monitor.NewDecider(me, other, mon, perform)

@@ -80,11 +80,13 @@ func TestRpc(test *testing.T) {
 		test.FailNow()
 	}
 
-	err = local.ExposeRPCEndpoint("tcp", "127.0.0.1:1234")
+	_, err = local.ExposeRPCEndpoint("tcp", "127.0.0.1:1234")
 	if err != nil {
 		test.Log(err)
 		test.FailNow()
 	}
+	// I don't know why this causes the tests to fail
+	// defer listen.Close()
 
 	client := state.NewRemoteState("tcp", "127.0.0.1:1234", time.Second)
 
@@ -118,11 +120,12 @@ func TestBounce(test *testing.T) {
 		test.FailNow()
 	}
 
-	err = local.ExposeRPCEndpoint("tcp", "127.0.0.1:2345")
+	listen, err := local.ExposeRPCEndpoint("tcp", "127.0.0.1:2345")
 	if err != nil {
 		test.Log(err)
 		test.FailNow()
 	}
+	defer listen.Close()
 
 	store.EXPECT().Read("states", "something", gomock.Any()).Return(fakeErr)
 	store.EXPECT().Write("states", "something", gomock.Any()).Return(nil)
@@ -138,11 +141,12 @@ func TestBounce(test *testing.T) {
 	// this needs to be reset
 	remote.SetSynced(false)
 
-	err = remote.ExposeRPCEndpoint("tcp", "127.0.0.1:3456")
+	listen1, err := remote.ExposeRPCEndpoint("tcp", "127.0.0.1:3456")
 	if err != nil {
 		test.Log(err)
 		test.FailNow()
 	}
+	defer listen1.Close()
 
 	client := state.NewRemoteState("tcp", "127.0.0.1:2345", time.Second)
 

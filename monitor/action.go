@@ -40,11 +40,12 @@ type (
 
 	performer struct {
 		sync.Mutex
-		step  map[string]bool
-		me    state.State
-		other state.State
-		err   chan error
-		cmd   *exec.Cmd
+		step   map[string]bool
+		me     state.State
+		other  state.State
+		err    chan error
+		cmd    *exec.Cmd
+		config config.Config
 	}
 )
 
@@ -59,8 +60,9 @@ func NewPrefix(prefix string) io.Writer {
 	return write
 }
 
-func NewPerformer(me state.State, other state.State) *performer {
+func NewPerformer(me state.State, other state.State, config config.Config) *performer {
 	perform := performer{
+		config: config,
 		step: map[string]bool{
 			"trigger": true, // this should only be there if the trigger file exists
 		},
@@ -163,11 +165,11 @@ func (performer *performer) stop() {
 }
 
 func (performer *performer) Initialize() error {
-	_, err := os.Stat(config.Conf.DataDir)
+	_, err := os.Stat(performer.config.DataDir)
 	switch {
 	case os.IsNotExist(err):
 		config.Log.Info("creating database")
-		init := exec.Command("initdb", config.Conf.DataDir)
+		init := exec.Command("initdb", performer.config.DataDir)
 		init.Stdout = NewPrefix("[initdb.stdout]")
 		init.Stderr = NewPrefix("[initdb.stderr]")
 		if err = init.Run(); err != nil {
@@ -194,8 +196,8 @@ func (performer *performer) Single() error {
 
 	config.Log.Info("[action] running DB as single")
 
-	addVip()
-	roleChangeCommand("single")
+	performer.addVip()
+	performer.roleChangeCommand("single")
 
 	return nil
 }
@@ -216,7 +218,7 @@ func (performer *performer) replicate(enabled bool) error {
 	}
 	performer.step["trigger"] = enabled
 
-	trigger := config.Conf.StatusDir + "/i-am-primary"
+	trigger := performer.config.StatusDir + "/i-am-primary"
 	switch enabled {
 	case true:
 		return os.Remove(trigger)
@@ -232,13 +234,13 @@ func (performer *performer) replicate(enabled bool) error {
 	}
 }
 
-func pgConnect() (*sql.DB, error) {
-	return sql.Open("postgres", fmt.Sprintf("user=%s database=postgres sslmode=disable host=localhost port=%d", config.Conf.SystemUser, config.Conf.PGPort))
+func (performer *performer) pgConnect() (*sql.DB, error) {
+	return sql.Open("postgres", fmt.Sprintf("user=%s database=postgres sslmode=disable host=localhost port=%d", performer.config.SystemUser, performer.config.PGPort))
 }
 
 func (performer *performer) setSync(enabled bool, db *sql.DB) error {
 	if db == nil {
-		db, err := pgConnect()
+		db, err := performer.pgConnect()
 		if err != nil {
 			return err
 		}
@@ -251,7 +253,7 @@ func (performer *performer) setSync(enabled bool, db *sql.DB) error {
 	default:
 		sync = "off"
 	}
-	_, err := db.Exec(fmt.Sprintf("ALTER USER %v SET synchronous_commit=%v", config.Conf.SystemUser, sync))
+	_, err := db.Exec(fmt.Sprintf("ALTER USER %v SET synchronous_commit=%v", performer.config.SystemUser, sync))
 	return err
 
 }
@@ -278,13 +280,13 @@ func (performer *performer) Active() error {
 	if err != nil {
 		return err
 	}
-	sync := mustache.Render(config.Conf.SyncCommand, map[string]string{"local_dir": config.Conf.DataDir, "slave_ip": ip, "slave_dir": dataDir})
+	sync := mustache.Render(performer.config.SyncCommand, map[string]string{"local_dir": performer.config.DataDir, "slave_ip": ip, "slave_dir": dataDir})
 
 	if err := performer.sync(sync); err != nil {
 		return err
 	}
 
-	db, err := pgConnect()
+	db, err := performer.pgConnect()
 	if err != nil {
 		return err
 	}
@@ -325,8 +327,8 @@ func (performer *performer) Active() error {
 		return err
 	}
 
-	addVip()
-	roleChangeCommand("master")
+	performer.addVip()
+	performer.roleChangeCommand("master")
 
 	performer.me.SetDBRole("active")
 	return nil
@@ -335,7 +337,7 @@ func (performer *performer) Active() error {
 // The Backup state.
 func (performer *performer) Backup() error {
 	config.Log.Info("transitioning to Backup")
-	removeVip()
+	performer.removeVip()
 
 	// TODO figure out if the recover.conf file needs to be regenerated.
 
@@ -353,7 +355,7 @@ func (performer *performer) Backup() error {
 
 	config.Log.Debug("[action] starting database")
 	performer.startDB()
-	roleChangeCommand("backup")
+	performer.roleChangeCommand("backup")
 	return performer.me.SetDBRole("backup")
 }
 
@@ -374,7 +376,7 @@ func (performer *performer) killDB() {
 
 func (performer *performer) startDB() {
 	config.Log.Info("[action] starting db")
-	cmd := exec.Command("postgres", "-D", config.Conf.DataDir)
+	cmd := exec.Command("postgres", "-D", performer.config.DataDir)
 	cmd.Stdout = NewPrefix("[postgres.stdout]")
 	cmd.Stderr = NewPrefix("[postgres.stderr]")
 	cmd.Start()
@@ -383,8 +385,8 @@ func (performer *performer) startDB() {
 
 	// wait for postgres to exit, or for it to start correctly
 	for performer.cmd != nil {
-		conn, err := net.Dial("tcp", fmt.Sprintf("127.0.0.1:%v", config.Conf.PGPort))
-		fmt.Println("checking if postgres is up", conn, err, config.Conf.PGPort)
+		conn, err := net.Dial("tcp", fmt.Sprintf("127.0.0.1:%v", performer.config.PGPort))
+		fmt.Println("checking if postgres is up", conn, err, performer.config.PGPort)
 		if err == nil {
 			conn.Close()
 			break
@@ -402,9 +404,9 @@ func (performer *performer) reportExit() {
 	}
 }
 
-func roleChangeCommand(role string) {
-	if config.Conf.RoleChangeCommand != "" {
-		rcc := exec.Command("bash", "-c", fmt.Sprintf("%s %s", config.Conf.RoleChangeCommand, role))
+func (performer *performer) roleChangeCommand(role string) {
+	if performer.config.RoleChangeCommand != "" {
+		rcc := exec.Command("bash", "-c", fmt.Sprintf("%s %s", performer.config.RoleChangeCommand, role))
 		rcc.Stdout = NewPrefix("[RoleChangeCommand.stdout]")
 		rcc.Stderr = NewPrefix("[RoleChangeCommand.stderr]")
 		if err := rcc.Run(); err != nil {
@@ -414,10 +416,10 @@ func roleChangeCommand(role string) {
 	}
 }
 
-func addVip() {
-	if vipable() {
+func (performer *performer) addVip() {
+	if performer.vipable() {
 		config.Log.Info("[action] Adding VIP")
-		vAddCmd := exec.Command("bash", "-c", fmt.Sprintf("%s %s", config.Conf.VipAddCommand, config.Conf.Vip))
+		vAddCmd := exec.Command("bash", "-c", fmt.Sprintf("%s %s", performer.config.VipAddCommand, performer.config.Vip))
 		vAddCmd.Stdout = NewPrefix("[VIPAddCommand.stdout]")
 		vAddCmd.Stderr = NewPrefix("[VIPAddCommand.stderr]")
 		if err := vAddCmd.Run(); err != nil {
@@ -427,10 +429,10 @@ func addVip() {
 	}
 }
 
-func removeVip() {
-	if vipable() {
+func (performer *performer) removeVip() {
+	if performer.vipable() {
 		config.Log.Info("[action] Removing VIP")
-		vRemoveCmd := exec.Command("bash", "-c", fmt.Sprintf("%s %s", config.Conf.VipRemoveCommand, config.Conf.Vip))
+		vRemoveCmd := exec.Command("bash", "-c", fmt.Sprintf("%s %s", performer.config.VipRemoveCommand, performer.config.Vip))
 		vRemoveCmd.Stdout = NewPrefix("[VIPRemoveCommand.stdout]")
 		vRemoveCmd.Stderr = NewPrefix("[VIPRemoveCommand.stderr]")
 		if err := vRemoveCmd.Run(); err != nil {
@@ -440,6 +442,6 @@ func removeVip() {
 	}
 }
 
-func vipable() bool {
-	return config.Conf.Vip != "" && config.Conf.VipAddCommand != "" && config.Conf.VipRemoveCommand != ""
+func (performer *performer) vipable() bool {
+	return performer.config.Vip != "" && performer.config.VipAddCommand != "" && performer.config.VipRemoveCommand != ""
 }
