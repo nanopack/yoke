@@ -101,6 +101,7 @@ func main() {
 					config.Log.Info("shutting down the database")
 					perform.Stop()
 					perform = nil
+					config.Log.Info("waiting for the database")
 				}
 			case syscall.SIGALRM:
 				config.Log.Info("Printing Stack Trace")

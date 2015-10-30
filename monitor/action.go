@@ -73,15 +73,19 @@ func NewPerformer(me state.State, other state.State) *performer {
 }
 
 func (performer *performer) Loop() error {
+	config.Log.Info("Going to Init")
 	if err := performer.Initialize(); err != nil {
 		return err
 	}
+	config.Log.Info("Waiting for error")
 	return <-performer.err
 }
 
 func (performer *performer) Stop() {
+	config.Log.Info("going to stop")
 	performer.Lock()
 	defer performer.Unlock()
+	config.Log.Info("stopping")
 
 	performer.Stop()
 	performer.err <- nil
