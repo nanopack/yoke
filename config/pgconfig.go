@@ -26,7 +26,7 @@ var (
 // configureHBAConf attempts to open the 'pg_hba.conf' file. Once open it will scan
 // the file line by line looking for replication settings, and overwrite only those
 // settings with the settings required for redundancy on Yoke
-func configureHBAConf(ip string) error {
+func ConfigureHBAConf(ip string) error {
 
 	// open the pg_hba.conf
 	file := Conf.DataDir + "pg_hba.conf"
@@ -82,7 +82,7 @@ host    replication     %s        %s/32            trust
 // configurePGConf attempts to open the 'postgresql.conf' file. Once open it will
 // scan the file line by line looking for replication settings, and overwrite only
 // those settings with the settings required for redundancy
-func configurePGConf(ip string, port int) error {
+func ConfigurePGConf(ip string, port int) error {
 
 	// open the postgresql.conf
 	file := Conf.DataDir + "postgresql.conf"

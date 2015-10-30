@@ -13,6 +13,7 @@ import (
 	"github.com/nanobox-io/yoke/config"
 	"github.com/nanobox-io/yoke/monitor"
 	"github.com/nanobox-io/yoke/state"
+	"net"
 	"os"
 	"os/signal"
 	"runtime"
@@ -27,6 +28,8 @@ func main() {
 		os.Exit(1)
 	}
 	config.Init(os.Args[1])
+
+	config.ConfigurePGConf("0.0.0.0", config.Conf.PGPort)
 
 	store, err := scribble.New(config.Conf.StatusDir, config.Log)
 	if err != nil {
@@ -47,9 +50,19 @@ func main() {
 	case "primary":
 		location := config.Conf.Secondary
 		other = state.NewRemoteState("tcp", location, time.Second)
+		host, _, err := net.SplitHostPort(location)
+		if err != nil {
+			panic(err)
+		}
+		config.ConfigureHBAConf(host)
 	case "secondary":
 		location := config.Conf.Primary
 		other = state.NewRemoteState("tcp", location, time.Second)
+		host, _, err := net.SplitHostPort(location)
+		if err != nil {
+			panic(err)
+		}
+		config.ConfigureHBAConf(host)
 	default:
 		// nothing as the monitor does not need to monitor anything
 		// the monitor just acts as a secondary mode of communication in network
