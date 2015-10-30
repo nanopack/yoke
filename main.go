@@ -63,14 +63,18 @@ func main() {
 	if other != nil {
 
 		perform = monitor.NewPerformer(me, other)
-		decide := monitor.NewDecider(me, other, mon, perform)
 
-		go decide.Loop(time.Second * 2)
+		go func() {
+			decide := monitor.NewDecider(me, other, mon, perform)
+			decide.Loop(time.Second * 2)
+		}()
+
 		go func() {
 			err := perform.Loop()
 			if err != nil {
 				finished <- err
 			}
+			// how do I stop the decide loop?
 			close(finished)
 		}()
 	}
