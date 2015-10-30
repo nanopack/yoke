@@ -216,7 +216,7 @@ func (performer *performer) replicate(enabled bool) error {
 	}
 	performer.step["trigger"] = enabled
 
-	trigger := "/data/var/db/postgresql/i-am-primary"
+	trigger := config.Conf.StatusDir + "/i-am-primary"
 	switch enabled {
 	case true:
 		return os.Remove(trigger)

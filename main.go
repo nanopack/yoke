@@ -28,7 +28,7 @@ func main() {
 	}
 	config.Init(os.Args[1])
 
-	store, err := scribble.New("dir", config.Log)
+	store, err := scribble.New(config.Conf.StatusDir, config.Log)
 	if err != nil {
 		config.Log.Fatal("scribble did not setup correctly %v", err)
 		os.Exit(1)
