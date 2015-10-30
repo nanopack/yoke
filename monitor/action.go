@@ -373,14 +373,14 @@ func (performer *performer) killDB() {
 }
 
 func (performer *performer) startDB() {
-	config.Log.Debug("[action] starting db")
+	config.Log.Info("[action] starting db")
 	cmd := exec.Command("postgres", "-D", config.Conf.DataDir)
 	cmd.Stdout = NewPrefix("[postgres.stdout]")
 	cmd.Stderr = NewPrefix("[postgres.stderr]")
 	cmd.Start()
 	performer.cmd = cmd
 	go performer.waitForExit()
-	config.Log.Debug("[action] db started")
+	config.Log.Info("[action] db started")
 }
 
 func (performer *performer) waitForExit() {
