@@ -383,7 +383,8 @@ func (performer *performer) startDB() {
 
 	// wait for postgres to exit, or for it to start correctly
 	for performer.cmd != nil {
-		conn, err := net.Dial("tcp", fmt.Sprintf("localhost:%v", config.Conf.PGPort))
+		conn, err := net.Dial("tcp", fmt.Sprintf("127.0.0.1:%v", config.Conf.PGPort))
+		fmt.Println("checking if postgres is up", conn, err, config.Conf.PGPort)
 		if err == nil {
 			conn.Close()
 			break
