@@ -130,7 +130,6 @@ func (decider decider) reCheck() error {
 	case "single":
 		fallthrough
 	case "active":
-		decider.me.SetDBRole("backup")
 		decider.performer.TransitionToBackup()
 	case "dead":
 		DBrole, err := decider.me.GetDBRole()
@@ -150,7 +149,6 @@ func (decider decider) reCheck() error {
 			}
 		}
 
-		decider.me.SetDBRole("single")
 		decider.performer.TransitionToSingle()
 	case "initialized":
 		role, err := decider.me.GetRole()
@@ -159,14 +157,11 @@ func (decider decider) reCheck() error {
 		}
 		switch role {
 		case "primary":
-			decider.me.SetDBRole("active")
 			decider.performer.TransitionToActive()
 		case "secondary":
-			decider.me.SetDBRole("backup")
 			decider.performer.TransitionToBackup()
 		}
 	case "backup":
-		decider.me.SetDBRole("active")
 		decider.performer.TransitionToActive()
 	}
 	return nil
