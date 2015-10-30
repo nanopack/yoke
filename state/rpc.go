@@ -32,14 +32,14 @@ type (
 	}
 
 	StateRPC struct {
-		state state
+		state *state
 	}
 
 	Nil struct{}
 )
 
 // Starts the RPC listening server, enables remote communication with local state objects
-func (local state) ExposeRPCEndpoint(network, location string) error {
+func (local *state) ExposeRPCEndpoint(network, location string) error {
 	wrap := StateRPC{
 		state: local,
 	}
