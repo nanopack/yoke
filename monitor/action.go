@@ -87,7 +87,7 @@ func (performer *performer) Stop() {
 	defer performer.Unlock()
 	config.Log.Info("stopping")
 
-	performer.Stop()
+	performer.stop()
 	performer.err <- nil
 }
 
