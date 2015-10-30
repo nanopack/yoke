@@ -96,12 +96,15 @@ func main() {
 		case signal := <-signals:
 			switch signal {
 			case syscall.SIGINT, os.Kill, syscall.SIGQUIT, syscall.SIGTERM:
+				config.Log.Info("shutting down")
 				if perform != nil {
 					// stop the database, then wait for it to be stopped
 					config.Log.Info("shutting down the database")
 					perform.Stop()
 					perform = nil
 					config.Log.Info("waiting for the database")
+				} else {
+					return
 				}
 			case syscall.SIGALRM:
 				config.Log.Info("Printing Stack Trace")
