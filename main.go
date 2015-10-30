@@ -48,7 +48,7 @@ func main() {
 		location := config.Conf.Secondary
 		other = state.NewRemoteState("tcp", location, time.Second)
 	case "secondary":
-		location := config.Conf.Secondary
+		location := config.Conf.Primary
 		other = state.NewRemoteState("tcp", location, time.Second)
 	default:
 		// nothing as the monitor does not need to monitor anything
