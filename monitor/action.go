@@ -379,12 +379,23 @@ func (performer *performer) startDB() {
 	cmd.Stderr = NewPrefix("[postgres.stderr]")
 	cmd.Start()
 	performer.cmd = cmd
-	go performer.waitForExit()
+	go performer.reportExit()
+
+	// wait for postgres to exit, or for it to start correctly
+	for performer.cmd != nil {
+		conn, err := net.Dial("tcp", fmt.Sprintf("localhost:%v", config.Conf.PGPort))
+		if err == nil {
+			conn.Close()
+			break
+		}
+		<-time.After(time.Second)
+	}
 	config.Log.Info("[action] db started")
 }
 
-func (performer *performer) waitForExit() {
+func (performer *performer) reportExit() {
 	err := performer.cmd.Wait()
+	performer.cmd = nil
 	if err != nil {
 		performer.err <- err
 	}
