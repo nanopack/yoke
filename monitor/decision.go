@@ -9,6 +9,7 @@ package monitor
 
 import (
 	"errors"
+	"github.com/nanobox-io/yoke/config"
 	"github.com/nanobox-io/yoke/state"
 	"sync"
 	"time"
@@ -46,8 +47,10 @@ func NewDecider(me, other, monitor state.State, performer Performer) Looper {
 		// if offline, we need to wait for all 3 nodes.
 		// So really we are going to wait for all 3 nodes to make it simple
 		// me is already Ready. no need to call it
+		config.Log.Info("waiting for cluster to be ready")
 		other.Ready()
 		monitor.Ready()
+		config.Log.Info("cluster is ready")
 
 		err := decider.reCheck()
 		switch err {

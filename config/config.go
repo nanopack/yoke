@@ -53,14 +53,11 @@ var (
 		DecisionTimeout: 10,
 		SystemUser:      systemUser(),
 	}
-	Log *lumber.ConsoleLogger
+	Log = lumber.NewConsoleLogger(lumber.INFO)
 )
 
 // init Initializeds the config file and the other constants
 func Init(path string) {
-
-	//
-	Log = lumber.NewConsoleLogger(lumber.INFO)
 
 	//
 	file, err := ini.LoadFile(path)

@@ -91,7 +91,19 @@ func (performer *performer) TransitionToSingle() {
 	performer.Lock()
 	defer performer.Unlock()
 
-	err := performer.Single()
+	// backups or actives can transition to single
+	// it just means that the other node went down
+	role, err := performer.me.GetDBRole()
+	if err != nil {
+		performer.err <- err
+		return
+	}
+	if role == "single" {
+		return
+	}
+	performer.me.SetDBRole("single")
+
+	err = performer.Single()
 	if err != nil {
 		performer.err <- err
 	}
@@ -101,7 +113,20 @@ func (performer *performer) TransitionToActive() {
 	performer.Lock()
 	defer performer.Unlock()
 
-	err := performer.Active()
+	role, err := performer.me.GetDBRole()
+	if err != nil {
+		performer.err <- err
+		return
+	}
+	switch role {
+	case "active":
+		return
+	case "backup":
+		// backups must transition to single before they can become active.
+		panic("something went seriously wrong, backups cannot transition to active.")
+	}
+
+	err = performer.Active()
 	if err != nil {
 		performer.err <- err
 	}
@@ -111,7 +136,16 @@ func (performer *performer) TransitionToBackup() {
 	performer.Lock()
 	defer performer.Unlock()
 
-	err := performer.Backup()
+	role, err := performer.me.GetDBRole()
+	if err != nil {
+		performer.err <- err
+		return
+	}
+	if role == "backup" {
+		return
+	}
+
+	err = performer.Backup()
 	if err != nil {
 		performer.err <- err
 	}
@@ -128,30 +162,22 @@ func (performer *performer) Initialize() error {
 	_, err := os.Stat(config.Conf.DataDir)
 	switch {
 	case os.IsNotExist(err):
+		config.Log.Info("creating database")
 		init := exec.Command("initdb", config.Conf.DataDir)
 		init.Stdout = NewPrefix("[initdb.stdout]")
 		init.Stderr = NewPrefix("[initdb.stderr]")
 		if err = init.Run(); err != nil {
 			return err
 		}
+	default:
+		config.Log.Info("database has already been created... skipping.")
 	}
 	return err
 }
 
 // The Single state.
 func (performer *performer) Single() error {
-	// backups or actives can transition to single
-	// it just means that the other node went down
-	role, err := performer.me.GetDBRole()
-	if err != nil {
-		return err
-	}
-	if role == "single" {
-		return nil
-	}
-	performer.me.SetDBRole("single")
-
-	config.Log.Info("[action] starting DB as single")
+	config.Log.Info("transitioning to Single")
 
 	// disable syncronus transaction commits.
 	if err := performer.setSync(false, nil); err != nil {
@@ -228,18 +254,7 @@ func (performer *performer) setSync(enabled bool, db *sql.DB) error {
 
 // The Active state.
 func (performer *performer) Active() error {
-	role, err := performer.me.GetDBRole()
-	if err != nil {
-		return err
-	}
-	switch role {
-	case "active":
-		return nil
-	case "backup":
-		// backups must transition to single before they can become active.
-		panic("something went seriously wrong, backups cannot transition to active.")
-	}
-
+	config.Log.Info("transitioning to Active")
 	if err := performer.replicate(false); err != nil {
 		return err
 	}
@@ -315,13 +330,7 @@ func (performer *performer) Active() error {
 
 // The Backup state.
 func (performer *performer) Backup() error {
-	role, err := performer.me.GetDBRole()
-	if err != nil {
-		return err
-	}
-	if role == "backup" {
-		return nil
-	}
+	config.Log.Info("transitioning to Backup")
 	removeVip()
 
 	// TODO figure out if the recover.conf file needs to be regenerated.
