@@ -22,6 +22,12 @@ import (
 
 //
 func main() {
+	if len(os.Args) != 2 {
+		fmt.Println("missing required config file!")
+		os.Exit(1)
+	}
+	config.Init(os.Args[1])
+
 	store, err := scribble.New("dir", config.Log)
 	if err != nil {
 		config.Log.Fatal("scribble did not setup correctly %v", err)
