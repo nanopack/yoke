@@ -296,7 +296,7 @@ func (performer *performer) Active() error {
 
 	// if we were unsucessfull at setting the sync flag on the other node
 	// then we need to start all over
-	if performer.other.SetSync(true) != nil {
+	if performer.other.SetSynced(true) != nil {
 		return nil
 	}
 

@@ -34,7 +34,7 @@ type (
 		GetDBRole() (string, error)
 		GetDataDir() (string, error)
 		SetDBRole(string) error
-		SetSync(bool) error
+		SetSynced(bool) error
 		HasSynced() (bool, error)
 	}
 
