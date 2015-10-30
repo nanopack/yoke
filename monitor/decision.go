@@ -69,9 +69,11 @@ func (decider decider) Loop(check time.Duration) error {
 	timer := time.Tick(check)
 	for range timer {
 		err := decider.reCheck()
-		if err != nil {
+		switch {
+		case err == ClusterUnaviable:
+		case err != nil:
 			return err
-			// just print it out? we will probably be able to decide later
+		default:
 		}
 	}
 	return nil
@@ -103,20 +105,25 @@ func (decider decider) reCheck() error {
 
 	var otherDBRole string
 	var err error
+	config.Log.Info("checking other role")
 	otherDBRole, err = decider.other.GetDBRole()
 	if err != nil {
+		config.Log.Info("checking other role (bounce)")
 		address := decider.other.Location()
 		otherDBRole, err = decider.monitor.Bounce(address).GetDBRole()
 		if err != nil {
 			// this node can't talk to the other member of the cluster or the monitor
 			// if this node is not in single mode it needs to shut off
 			if role, err := decider.me.GetDBRole(); role != "single" || err != nil {
+				config.Log.Info("stopping, no one here")
 				decider.performer.Stop()
 				return ClusterUnaviable
 			}
 			return nil
 		}
 	}
+
+	config.Log.Info("got role", otherDBRole)
 
 	// we need to handle multiple possible states that the remote node is in
 	switch otherDBRole {
