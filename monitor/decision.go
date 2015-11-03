@@ -84,7 +84,6 @@ func (decider decider) Demote() {
 	decider.Lock()
 	defer decider.Unlock()
 
-	decider.me.SetDBRole("backup")
 	decider.performer.TransitionToBackup()
 }
 
@@ -93,7 +92,6 @@ func (decider decider) Promote() {
 	decider.Lock()
 	defer decider.Unlock()
 
-	decider.me.SetDBRole("active")
 	decider.performer.TransitionToActive()
 }
 

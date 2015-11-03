@@ -35,6 +35,8 @@ type (
 		TransitionToBackup()
 		TransitionToSingle()
 		Stop()
+		Initialize() error
+		Start() error
 		Loop() error
 	}
 
@@ -77,10 +79,6 @@ func NewPerformer(me state.State, other state.State, config config.Config) *perf
 }
 
 func (performer *performer) Loop() error {
-	config.Log.Info("Going to Init")
-	if err := performer.Initialize(); err != nil {
-		return err
-	}
 	config.Log.Info("Waiting for error")
 	return <-performer.err
 }

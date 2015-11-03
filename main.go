@@ -46,23 +46,22 @@ func main() {
 	me.ExposeRPCEndpoint("tcp", location)
 
 	var other state.State
+	var host string
 	switch config.Conf.Role {
 	case "primary":
 		location := config.Conf.Secondary
 		other = state.NewRemoteState("tcp", location, time.Second)
-		host, _, err := net.SplitHostPort(location)
+		host, _, err = net.SplitHostPort(location)
 		if err != nil {
 			panic(err)
 		}
-		config.ConfigureHBAConf(host)
 	case "secondary":
 		location := config.Conf.Primary
 		other = state.NewRemoteState("tcp", location, time.Second)
-		host, _, err := net.SplitHostPort(location)
+		host, _, err = net.SplitHostPort(location)
 		if err != nil {
 			panic(err)
 		}
-		config.ConfigureHBAConf(host)
 	default:
 		// nothing as the monitor does not need to monitor anything
 		// the monitor just acts as a secondary mode of communication in network
@@ -76,6 +75,22 @@ func main() {
 	if other != nil {
 
 		perform = monitor.NewPerformer(me, other, config.Conf)
+
+		if err := perform.Initialize(); err != nil {
+			panic(err)
+		}
+
+		if err := config.ConfigureHBAConf(host); err != nil {
+			panic(err)
+		}
+
+		if err := config.ConfigurePGConf("0.0.0.0", config.Conf.PGPort); err != nil {
+			panic(err)
+		}
+
+		if err := perform.Start(); err != nil {
+			panic(err)
+		}
 
 		go func() {
 			decide := monitor.NewDecider(me, other, mon, perform)

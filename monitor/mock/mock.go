@@ -28,6 +28,16 @@ func (_m *MockPerformer) EXPECT() *_MockPerformerRecorder {
 	return _m.recorder
 }
 
+func (_m *MockPerformer) Initialize() error {
+	ret := _m.ctrl.Call(_m, "Initialize")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+func (_mr *_MockPerformerRecorder) Initialize() *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "Initialize")
+}
+
 func (_m *MockPerformer) Loop() error {
 	ret := _m.ctrl.Call(_m, "Loop")
 	ret0, _ := ret[0].(error)
@@ -36,6 +46,16 @@ func (_m *MockPerformer) Loop() error {
 
 func (_mr *_MockPerformerRecorder) Loop() *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "Loop")
+}
+
+func (_m *MockPerformer) Start() error {
+	ret := _m.ctrl.Call(_m, "Start")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+func (_mr *_MockPerformerRecorder) Start() *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "Start")
 }
 
 func (_m *MockPerformer) Stop() {
