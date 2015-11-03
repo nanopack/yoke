@@ -2,6 +2,9 @@ language: go
 
 services:
   - postgresql
+
+before_script:
+  - find / -name initdb
   
 go:
   - 1.5
