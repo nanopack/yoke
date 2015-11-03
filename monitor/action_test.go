@@ -113,7 +113,7 @@ func start(me, other *mock_state.MockState, test *testing.T) *performer {
 		test.Log(err)
 		test.FailNow()
 	}
-	if err := config.ConfigurePGConf("127.0.0.1", 5432); err != nil {
+	if err := config.ConfigurePGConf("127.0.0.1", config.Conf.PGPort); err != nil {
 		test.Log(err)
 		test.FailNow()
 	}
