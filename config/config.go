@@ -51,7 +51,7 @@ var (
 		StatusDir:       "./status/",
 		SyncCommand:     "rsync -a --delete {{local_dir}} {{slave_ip}}:{{slave_dir}}",
 		DecisionTimeout: 10,
-		SystemUser:      systemUser(),
+		SystemUser:      SystemUser(),
 	}
 	Log = lumber.NewConsoleLogger(lumber.INFO)
 )
@@ -255,7 +255,7 @@ func parseArr(val *[]string, file ini.File, section, name string) {
 	}
 }
 
-func systemUser() string {
+func SystemUser() string {
 	username := "postgres"
 	usr, err := user.Current()
 	if err != nil {

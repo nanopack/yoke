@@ -123,7 +123,7 @@ func (decider decider) reCheck() error {
 		}
 	}
 
-	config.Log.Info("got role", otherDBRole)
+	config.Log.Info("other node is '%v'", otherDBRole)
 
 	// we need to handle multiple possible states that the remote node is in
 	switch otherDBRole {

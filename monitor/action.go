@@ -44,6 +44,7 @@ type (
 		me     state.State
 		other  state.State
 		err    chan error
+		done   chan interface{}
 		cmd    *exec.Cmd
 		config config.Config
 	}
@@ -69,6 +70,7 @@ func NewPerformer(me state.State, other state.State, config config.Config) *perf
 		me:    me,
 		other: other,
 		err:   make(chan error),
+		done:  make(chan interface{}),
 	}
 
 	return &perform
@@ -88,9 +90,8 @@ func (performer *performer) Stop() {
 	performer.Lock()
 	defer performer.Unlock()
 	config.Log.Info("stopping")
-
 	performer.stop()
-	performer.err <- nil
+	config.Log.Info("stopped")
 }
 
 func (performer *performer) TransitionToSingle() {
@@ -107,7 +108,6 @@ func (performer *performer) TransitionToSingle() {
 	if role == "single" {
 		return
 	}
-	performer.me.SetDBRole("single")
 
 	err = performer.Single()
 	if err != nil {
@@ -157,11 +157,19 @@ func (performer *performer) TransitionToBackup() {
 	}
 }
 
-func (performer *performer) stop() {
-	if !performer.step["started"] {
-		// do any steps needed to stop postgres
+func (performer *performer) stop() error {
+	if performer.step["started"] {
+		fmt.Println("sending signal")
+		err := performer.cmd.Process.Signal(syscall.SIGINT)
+		if err != nil {
+			return err
+		}
+		fmt.Println("waiting for stop")
+		<-performer.done
+		fmt.Println("really stopped")
 		performer.step["started"] = false
 	}
+	return nil
 }
 
 func (performer *performer) Initialize() error {
@@ -181,6 +189,14 @@ func (performer *performer) Initialize() error {
 	return err
 }
 
+func (performer *performer) Start() error {
+	config.Log.Info("going to start")
+	performer.Lock()
+	defer performer.Unlock()
+	config.Log.Info("starting")
+	return performer.startDB()
+}
+
 // The Single state.
 func (performer *performer) Single() error {
 	config.Log.Info("transitioning to Single")
@@ -198,6 +214,7 @@ func (performer *performer) Single() error {
 
 	performer.addVip()
 	performer.roleChangeCommand("single")
+	performer.me.SetDBRole("single")
 
 	return nil
 }
@@ -235,12 +252,14 @@ func (performer *performer) replicate(enabled bool) error {
 }
 
 func (performer *performer) pgConnect() (*sql.DB, error) {
+	fmt.Println("opening new connection to db")
 	return sql.Open("postgres", fmt.Sprintf("user=%s database=postgres sslmode=disable host=localhost port=%d", performer.config.SystemUser, performer.config.PGPort))
 }
 
 func (performer *performer) setSync(enabled bool, db *sql.DB) error {
 	if db == nil {
-		db, err := performer.pgConnect()
+		var err error
+		db, err = performer.pgConnect()
 		if err != nil {
 			return err
 		}
@@ -253,7 +272,11 @@ func (performer *performer) setSync(enabled bool, db *sql.DB) error {
 	default:
 		sync = "off"
 	}
-	_, err := db.Exec(fmt.Sprintf("ALTER USER %v SET synchronous_commit=%v", performer.config.SystemUser, sync))
+	_, err := db.Exec(fmt.Sprintf(
+		`BEGIN;
+SET LOCAL synchronous_commit=off;
+ALTER USER %v SET synchronous_commit=%v;
+COMMIT;`, performer.config.SystemUser, sync))
 	return err
 
 }
@@ -264,8 +287,6 @@ func (performer *performer) Active() error {
 	if err := performer.replicate(false); err != nil {
 		return err
 	}
-
-	performer.startDB()
 
 	// do an initial copy of files which might be corrupt because they are not consistant
 	// this will be fixed later. we do this now so that a majority of the data will make it across without
@@ -374,34 +395,47 @@ func (performer *performer) killDB() {
 	}
 }
 
-func (performer *performer) startDB() {
-	config.Log.Info("[action] starting db")
-	cmd := exec.Command("postgres", "-D", performer.config.DataDir)
-	cmd.Stdout = NewPrefix("[postgres.stdout]")
-	cmd.Stderr = NewPrefix("[postgres.stderr]")
-	cmd.Start()
-	performer.cmd = cmd
-	go performer.reportExit()
-
-	// wait for postgres to exit, or for it to start correctly
-	for performer.cmd != nil {
-		conn, err := net.Dial("tcp", fmt.Sprintf("127.0.0.1:%v", performer.config.PGPort))
-		fmt.Println("checking if postgres is up", conn, err, performer.config.PGPort)
-		if err == nil {
-			conn.Close()
-			break
+func (performer *performer) startDB() error {
+	if !performer.step["started"] {
+		config.Log.Info("[action] starting db")
+		cmd := exec.Command("postgres", "-D", performer.config.DataDir)
+		cmd.Stdout = NewPrefix("[postgres.stdout]")
+		cmd.Stderr = NewPrefix("[postgres.stderr]")
+		err := cmd.Start()
+		if err != nil {
+			return err
 		}
-		<-time.After(time.Second)
+		performer.cmd = cmd
+		go performer.reportExit()
+
+		// wait for postgres to exit, or for it to start correctly
+		for {
+			if performer.cmd == nil {
+				return <-performer.err
+			}
+			conn, err := net.Dial("tcp", fmt.Sprintf("127.0.0.1:%v", performer.config.PGPort))
+			fmt.Println("checking if postgres is up", conn, err, performer.config.PGPort)
+			if err == nil {
+				conn.Close()
+				break
+			}
+			<-time.After(time.Second)
+		}
+		config.Log.Info("[action] db started")
+		performer.step["started"] = true
 	}
-	config.Log.Info("[action] db started")
+	return nil
 }
 
 func (performer *performer) reportExit() {
 	err := performer.cmd.Wait()
 	performer.cmd = nil
+	fmt.Println("it exited", err)
+
 	if err != nil {
 		performer.err <- err
 	}
+	close(performer.done)
 }
 
 func (performer *performer) roleChangeCommand(role string) {
