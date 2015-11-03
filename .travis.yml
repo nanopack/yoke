@@ -1,4 +1,10 @@
 language: go
 
+services:
+  - postgresql
+
+before_script:
+  - pg_ctl stop
+  
 go:
   - 1.5

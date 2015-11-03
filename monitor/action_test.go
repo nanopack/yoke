@@ -89,7 +89,7 @@ func start(me, other *mock_state.MockState, test *testing.T) *performer {
 
 	// overwrite the builtin config options
 	config.Conf = config.Config{
-		PGPort:      5432,
+		PGPort:      4567,
 		DataDir:     os.TempDir() + "postgres/",
 		StatusDir:   os.TempDir() + "postgres/",
 		SyncCommand: "true",
