@@ -1,0 +1,15 @@
+language: go
+sudo: true
+
+services:
+  - postgresql
+
+
+env:
+  - PATH=$PATH:/usr/lib/postgresql/9.4/bin
+  - PATH=$PATH:/usr/lib/postgresql/9.3/bin
+  - PATH=$PATH:/usr/lib/postgresql/9.2/bin
+  - PATH=$PATH:/usr/lib/postgresql/9.1/bin
+  
+go:
+  - 1.5

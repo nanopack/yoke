@@ -9,74 +9,137 @@ package main
 
 import (
 	"fmt"
+	"github.com/nanobox-io/golang-scribble"
+	"github.com/nanopack/yoke/config"
+	"github.com/nanopack/yoke/monitor"
+	"github.com/nanopack/yoke/state"
+	"net"
 	"os"
-	"os/exec"
 	"os/signal"
 	"runtime"
 	"syscall"
+	"time"
 )
 
 //
 func main() {
-	log.Info("%#v", conf)
-	// kill postgres server thats running
-	log.Info("killing old postgres if there is one")
-	killOldPostgres()
+	if len(os.Args) != 2 {
+		fmt.Println("missing required config file!")
+		os.Exit(1)
+	}
+	config.Init(os.Args[1])
 
-	handle(StatusStart())
-	handle(DecisionStart())
-	handle(ActionStart())
+	config.ConfigurePGConf("0.0.0.0", config.Conf.PGPort)
+
+	store, err := scribble.New(config.Conf.StatusDir, config.Log)
+	if err != nil {
+		config.Log.Fatal("scribble did not setup correctly %v", err)
+		os.Exit(1)
+	}
+
+	location := fmt.Sprintf("%v:%d", config.Conf.AdvertiseIp, config.Conf.AdvertisePort)
+	me, err := state.NewLocalState(config.Conf.Role, location, config.Conf.DataDir, store)
+	if err != nil {
+		panic(err)
+	}
+
+	me.ExposeRPCEndpoint("tcp", location)
+
+	var other state.State
+	var host string
+	switch config.Conf.Role {
+	case "primary":
+		location := config.Conf.Secondary
+		other = state.NewRemoteState("tcp", location, time.Second)
+		host, _, err = net.SplitHostPort(location)
+		if err != nil {
+			panic(err)
+		}
+	case "secondary":
+		location := config.Conf.Primary
+		other = state.NewRemoteState("tcp", location, time.Second)
+		host, _, err = net.SplitHostPort(location)
+		if err != nil {
+			panic(err)
+		}
+	default:
+		// nothing as the monitor does not need to monitor anything
+		// the monitor just acts as a secondary mode of communication in network
+		// splits
+	}
+
+	mon := state.NewRemoteState("tcp", config.Conf.Monitor, time.Second)
+
+	var perform monitor.Performer
+	finished := make(chan error)
+	if other != nil {
+
+		perform = monitor.NewPerformer(me, other, config.Conf)
+
+		if err := perform.Initialize(); err != nil {
+			panic(err)
+		}
+
+		if err := config.ConfigureHBAConf(host); err != nil {
+			panic(err)
+		}
+
+		if err := config.ConfigurePGConf("0.0.0.0", config.Conf.PGPort); err != nil {
+			panic(err)
+		}
+
+		if err := perform.Start(); err != nil {
+			panic(err)
+		}
+
+		go func() {
+			decide := monitor.NewDecider(me, other, mon, perform)
+			decide.Loop(time.Second * 2)
+		}()
+
+		go func() {
+			err := perform.Loop()
+			if err != nil {
+				finished <- err
+			}
+			// how do I stop the decide loop?
+			close(finished)
+		}()
+	}
 
 	// signal Handle
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM, os.Kill, syscall.SIGQUIT, syscall.SIGHUP, syscall.SIGALRM)
+	signals := make(chan os.Signal, 1)
+	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM, os.Kill, syscall.SIGQUIT, syscall.SIGALRM)
 
 	// Block until a signal is received.
 	for {
-		s := <-c
-		switch s {
-		case syscall.SIGINT, os.Kill, syscall.SIGQUIT, syscall.SIGTERM:
-			// kill the database then quit
-			log.Info("Signal Recieved: %s", s.String())
-			if conf.Role == "monitor" {
-				log.Info("shutting down")
-			} else {
-				log.Info("Killing Database")
-				actions <- "kill"
-				// called twice because the first call returns when the job is picked up
-				// the second call returns when the first job is complete
-				actions <- "kill"
+		select {
+		case err := <-finished:
+			// the performer is finished, something triggered a stop.
+			if err != nil {
+				panic(err)
 			}
-			log.Close()
-			os.Exit(0)
-		case syscall.SIGALRM:
-			log.Info("Printing Stack Trace")
-			stacktrace := make([]byte, 8192)
-			length := runtime.Stack(stacktrace, true)
-			fmt.Println(string(stacktrace[:length]))
-		case syscall.SIGHUP:
-			// demote
-			log.Info("Signal Recieved: %s", s.String())
-			log.Info("advising a demotion")
-			advice <- "demote"
+			config.Log.Info("the database was shut down")
+			return
+		case signal := <-signals:
+			switch signal {
+			case syscall.SIGINT, os.Kill, syscall.SIGQUIT, syscall.SIGTERM:
+				config.Log.Info("shutting down")
+				if perform != nil {
+					// stop the database, then wait for it to be stopped
+					config.Log.Info("shutting down the database")
+					perform.Stop()
+					perform = nil
+					config.Log.Info("waiting for the database")
+				} else {
+					return
+				}
+			case syscall.SIGALRM:
+				config.Log.Info("Printing Stack Trace")
+				stacktrace := make([]byte, 8192)
+				length := runtime.Stack(stacktrace, true)
+				fmt.Println(string(stacktrace[:length]))
+			}
 		}
-	}
-
-}
-
-//
-func handle(err error) {
-	if err != nil {
-		fmt.Println("error: " + err.Error())
-		os.Exit(1)
-	}
-}
-
-func killOldPostgres() {
-	killOld := exec.Command("pg_ctl", "stop", "-D", conf.DataDir, "-m", "fast")
-	killOld.Stdout = Piper{"[KillOLD.stdout]"}
-	killOld.Stderr = Piper{"[KillOLD.stderr]"}
-	if err := killOld.Run(); err != nil {
-		log.Error("[action] KillOLD failed.")
 	}
 }
