@@ -18,24 +18,40 @@ Each node in the cluster requires it's own config.ini file with the following op
 
 ```ini
 [config]
-  advertise_ip=         # REQUIRED - the IP which this node will broadcast to other nodes
-  advertise_port=4400   # the port which this node will broadcast to other nodes
-  data_dir=/data/       # the directory where postgresql was installed
-  decision_timeout=10   # delay before node dicides what to do with postgresql instance
-  log_level=info        # log verbosity (trace, debug, info, warn error, fatal)
-  peers=                # REQUIRED - the (comma delimited) IP:port combination of all nodes that are to be in the cluster
-  pg_port=5432          # the postgresql port
-  role=monitor          # REQUIRED - either 'primary', 'secondary', or 'monitor' (the cluster needs exactly one of each)
-  status_dir=./status/  # the directory where node status information is stored
-  sync_command='rsync -a --delete {{local_dir}} {{slave_ip}}:{{slave_dir}}' # the command you would like to use to sync the data from this node to the other when this node is master. This uses Mustache style templating so Yoke can fill in the {{local_dir}}, {{slave_ip}}, {{slave_dir}} if you want to use them.
+# the IP which this node will broadcast to other nodes
+advertise_ip=
+# the port which this node will broadcast to other nodes
+advertise_port=4400
+# the directory where postgresql was installed
+data_dir=/data
+# delay before node dicides what to do with postgresql instance
+decision_timeout=30
+# log verbosity (trace, debug, info, warn error, fatal)
+log_level=warn
+# REQUIRED - the IP:port combination of all nodes that are to be in the cluster (e.g. 'role=m.y.i.p:4400')
+primary=
+secondary=
+monitor=
+# SmartOS REQUIRED - either 'primary', 'secondary', or 'monitor' (the cluster needs exactly one of each)
+role=
+# the postgresql port
+pg_port=5432
+# the directory where node status information is stored
+status_dir=./status
+# the command you would like to use to sync the data from this node to the other when this node is master
+sync_command=rsync -ae "ssh -o StrictHostKeyChecking=no" --delete {{local_dir}} {{slave_ip}}:{{slave_dir}}
 
 [vip]
-  ip="1.2.3.4"          # Virtual Ip you would like to use
-  add_command           # Command to use when adding the vip. This will be called as {{add_command}} {{vip}}
-  remove_command        # Command to use when removeing the vip. This will be called as {{remove_command}} {{vip}}
+# Virtual Ip you would like to use
+ip=
+# Command to use when adding the vip. This will be called as {{add_command}} {{vip}}
+add_command=
+# Command to use when removing the vip. This will be called as {{remove_command}} {{vip}}
+remove_command=
 
 [role_change]
-  command               # When this nodes role changes we will call the command with the new role as its arguement '{{command}} {{(master|slave|single}))'
+# When this nodes role changes we will call the command with the new role as its arguement '{{command}} {{(master|slave|single}))'
+command=
 ```
 
 
@@ -77,5 +93,8 @@ yokeadm (<COMMAND>:<ACTION> OR <ALIAS>) [GLOBAL FLAG] <POSITIONAL> [SUB FLAGS]
 Complete documentation is available on [godoc](http://godoc.org/github.com/nanopack/yoke).
 
 
-### Contributing
+### Licence
+
+Mozilla Public License Version 2.0
+
 [![open source](http://nano-assets.gopagoda.io/open-src/nanobox-open-src.png)](http://nanobox.io/open-source)
