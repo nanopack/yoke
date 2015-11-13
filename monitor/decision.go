@@ -9,8 +9,8 @@ package monitor
 
 import (
 	"errors"
-	"github.com/nanobox-io/yoke/config"
-	"github.com/nanobox-io/yoke/state"
+	"github.com/nanopack/yoke/config"
+	"github.com/nanopack/yoke/state"
 	"sync"
 	"time"
 )

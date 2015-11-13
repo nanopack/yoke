@@ -7,7 +7,7 @@
 
 package main
 
-import "github.com/nanobox-io/yoke/yokeadm/commands"
+import "github.com/nanopack/yoke/yokeadm/commands"
 
 //
 func main() {

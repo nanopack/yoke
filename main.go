@@ -10,9 +10,9 @@ package main
 import (
 	"fmt"
 	"github.com/nanobox-io/golang-scribble"
-	"github.com/nanobox-io/yoke/config"
-	"github.com/nanobox-io/yoke/monitor"
-	"github.com/nanobox-io/yoke/state"
+	"github.com/nanopack/yoke/config"
+	"github.com/nanopack/yoke/monitor"
+	"github.com/nanopack/yoke/state"
 	"net"
 	"os"
 	"os/signal"

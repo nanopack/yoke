@@ -10,9 +10,9 @@ package monitor_test
 import (
 	"errors"
 	"github.com/golang/mock/gomock"
-	"github.com/nanobox-io/yoke/monitor"
-	"github.com/nanobox-io/yoke/monitor/mock"
-	"github.com/nanobox-io/yoke/state/mock"
+	"github.com/nanopack/yoke/monitor"
+	"github.com/nanopack/yoke/monitor/mock"
+	"github.com/nanopack/yoke/state/mock"
 	"testing"
 )
 

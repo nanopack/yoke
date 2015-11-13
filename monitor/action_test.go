@@ -9,8 +9,8 @@ package monitor
 
 import (
 	"github.com/golang/mock/gomock"
-	"github.com/nanobox-io/yoke/config"
-	"github.com/nanobox-io/yoke/state/mock"
+	"github.com/nanopack/yoke/config"
+	"github.com/nanopack/yoke/state/mock"
 	"os"
 	"testing"
 )

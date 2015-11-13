@@ -74,7 +74,7 @@ yokeadm (<COMMAND>:<ACTION> OR <ALIAS>) [GLOBAL FLAG] <POSITIONAL> [SUB FLAGS]
 
 ### Documentation
 
-Complete documentation is available on [godoc](http://godoc.org/github.com/nanobox-io/yoke).
+Complete documentation is available on [godoc](http://godoc.org/github.com/nanopack/yoke).
 
 
 ### Contributing
