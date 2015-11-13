@@ -1,4 +1,5 @@
-## Yoke
+[![yoke logo](http://nano-assets.gopagoda.io/readme-headers/yoke.png)](http://nanobox.io/open-source#yoke)
+ [![Build Status](https://travis-ci.org/nanopack/yoke.svg)](https://travis-ci.org/nanopack/yoke)
 
 Yoke is a postgres redundancy/auto-failover solution
 
@@ -69,3 +70,4 @@ Complete documentation is available on [godoc](http://godoc.org/github.com/nanob
 
 
 ### Contributing
+[![open source](http://nano-assets.gopagoda.io/open-src/nanobox-open-src.png)](http://nanobox.io/open-source)
