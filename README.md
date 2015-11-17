@@ -14,7 +14,7 @@ Yoke has the following requirements/dependancies to run:
 - 'primary' & 'secondary' nodes should have postgres installed under a postgres user, and in the `path`. Yoke tries calling 'postgres' and 'pg_ctl'
 - 'primary' & 'secondary' nodes run postgres as a child process so it should not be started independently
 
-Each node in the cluster requires it's own config.ini file with the following options (provided values are defaults):
+Each node in the cluster requires its own config.ini file with the following options (provided values are defaults):
 
 ```ini
 [config]
