@@ -6,7 +6,7 @@ Yoke is a Postgres redundancy/auto-failover solution that provides a high-availa
 
 ### Requirements
 
-Yoke has the following requirements/dependancies to run:
+Yoke has the following requirements/dependencies to run:
 
 - A 3-server cluster consisting of a 'primary', 'secondary', and 'monitor' node
 - 'primary' & 'secondary' nodes need ssh connections between each other (w/o passwords)
@@ -14,7 +14,7 @@ Yoke has the following requirements/dependancies to run:
 - 'primary' & 'secondary' nodes should have postgres installed under a postgres user, and in the `path`. Yoke tries calling 'postgres' and 'pg_ctl'
 - 'primary' & 'secondary' nodes run postgres as a child process so it should not be started independently
 
-Each node in the cluster requires it's own config.ini file with the following options (provided values are defaults):
+Each node in the cluster requires its own config.ini file with the following options (provided values are defaults):
 
 ```ini
 [config]
@@ -56,7 +56,7 @@ command=
 
 
 ### Startup
-Once all configurations are in place, Start yoke by running:
+Once all configurations are in place, start yoke by running:
 
 ```
 ./yoke ./primary.ini
