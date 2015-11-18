@@ -24,7 +24,7 @@ advertise_ip=
 advertise_port=4400
 # the directory where postgresql was installed
 data_dir=/data
-# delay before node dicides what to do with postgresql instance
+# delay before node decides what to do with postgresql instance
 decision_timeout=30
 # log verbosity (trace, debug, info, warn error, fatal)
 log_level=warn
