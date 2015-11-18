@@ -11,10 +11,10 @@
 package config
 
 import (
+	"os"
+	"fmt"
 	"bufio"
 	"bytes"
-	"fmt"
-	"os"
 	"regexp"
 	"strings"
 )

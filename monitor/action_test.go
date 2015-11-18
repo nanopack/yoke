@@ -8,11 +8,12 @@
 package monitor
 
 import (
+	"os"
+	"testing"
+
 	"github.com/golang/mock/gomock"
 	"github.com/nanopack/yoke/config"
 	"github.com/nanopack/yoke/state/mock"
-	"os"
-	"testing"
 )
 
 func TestSingle(test *testing.T) {

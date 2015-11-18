@@ -8,23 +8,25 @@
 package main
 
 import (
-	"fmt"
-	"github.com/nanobox-io/golang-scribble"
-	"github.com/nanopack/yoke/config"
-	"github.com/nanopack/yoke/monitor"
-	"github.com/nanopack/yoke/state"
-	"net"
 	"os"
-	"os/signal"
+	"fmt"
+	"net"
+	"time"
 	"runtime"
 	"syscall"
-	"time"
+	"os/signal"
+
+	"github.com/nanopack/yoke/state"
+	"github.com/nanopack/yoke/config"
+	"github.com/nanopack/yoke/monitor"
+	"github.com/nanobox-io/golang-scribble"
 )
 
 //
 func main() {
 	if len(os.Args) != 2 {
-		fmt.Println("missing required config file!")
+		fmt.Println("Missing required config file!")
+		fmt.Println("Please, run yoke with configuration file as argument (e.g. $ yoke /etc/yoke/yoke.ini)")
 		os.Exit(1)
 	}
 	config.Init(os.Args[1])
@@ -33,14 +35,15 @@ func main() {
 
 	store, err := scribble.New(config.Conf.StatusDir, config.Log)
 	if err != nil {
-		config.Log.Fatal("scribble did not setup correctly %v", err)
+		config.Log.Fatal("Scribble did not setup correctly: %v", err)
 		os.Exit(1)
 	}
 
 	location := fmt.Sprintf("%v:%d", config.Conf.AdvertiseIp, config.Conf.AdvertisePort)
 	me, err := state.NewLocalState(config.Conf.Role, location, config.Conf.DataDir, store)
 	if err != nil {
-		panic(err)
+		config.Log.Fatal("Failed to set local state: %v", err)
+		os.Exit(1)
 	}
 
 	me.ExposeRPCEndpoint("tcp", location)
@@ -53,14 +56,16 @@ func main() {
 		other = state.NewRemoteState("tcp", location, time.Second)
 		host, _, err = net.SplitHostPort(location)
 		if err != nil {
-			panic(err)
+			config.Log.Fatal("Failed to split host:port for primary node: %v", err)
+			os.Exit(1)
 		}
 	case "secondary":
 		location := config.Conf.Primary
 		other = state.NewRemoteState("tcp", location, time.Second)
 		host, _, err = net.SplitHostPort(location)
 		if err != nil {
-			panic(err)
+			config.Log.Fatal("Failed to split host:port for secondary node: %v", err)
+			os.Exit(1)
 		}
 	default:
 		// nothing as the monitor does not need to monitor anything
@@ -77,19 +82,23 @@ func main() {
 		perform = monitor.NewPerformer(me, other, config.Conf)
 
 		if err := perform.Initialize(); err != nil {
-			panic(err)
+			config.Log.Fatal("Failed to initialize database: %v", err)
+			os.Exit(1)
 		}
 
 		if err := config.ConfigureHBAConf(host); err != nil {
-			panic(err)
+			config.Log.Fatal("Failed to configure pg_hba.conf file: %v", err)
+			os.Exit(1)
 		}
 
 		if err := config.ConfigurePGConf("0.0.0.0", config.Conf.PGPort); err != nil {
-			panic(err)
+			config.Log.Fatal("Failed to configure postgresql.conf file: %v", err)
+			os.Exit(1)
 		}
 
 		if err := perform.Start(); err != nil {
-			panic(err)
+			config.Log.Fatal("Failed to start postgres: %v", err)
+			os.Exit(1)
 		}
 
 		go func() {
@@ -115,9 +124,9 @@ func main() {
 	for {
 		select {
 		case err := <-finished:
-			// the performer is finished, something triggered a stop.
 			if err != nil {
-				panic(err)
+				config.Log.Fatal("The performer is finished, something triggered a stop: %v", err)
+				os.Exit(1)
 			}
 			config.Log.Info("the database was shut down")
 			return

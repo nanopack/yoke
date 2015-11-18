@@ -9,11 +9,12 @@ package monitor_test
 
 import (
 	"errors"
+	"testing"
+
 	"github.com/golang/mock/gomock"
 	"github.com/nanopack/yoke/monitor"
-	"github.com/nanopack/yoke/monitor/mock"
 	"github.com/nanopack/yoke/state/mock"
-	"testing"
+	"github.com/nanopack/yoke/monitor/mock"
 )
 
 func TestPrimary(test *testing.T) {

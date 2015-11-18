@@ -8,11 +8,12 @@
 package monitor
 
 import (
-	"errors"
-	"github.com/nanopack/yoke/config"
-	"github.com/nanopack/yoke/state"
 	"sync"
 	"time"
+	"errors"
+
+	"github.com/nanopack/yoke/state"
+	"github.com/nanopack/yoke/config"
 )
 
 var (
@@ -57,8 +58,9 @@ func NewDecider(me, other, monitor state.State, performer Performer) Looper {
 		case ClusterUnaviable: // we try again.
 		case nil: // the cluster was successfully rechecked
 			return decider
-		default: // another kind of error occured
-			panic(err)
+		default:
+			config.Log.Fatal("Another kind of error occured: %v", err)
+			os.Exit(1)
 		}
 	}
 }
