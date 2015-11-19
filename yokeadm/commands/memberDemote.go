@@ -30,6 +30,7 @@ func memberDemote(ccmd *cobra.Command, args []string) {
 	client, err := rpc.Dial("tcp", fmt.Sprintf("%s:%s", fHost, fPort))
 	if err != nil {
 		fmt.Printf("[commands/memberDemote] rpc.Dial() failed - %s\n", err.Error())
+		return
 	}
 	defer client.Close()
 
