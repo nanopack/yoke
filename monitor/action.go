@@ -8,21 +8,22 @@
 package monitor
 
 import (
-	"bufio"
-	"database/sql"
-	"errors"
-	"fmt"
-	"github.com/hoisie/mustache"
-	_ "github.com/lib/pq"
-	"github.com/nanopack/yoke/config"
-	"github.com/nanopack/yoke/state"
-	"io"
-	"net"
 	"os"
-	"os/exec"
+	"io"
+	"fmt"
+	"net"
 	"sync"
-	"syscall"
 	"time"
+	"bufio"
+	"errors"
+	"os/exec"
+	"syscall"
+	"database/sql"
+
+	_ "github.com/lib/pq"
+	"github.com/hoisie/mustache"
+	"github.com/nanopack/yoke/state"
+	"github.com/nanopack/yoke/config"
 )
 
 var (
@@ -127,7 +128,8 @@ func (performer *performer) TransitionToActive() {
 		return
 	case "backup":
 		// backups must transition to single before they can become active.
-		panic("something went seriously wrong, backups cannot transition to active.")
+		config.Log.Fatal("Something went seriously wrong, backups cannot transition to active: %v", err)
+		os.Exit(1)
 	}
 
 	err = performer.Active()

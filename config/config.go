@@ -8,14 +8,15 @@
 package config
 
 import (
-	"github.com/jcelliott/lumber"
-	"github.com/vaughan0/go-ini"
-	"net"
 	"os"
+	"net"
 	"os/exec"
 	"os/user"
 	"strconv"
 	"strings"
+
+	"github.com/jcelliott/lumber"
+	"github.com/vaughan0/go-ini"
 )
 
 // Config is the struct of all global configuration data
