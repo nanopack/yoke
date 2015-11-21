@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 	"errors"
+	"os"
 
 	"github.com/nanopack/yoke/state"
 	"github.com/nanopack/yoke/config"
