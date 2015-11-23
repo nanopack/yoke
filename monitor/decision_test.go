@@ -1,10 +1,3 @@
-// Copyright (c) 2015 Pagoda Box Inc
-//
-// This Source Code Form is subject to the terms of the Mozilla Public License, v.
-// 2.0. If a copy of the MPL was not distributed with this file, You can obtain one
-// at http://mozilla.org/MPL/2.0/.
-//
-
 package monitor_test
 
 import (
@@ -13,8 +6,8 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/nanopack/yoke/monitor"
-	"github.com/nanopack/yoke/state/mock"
 	"github.com/nanopack/yoke/monitor/mock"
+	"github.com/nanopack/yoke/state/mock"
 )
 
 func TestPrimary(test *testing.T) {

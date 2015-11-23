@@ -1,5 +1,5 @@
 [![yoke logo](http://nano-assets.gopagoda.io/readme-headers/yoke.png)](http://nanobox.io/open-source#yoke)
- [![Build Status](https://travis-ci.org/nanopack/yoke.svg)](https://travis-ci.org/nanopack/yoke)
+[![Build Status](https://travis-ci.org/nanopack/yoke.svg)](https://travis-ci.org/nanopack/yoke)
 
 Yoke is a Postgres redundancy/auto-failover solution that provides a high-availability PostgreSQL cluster that's simple to manage.
 

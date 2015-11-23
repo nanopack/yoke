@@ -1,15 +1,9 @@
-// Copyright (c) 2015 Pagoda Box Inc
 //
-// This Source Code Form is subject to the terms of the Mozilla Public License, v.
-// 2.0. If a copy of the MPL was not distributed with this file, You can obtain one
-// at http://mozilla.org/MPL/2.0/.
-//
-
 package config
 
 import (
-	"os"
 	"net"
+	"os"
 	"os/exec"
 	"os/user"
 	"strconv"
@@ -45,6 +39,8 @@ type Config struct {
 // these are singleton values that are used throughout
 // the package.
 var (
+
+	//
 	Conf = Config{
 		AdvertisePort:   4400,
 		PGPort:          5432,
@@ -54,6 +50,8 @@ var (
 		DecisionTimeout: 10,
 		SystemUser:      SystemUser(),
 	}
+
+	//
 	Log = lumber.NewConsoleLogger(lumber.INFO)
 )
 
@@ -63,7 +61,7 @@ func Init(path string) {
 	//
 	file, err := ini.LoadFile(path)
 	if err != nil {
-		Log.Error("[config.init]: Failed to load config file!\n%s\n", err)
+		Log.Error("[config.init] Failed to load config file - ", err)
 		os.Exit(1)
 	}
 
@@ -161,7 +159,7 @@ func confirmRole() {
 		Conf.Role = getRole()
 	}
 	if Conf.Role != "monitor" && Conf.Role != "primary" && Conf.Role != "secondary" {
-		Log.Fatal("I could not find the appropriate role (role:'%s').", Conf.Role)
+		Log.Fatal("I could not find the appropriate role: ", Conf.Role)
 		Log.Close()
 		os.Exit(1)
 	}
@@ -172,7 +170,7 @@ func confirmAdvertiseIp() {
 		getAdvertiseData()
 	}
 	if Conf.AdvertiseIp == "" || Conf.AdvertiseIp == "0.0.0.0" {
-		Log.Fatal("I could not find the appropriate AdvertiseIP (ip:'%s').", Conf.AdvertiseIp)
+		Log.Fatal("I could not find the appropriate AdvertiseIP: ", Conf.AdvertiseIp)
 		Log.Close()
 		os.Exit(1)
 	}

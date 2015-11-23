@@ -1,29 +1,23 @@
-// Copyright (c) 2015 Pagoda Box Inc
 //
-// This Source Code Form is subject to the terms of the Mozilla Public License, v.
-// 2.0. If a copy of the MPL was not distributed with this file, You can obtain one
-// at http://mozilla.org/MPL/2.0/.
-//
-
 package monitor
 
 import (
-	"os"
-	"io"
-	"fmt"
-	"net"
-	"sync"
-	"time"
 	"bufio"
-	"errors"
-	"os/exec"
-	"syscall"
 	"database/sql"
+	"errors"
+	"fmt"
+	"io"
+	"net"
+	"os"
+	"os/exec"
+	"sync"
+	"syscall"
+	"time"
 
-	_ "github.com/lib/pq"
 	"github.com/hoisie/mustache"
-	"github.com/nanopack/yoke/state"
+	_ "github.com/lib/pq"
 	"github.com/nanopack/yoke/config"
+	"github.com/nanopack/yoke/state"
 )
 
 var (

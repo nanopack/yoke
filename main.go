@@ -1,25 +1,19 @@
-// Copyright (c) 2015 Pagoda Box Inc
 //
-// This Source Code Form is subject to the terms of the Mozilla Public License, v.
-// 2.0. If a copy of the MPL was not distributed with this file, You can obtain one
-// at http://mozilla.org/MPL/2.0/.
-//
-
 package main
 
 import (
-	"os"
 	"fmt"
 	"net"
-	"time"
+	"os"
+	"os/signal"
 	"runtime"
 	"syscall"
-	"os/signal"
+	"time"
 
-	"github.com/nanopack/yoke/state"
+	"github.com/nanobox-io/golang-scribble"
 	"github.com/nanopack/yoke/config"
 	"github.com/nanopack/yoke/monitor"
-	"github.com/nanobox-io/golang-scribble"
+	"github.com/nanopack/yoke/state"
 )
 
 //
@@ -35,14 +29,14 @@ func main() {
 
 	store, err := scribble.New(config.Conf.StatusDir, config.Log)
 	if err != nil {
-		config.Log.Fatal("Scribble did not setup correctly: %v", err)
+		config.Log.Fatal("Scribble did not setup correctly - ", err.Error())
 		os.Exit(1)
 	}
 
 	location := fmt.Sprintf("%v:%d", config.Conf.AdvertiseIp, config.Conf.AdvertisePort)
 	me, err := state.NewLocalState(config.Conf.Role, location, config.Conf.DataDir, store)
 	if err != nil {
-		config.Log.Fatal("Failed to set local state: %v", err)
+		config.Log.Fatal("Failed to set local state - ", err.Error())
 		os.Exit(1)
 	}
 
@@ -56,7 +50,7 @@ func main() {
 		other = state.NewRemoteState("tcp", location, time.Second)
 		host, _, err = net.SplitHostPort(location)
 		if err != nil {
-			config.Log.Fatal("Failed to split host:port for primary node: %v", err)
+			config.Log.Fatal("Failed to split host:port for primary node - ", err.Error())
 			os.Exit(1)
 		}
 	case "secondary":
@@ -64,7 +58,7 @@ func main() {
 		other = state.NewRemoteState("tcp", location, time.Second)
 		host, _, err = net.SplitHostPort(location)
 		if err != nil {
-			config.Log.Fatal("Failed to split host:port for secondary node: %v", err)
+			config.Log.Fatal("Failed to split host:port for secondary node - ", err.Error())
 			os.Exit(1)
 		}
 	default:
@@ -82,22 +76,22 @@ func main() {
 		perform = monitor.NewPerformer(me, other, config.Conf)
 
 		if err := perform.Initialize(); err != nil {
-			config.Log.Fatal("Failed to initialize database: %v", err)
+			config.Log.Fatal("Failed to initialize database - ", err.Error())
 			os.Exit(1)
 		}
 
 		if err := config.ConfigureHBAConf(host); err != nil {
-			config.Log.Fatal("Failed to configure pg_hba.conf file: %v", err)
+			config.Log.Fatal("Failed to configure pg_hba.conf file - ", err.Error())
 			os.Exit(1)
 		}
 
 		if err := config.ConfigurePGConf("0.0.0.0", config.Conf.PGPort); err != nil {
-			config.Log.Fatal("Failed to configure postgresql.conf file: %v", err)
+			config.Log.Fatal("Failed to configure postgresql.conf file - ", err.Error())
 			os.Exit(1)
 		}
 
 		if err := perform.Start(); err != nil {
-			config.Log.Fatal("Failed to start postgres: %v", err)
+			config.Log.Fatal("Failed to start postgres - ", err.Error())
 			os.Exit(1)
 		}
 
@@ -125,7 +119,7 @@ func main() {
 		select {
 		case err := <-finished:
 			if err != nil {
-				config.Log.Fatal("The performer is finished, something triggered a stop: %v", err)
+				config.Log.Fatal("The performer is finished, something triggered a stop - ", err.Error())
 				os.Exit(1)
 			}
 			config.Log.Info("the database was shut down")

@@ -1,19 +1,13 @@
-// Copyright (c) 2015 Pagoda Box Inc
-//
-// This Source Code Form is subject to the terms of the Mozilla Public License, v.
-// 2.0. If a copy of the MPL was not distributed with this file, You can obtain one
-// at http://mozilla.org/MPL/2.0/.
-//
-
 package state_test
 
 import (
 	"errors"
 	"github.com/golang/mock/gomock"
-	"github.com/nanopack/yoke/state"
-	"github.com/nanopack/yoke/state/mock"
 	"testing"
 	"time"
+
+	"github.com/nanopack/yoke/state"
+	"github.com/nanopack/yoke/state/mock"
 )
 
 var fakeErr = errors.New("general")
