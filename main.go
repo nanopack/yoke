@@ -27,7 +27,7 @@ func main() {
 
 	config.ConfigurePGConf("0.0.0.0", config.Conf.PGPort)
 
-	store, err := scribble.New(config.Conf.StatusDir, config.Log)
+	store, err := scribble.New(config.Conf.StatusDir, &scribble.Options{Logger: config.Log})
 	if err != nil {
 		config.Log.Fatal("Scribble did not setup correctly - ", err.Error())
 		os.Exit(1)
