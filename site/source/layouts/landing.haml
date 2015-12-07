@@ -1,0 +1,52 @@
+!!!
+%html
+  %head
+    %meta{:charset => "utf-8"}/
+    %meta{:content => "width=device-width, initial-scale=1", :name => "viewport"}/
+    / Always force latest IE rendering engine or request Chrome Frame
+    %meta{:content => "IE=edge,chrome=1", "http-equiv" => "X-UA-Compatible"}/
+    / Use title if it's in the page YAML frontmatter
+    %title= data.project_info.name + " - " + data.project_info.subhead || "A Nanobox Open Source Project"
+    %link{:href => "https://fonts.googleapis.com/css?family=Lato:400,400italic,700,700italic,300italic,300", :rel => "stylesheet", :type => "text/css"}
+    %link{ :href => nav_root + "stylesheets/all.css", :rel => "stylesheet", :type => "text/css" }
+    %script{ :src => nav_root + "javascripts/all.js", :type => "text/javascript" }
+  %body{:class => page_classes}
+    .row.flood-1
+      = partial "nb-head"
+      .project-logo
+        = partial "svgs/project-logo.svg"
+      .headline
+        %h1= data.project_info.name
+        %h2= data.project_info.subhead
+        %p= data.project_info.summary
+      .project-btns
+        %a{ :href => "https://github.com/nanopack/#{data.project_info.name.downcase.gsub(/\s+/, "")}" } Source Code
+        - if data.project_info.full_docs
+          / %a{ :href => "/#{data.project_info.name.downcase.gsub(/\s+/, "")}/docs" } Documentation
+          %a{ :href => "docs" } Documentation
+        - if data.project_info.downloads
+          %a#download{ :href => '#' } Download
+      = partial 'gh-btns'
+
+    .row.flood-2
+      .tlk-pnts
+        - data.project_info.points.each do |point|
+          .item
+            %h4= point.title
+            %p= point.content
+
+    .row.flood-1
+      .content
+        = find_and_preserve do
+          = partial "README.md"
+
+    .row.flood-2
+      = partial 'nb-foot'
+
+    - if data.project_info.downloads
+      #dl-modal
+        .container
+          - data.project_info.downloads.each do |download|
+            = link_to download.text, download.link
+        .close
+          &#10005;  

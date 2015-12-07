@@ -1,0 +1,26 @@
+# Project Information
+name: 'Yoke'
+subhead: 'High-Availability PostgreSQL Cluster'
+summary: 'The Postgres failover solution designed to fit with the Nanobox workflow. Includes election-based auto-failover and consistent read/write access, even with a node offline.'
+
+# Full Docs - Are there full docs included in this site
+full_docs: false
+
+# Download Links - If none exist, just remove
+downloads:
+  - text: 'Linux 64bit'
+    link: '#'
+  - text: 'Linux 32bit'
+    link: '#'
+
+# Talking Points - Just features to Highlight
+points:
+  - title: 'Data Integrity'
+    content: "Yoke's highest priority is preserving data integrity. Excluding acts of God, Yoke should never lose data."
+  - title: 'Fully Functional with Down Nodes'
+    content: "While other Postgres cluster tools typically switch to readonly when a node goes offline, Yoke continues to allow writes."
+  - title: 'Proven in Production'
+    content: "Yoke has been used in production by <a href='https://pagodabox.io'>Pagoda Box</a> and is used for redundant Postgres Services on <a href='https://nanobox.io'>Nanobox</a>."
+
+# Project License - Options are 'mpl2' or 'mit'. If a license is not included, defaults to mpl2.
+license: mpl2

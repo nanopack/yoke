@@ -1,0 +1,21 @@
+docs:
+  - title: "Introduction"
+    path: "docs/"
+  - title: "Test 1"
+    path: "docs/test-1/"
+  - title: "Test 2"
+    path: "docs/test-2/"
+    sub_docs:
+      - title: "sub1"
+        path: "docs/test-2/sub1/"
+      - title: "sub2"
+        path: "docs/test-2/sub2/"
+        sub_docs:
+          - title: "sub2-sub1"
+            path: "docs/test-2/sub2/sub2-sub1/"
+          - title: "sub2-sub2"
+            path: "docs/test-2/sub2/sub2-sub2/"
+      - title: "sub3"
+        path: "docs/test-2/sub3/"
+  - title: "Test 3"
+    path: "docs/test-3/"

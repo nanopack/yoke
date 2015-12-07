@@ -1,0 +1,203 @@
+@import 'normalize', 'mixins', 'syntax';
+
+///////////////// COLORS /////////////////
+$flood-1: #fff;
+$base-h: #206B9E;
+$base-txt: #6D6D6D;
+$base-link: #1791CE;
+$base-link-hover: #E0C643;
+
+$flood-2: #FCE15B;
+$alt-h: #594906;
+$alt-txt: #594906;
+$alt-link: #0D6D9C;
+$alt-link-hover: #9E8E04;
+
+$base-hl: #EC5268;
+$alt-hl: #12848F;
+
+$table-bkg-0: #cbcbcb;
+$table-bkg-1: #f8f8f8;
+$strk-light: #E6E6E6;
+
+
+body              { width: 100%; position: relative; font-size: 18px; background: $flood-1; color: $base-txt; @include box-sizing; @include font-smoothing; font-family: 'Lato', sans-serif; }
+a                 { text-decoration: none; @include transition(all .2s); }
+p, li             { line-height: 1.8em; 
+  code            { padding: .3em .5em; font-size: .95em; background-color: $code-bkg; }
+}
+
+///////////////// FLOOD COLOR DEFINITIONS /////////////////
+.row              {
+  &.flood-1       { background: $flood-1; color: $base-txt;  
+    a             { color: $base-link;
+      &:hover     { color: $base-link-hover; }
+    }
+  }
+  &.flood-2       { background: $flood-2; color: $alt-txt;
+    a             { color: $alt-link;
+      &:hover     { color: $alt-link-hover; }
+    }
+  }
+}
+
+///////////////// HEADER /////////////////
+a.nb-project      { display: inline-block; margin: 0; color: $base-txt !important; font-size: .8em; font-style: italic;
+  &:hover         { color: $base-link !important; }
+  #nb-logo        { width: 2em; }
+  span            { display: inline-block; margin: .5em 0 0 .5em; vertical-align: top;  }
+}
+.gh-btns          { position: absolute; top: 1.4em; right: 1.4em; }
+
+///////////////// MASTHEAD /////////////////
+.project-logo     { margin: .5em auto; max-width: 15.5em; }
+.headline         { max-width: 500px; margin: 0 auto; text-align: center;
+  h1              { margin: .25em 0 .1em; color: $base-h; font-size: 3em; font-weight: 300; }
+  h2              { margin: .25em 0 .1em; color: $base-h; font-size: 1.5em; font-weight: 300; }
+}
+
+///////////////// PROJECT BUTTONS /////////////////
+.project-btns     { max-width: 500px; margin: 2em auto 1em; text-align: center; font-size: .9em; 
+  a               { display: inline-block; width: 40%; max-width: 7em; padding: .75em 1em .9em; margin: 0 .25em; color: $base-txt !important; border-color: $base-txt !important; border-weight: .15em; border-style: solid; font-weight: 700;
+    &:hover       { color: #fff !important; background: $base-h !important; border-color: $base-h !important; }
+  }
+}
+
+///////////////// TALKING POINTS /////////////////
+.tlk-pnts         { position: relative; max-width: 1100px; margin: 0 auto; text-align: left; 
+  .item           { display: inline-block; max-width: 30%; margin: .75em; text-align: left; vertical-align: top;
+    h4            { font-size: 1em; margin: 0; }
+    p             { margin-top: .5em; font-size: .95em; line-height: 1.6em; }
+  }
+}
+/////////////// README/DOC CONTENT ///////////////
+.content          { position: relative; max-width: 630px; margin: 0 auto; padding: 1em; line-height: 1.6em; @include box-sizing; 
+  h1              { margin-top: .15em; font-size: 3.5em; font-weight: 300; line-height: 1em; }
+  h2              { padding-top: 1em; margin: 0 0 .15em; font-size: 2.25em; font-weight: 500; }
+  h3              { padding-top: 1.5em; margin: 0 0 .1em; font-size: 1.75em; font-weight: 500; }
+  h4              { padding-top: 1.5em; margin: 0 0 .1em; font-size: 1.45em; font-weight: 500; font-style: italic;}
+  h5              { padding-top: 1.5em; margin: 0; font-size: 1.05em; text-transform: uppercase; }
+  h6              { padding-top: 1.5em; margin: 0; font-size: 1em; text-transform: uppercase; font-style: italic; }
+  h3, h4          {
+    & + p         { margin-top: .75em !important; }
+  }
+  h5,h6           {
+    & + p         { margin-top: .25em !important;}
+  }
+  h2,h3,h4,h5,h6  { position: relative;
+    a             { color: $base-txt !important;
+      &:before    { content: '#'; position: absolute; display: block; left: -1em; font-size: 20px; font-weight: 500; @include opacity(.1); @include transition(all .2s); }
+      &:hover:before { @include opacity(.6); }
+    }
+  }
+  img             { max-width: 100%; }
+  hr              { border-width: 1px 0 0; border-color: $strk-light; border-style: solid; }
+  table           { width: 100%; @include box-sizing; }
+  th              { padding: .35em .65em; background-color: $table-bkg-0; border-right: 1px solid $flood-1;
+    &:last-child  { border-color: $table-bkg-0; }
+  }
+  tr:nth-child(2n+2){ background: $table-bkg-1; }
+  td              { padding: .35em .65em; border: 1px solid $table-bkg-0; }
+}
+
+///////////////// ROW STYLES /////////////////
+.row              { position: relative; width: 100%; padding: 1em 1em 9.5em 1em; @include box-sizing; @include transition(all .5s);
+  &:not(:first-child) { padding-top: .5em;
+    &:before      { content: ''; position: absolute; top: -5em; left: 0; display: block; width: 100%; height: 350px; background: inherit; @include transform(skewY(-3deg)); -webkit-backface-visibility: hidden; }
+  }
+}
+
+///////////////// FOOTER STYLES /////////////////
+.nb-foot          { position: relative; padding-top: 2em; text-align: center;
+  a.nb-circle     { display: block; background-color: #fff; width: 6em; height: 6em; margin: 0 auto 1.5em; padding: 1.4em; @include border-radius(50%); @include box-sizing; }
+  p               { margin-bottom: 0 !important; }
+  .heart          { font-size: 1.5em; vertical-align: sub; }
+  .contribute     { margin: 0; font-size: .8em; font-style: italic; }
+}
+
+///////////////// JS FADE-IN STYLES /////////////////
+.fade-in, .fade-in-fast{ @include opacity(0); @include transition(all .5s);
+  &.show          { @include opacity(1); }
+}
+
+///////////////// DOWNLOAD MODAL /////////////////
+#dl-modal         { display: none; position: fixed; top: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); padding: 2em; @include box-sizing; 
+  .container      { position: relative; margin: 10em auto 0; max-width: 18em; padding: .8em; background: #fff; @include box-sizing;
+    a             { display: block; padding: .8em; margin: .5em; color: $base-h; border-color: $base-h; text-align: center; font-weight: bold; border-weight: 3px; border-style: solid;
+      &:hover     { color: #fff; background: $base-h; }
+    }
+    &:before      { content: "Download"; position: absolute; top: -2em; left: 0; width: 100%; color: #fff; font-size: 1.2em; text-align: center;  }
+  }
+  .close          { display: block; margin: 1em auto 0; padding: .8em; height: 3em; width: 3em; color: #fff; text-align: center; border: 1px solid #fff; cursor: pointer; @include border-radius; @include box-sizing; @include transition(all .2s);
+    &:hover       { background: #fff; color: #515151;}
+  }
+}
+
+
+////////////////////////////////////////////////////
+/////////////// DOCUMENTATION STYLES ///////////////
+////////////////////////////////////////////////////
+
+body.docs         {
+  p               { margin: 1.5em 0; }
+  a               { color: $base-link; 
+    &:hover       { color: $base-link-hover; }
+  }
+  .row            {
+    &:first-child { padding-bottom: 2em; }
+    &:nth-child(2):before{ content: none; }
+  }
+  .top-nav        { max-width: 1100px; margin: 0 auto; position: relative;
+    a             { color: $base-txt;
+      &:hover     { color: $base-link-hover; }
+    } 
+    svg           { max-width: 3em; }
+    span          { display: inline-block; vertical-align: top; margin: .8em 0 0 .8em; font-size: 1.2em; font-weight: 300; }
+    p             { display: inline-block; vertical-align: top; margin: 1em 0 0 .8em; padding: 0 1em;  font-size: .95em; font-weight: 300; font-style: italic; border-left: 1px solid $strk-light; }
+  }
+  .wrapper        { position: relative; margin: 0 auto; max-width: 1100px; }
+  
+  //////////////// TABLE OF CONTENTS ////////////////
+  #contents-btn   { position: relative; padding: 1em 0; cursor: pointer; 
+    p             { display: inline-block; margin: 0; }
+    #icon         { position: absolute; right: 0; top: 1.8em; height: 3px; width: 22px; background: $base-txt;
+      &:before    { content: ''; display: block; position: absolute; height: 3px; width: 22px; background: $base-txt; @include transform(translateY(-6px)); @include transition(all .15s); }
+      &:after     { content: ''; display: block; position: absolute; height: 3px; width: 22px; background: $base-txt; @include transform(translateY(6px)); @include transition(all .15s); }
+    }
+    &.open #icon {
+      &:before    { @include transform(translateY(0px)); }
+      &:after     { @include transform(translateY(0px)); }
+    }
+  }
+  ul#contents     { display: inline-block; width: 20%; list-style: none; padding: 0 1em; max-height: 1000em; overflow: hidden; padding-bottom: 1em;
+    ul            { padding-left: 1.35em; list-style: none; border-left: 1px dotted $strk-light;
+      &.sub       { background-color: #fff; max-height: 0; overflow: hidden; }
+    }
+    li            { position: relative; width: 100%;
+      &.active    {
+        & > a     { color: $base-hl; display: block; }
+        &:before  { content: '\2B22'; font-size: .5em; position: absolute; left: -1.75em; color: $base-hl; }
+        & > ul.sub{ max-height: 2000px; }
+        &.more > a:after{ display: none; }
+      }
+      &.more > a  {
+        &:after   { content: "+"; margin-left: .3em; color: $strk-light; font-size: 1em; }
+      }
+      &.open      {
+        & > ul.sub{ max-height: 2000px; }
+        &.more > a:after{ display: none; }
+      }
+      a           { color: $base-txt;
+        &:hover   { color: $base-hl; }
+      }
+    }
+  }
+
+  //////// CONTENT STYLES SPECIFIC TO DOCS ////////
+  .content        { display: inline-block; width: 70%; margin: 0; vertical-align: top; }
+
+}
+
+
+
+@import 'media-queries';

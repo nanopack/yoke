@@ -1,0 +1,58 @@
+@import 'mixins';
+
+// Upper and Lower Ends
+$sm-upper: "(max-width: 40em)";      /* 640px */
+$md-lower: "(min-width: 40.063em)";  /* 641px */
+$md-upper: "(max-width: 54em)";      /* 864px */
+$lg-lower: "(min-width: 54.063em)";  /* 865px */
+$lg-upper: "(max-width: 90em)";      /* 1440px */
+
+// Specifications
+$screen: only screen !default;
+
+$landscape: $screen and (orientation: landscape) !default;
+$portrait: $screen and (orientation: portrait) !default;
+
+// Ranges
+$small-up: $screen !default;
+$small-only: $screen and $sm-upper !default;
+
+$medium-up: $screen and $md-lower !default;
+$medium-only: $screen and $md-lower and $md-upper !default;
+
+$large-up: $screen and $lg-lower !default;
+$large-only: $screen and $lg-lower and $lg-upper !default;
+
+
+// Styles -------------------------------------------------
+
+
+@media #{$small-up} { }
+@media #{$small-only} {
+
+  body                { font-size: 15px; }
+  .nb-project         { display: block; text-align: center; }
+  .gh-btns            { position: initial; margin-top: 2em; text-align: center; }
+  .logo               { max-width: 15.5em; }
+  .project-btns a     { display: block; max-width: 100%; width: 90%; margin: .5em auto; @include box-sizing; font-size: 1.1em; }
+  .tlk-pnts .item     { max-width: 100% !important; }
+  #contents           { display: block; width: 100% !important; max-width: 100% !important; border-top: 1px solid $strk-light; border-bottom: 1px solid $strk-light; @include box-sizing;
+    &.closed          { height: 4em; }
+  }
+  .content            { width: 100% !important; max-width: 100% !important; }
+
+}
+
+@media #{$medium-up} { 
+
+  #contents-btn       { display: none; }
+
+}
+@media #{$medium-only} { 
+
+  .tlk-pnts .item     { max-width: 45%; }
+
+}
+
+@media #{$large-up} { }
+@media #{$large-only} { }

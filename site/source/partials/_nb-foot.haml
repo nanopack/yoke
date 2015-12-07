@@ -1,0 +1,17 @@
+.nb-foot
+  .nb-info
+    %a.nb-circle{ :href => 'https://nanobox.io' }
+      = partial 'svgs/nb-logo'
+    %p
+      Made with
+      %span.heart &hearts;
+      by
+      %a{ :href => 'https://nanobox.io' } Nanobox
+      under the
+      - if data.project_info.license == 'mit'
+        %a{ :href => 'https://opensource.org/licenses/MIT', :target => '_blank' }  MIT License
+      - else
+        %a{ :href => 'https://www.mozilla.org/en-US/MPL/2.0/', :target => '_blank' }  MPL 2.0
+    %p.contribute 
+      Want to contribute? View our
+      %a{ :href => 'http://nanopack.io/contributing' } contributing guidelines.

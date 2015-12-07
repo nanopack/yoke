@@ -1,0 +1,53 @@
+!!!
+%html
+  %head
+    %meta{:charset => "utf-8"}/
+    %meta{:content => "width=device-width, initial-scale=1", :name => "viewport"}/
+    / Always force latest IE rendering engine or request Chrome Frame
+    %meta{:content => "IE=edge,chrome=1", "http-equiv" => "X-UA-Compatible"}/
+    / Use title if it's in the page YAML frontmatter
+    %title
+      - if current_page.data.title
+        = current_page.data.title + " - " + data.project_info.name + " Documentation" || "A Nanobox Open Source Project"
+      - else
+        = data.project_info.name + " Documentation"
+    %link{:href => "https://fonts.googleapis.com/css?family=Lato:400,400italic,700,700italic,300italic,300", :rel => "stylesheet", :type => "text/css"}
+    %link{ :href => nav_root + "stylesheets/all.css", :rel => "stylesheet", :type => "text/css" }
+    %script{ :src => nav_root + "javascripts/all.js", :type => "text/javascript" }
+    / = stylesheet_link_tag "all"
+    / = javascript_include_tag  "all"
+  %body.docs
+    .row
+      .top-nav
+        %a{ :href => nav_root }  
+          = partial "svgs/project-logo.svg"
+          %span= data.project_info.name
+        %p Documentation
+    .row
+      .wrapper
+        %ul#contents.closed
+          #contents-btn
+            %p Contents
+            #icon
+          - data.docs_index.docs.each do |doc|
+            %li{ nav_article_active( doc.path ) }
+              = link_to doc.title, nav_root + doc.path
+              - if doc.sub_docs
+                %ul.sub
+                  - doc.sub_docs.each do |doc|
+                    %li{ nav_article_active( doc.path ) }
+                      = link_to doc.title, nav_root + doc.path
+                      - if doc.sub_docs
+                        %ul.sub
+                          - doc.sub_docs.each do |doc|
+                            %li{ nav_article_active( doc.path ) }
+                              = link_to doc.title, nav_root + doc.path
+
+        .content.fade-in-fast
+          -if current_page.data.title
+            %h1= current_page.data.title
+          = find_and_preserve do
+            = yield
+
+    .row.flood-2
+      = partial "nb-foot"
