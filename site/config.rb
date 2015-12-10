@@ -43,7 +43,10 @@ activate :directory_indexes
 
 # Reload the browser automatically whenever files change
 configure :development do
-  activate :livereload
+  activate :livereload do |opts|
+    opts.host = '0.0.0.0'
+    opts.js_host = 'yolk-site.dev'
+  end
 end
 
 

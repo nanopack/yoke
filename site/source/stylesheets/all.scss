@@ -21,15 +21,15 @@ $table-bkg-1: #f8f8f8;
 $strk-light: #E6E6E6;
 
 
-body              { width: 100%; position: relative; font-size: 18px; background: $flood-1; color: $base-txt; @include box-sizing; @include font-smoothing; font-family: 'Lato', sans-serif; }
+body              { width: 100%; position: relative; font-size: 18px; background: $flood-2; color: $base-txt; @include box-sizing; @include font-smoothing; font-family: 'Lato', sans-serif; }
 a                 { text-decoration: none; @include transition(all .2s); }
-p, li             { line-height: 1.8em; 
+p, li             { line-height: 1.8em;
   code            { padding: .3em .5em; font-size: .95em; background-color: $code-bkg; }
 }
 
 ///////////////// FLOOD COLOR DEFINITIONS /////////////////
 .row              {
-  &.flood-1       { background: $flood-1; color: $base-txt;  
+  &.flood-1       { background: $flood-1; color: $base-txt;
     a             { color: $base-link;
       &:hover     { color: $base-link-hover; }
     }
@@ -57,21 +57,21 @@ a.nb-project      { display: inline-block; margin: 0; color: $base-txt !importan
 }
 
 ///////////////// PROJECT BUTTONS /////////////////
-.project-btns     { max-width: 500px; margin: 2em auto 1em; text-align: center; font-size: .9em; 
+.project-btns     { max-width: 500px; margin: 2em auto 1em; text-align: center; font-size: .9em;
   a               { display: inline-block; width: 40%; max-width: 7em; padding: .75em 1em .9em; margin: 0 .25em; color: $base-txt !important; border-color: $base-txt !important; border-weight: .15em; border-style: solid; font-weight: 700;
     &:hover       { color: #fff !important; background: $base-h !important; border-color: $base-h !important; }
   }
 }
 
 ///////////////// TALKING POINTS /////////////////
-.tlk-pnts         { position: relative; max-width: 1100px; margin: 0 auto; text-align: left; 
+.tlk-pnts         { position: relative; max-width: 1100px; margin: 0 auto; text-align: left;
   .item           { display: inline-block; max-width: 30%; margin: .75em; text-align: left; vertical-align: top;
     h4            { font-size: 1em; margin: 0; }
     p             { margin-top: .5em; font-size: .95em; line-height: 1.6em; }
   }
 }
 /////////////// README/DOC CONTENT ///////////////
-.content          { position: relative; max-width: 630px; margin: 0 auto; padding: 1em; line-height: 1.6em; @include box-sizing; 
+.content          { position: relative; max-width: 630px; margin: 0 auto; padding: 1em; line-height: 1.6em; @include box-sizing;
   h1              { margin-top: .15em; font-size: 3.5em; font-weight: 300; line-height: 1em; }
   h2              { padding-top: 1em; margin: 0 0 .15em; font-size: 2.25em; font-weight: 500; }
   h3              { padding-top: 1.5em; margin: 0 0 .1em; font-size: 1.75em; font-weight: 500; }
@@ -121,7 +121,7 @@ a.nb-project      { display: inline-block; margin: 0; color: $base-txt !importan
 }
 
 ///////////////// DOWNLOAD MODAL /////////////////
-#dl-modal         { display: none; position: fixed; top: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); padding: 2em; @include box-sizing; 
+#dl-modal         { display: none; position: fixed; top: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); padding: 2em; @include box-sizing;
   .container      { position: relative; margin: 10em auto 0; max-width: 18em; padding: .8em; background: #fff; @include box-sizing;
     a             { display: block; padding: .8em; margin: .5em; color: $base-h; border-color: $base-h; text-align: center; font-weight: bold; border-weight: 3px; border-style: solid;
       &:hover     { color: #fff; background: $base-h; }
@@ -140,7 +140,7 @@ a.nb-project      { display: inline-block; margin: 0; color: $base-txt !importan
 
 body.docs         {
   p               { margin: 1.5em 0; }
-  a               { color: $base-link; 
+  a               { color: $base-link;
     &:hover       { color: $base-link-hover; }
   }
   .row            {
@@ -150,15 +150,15 @@ body.docs         {
   .top-nav        { max-width: 1100px; margin: 0 auto; position: relative;
     a             { color: $base-txt;
       &:hover     { color: $base-link-hover; }
-    } 
+    }
     svg           { max-width: 3em; }
     span          { display: inline-block; vertical-align: top; margin: .8em 0 0 .8em; font-size: 1.2em; font-weight: 300; }
     p             { display: inline-block; vertical-align: top; margin: 1em 0 0 .8em; padding: 0 1em;  font-size: .95em; font-weight: 300; font-style: italic; border-left: 1px solid $strk-light; }
   }
   .wrapper        { position: relative; margin: 0 auto; max-width: 1100px; }
-  
+
   //////////////// TABLE OF CONTENTS ////////////////
-  #contents-btn   { position: relative; padding: 1em 0; cursor: pointer; 
+  #contents-btn   { position: relative; padding: 1em 0; cursor: pointer;
     p             { display: inline-block; margin: 0; }
     #icon         { position: absolute; right: 0; top: 1.8em; height: 3px; width: 22px; background: $base-txt;
       &:before    { content: ''; display: block; position: absolute; height: 3px; width: 22px; background: $base-txt; @include transform(translateY(-6px)); @include transition(all .15s); }

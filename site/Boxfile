@@ -1,6 +1,4 @@
 build:
+  engine: ../../../nanobox/nanobox-engine-middleman
   exec:
     - 'mv build/yoke.html build/index.html'
-
-web1:
-  httpd_document_root: build
