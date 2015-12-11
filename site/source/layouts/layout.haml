@@ -14,8 +14,6 @@
     %link{:href => "https://fonts.googleapis.com/css?family=Lato:400,400italic,700,700italic,300italic,300", :rel => "stylesheet", :type => "text/css"}
     %link{ :href => nav_root + "stylesheets/all.css", :rel => "stylesheet", :type => "text/css" }
     %script{ :src => nav_root + "javascripts/all.js", :type => "text/javascript" }
-    / = stylesheet_link_tag "all"
-    / = javascript_include_tag  "all"
   %body.docs
     .row
       .top-nav
@@ -48,6 +46,15 @@
             %h1= current_page.data.title
           = find_and_preserve do
             = yield
+
+          #pagination
+            - prev_doc = get_prev_doc(current_page.url.gsub(/^\//, ""))
+            - if prev_doc
+              = link_to prev_doc[:title], nav_root + prev_doc[:path], class: "prev"
+
+            - next_doc = get_next_doc(current_page.url.gsub(/^\//, ""))
+            - if next_doc
+              = link_to next_doc[:title], nav_root + next_doc[:path], class: "next"
 
     .row.flood-2
       = partial "nb-foot"
