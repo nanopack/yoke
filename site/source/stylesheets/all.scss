@@ -21,7 +21,7 @@ $table-bkg-1: #f8f8f8;
 $strk-light: #E6E6E6;
 
 
-body              { width: 100%; position: relative; font-size: 18px; background: $flood-2; color: $base-txt; @include box-sizing; @include font-smoothing; font-family: 'Lato', sans-serif; }
+body              { width: 100%; position: relative; font-size: 18px; background: $flood-1; color: $base-txt; @include box-sizing; @include font-smoothing; font-family: 'Lato', sans-serif; }
 a                 { text-decoration: none; @include transition(all .2s); }
 p, li             { line-height: 1.8em;
   code            { padding: .3em .5em; font-size: .95em; background-color: $code-bkg; }
@@ -195,6 +195,20 @@ body.docs         {
 
   //////// CONTENT STYLES SPECIFIC TO DOCS ////////
   .content        { display: inline-block; width: 70%; margin: 0; vertical-align: top; }
+  #pagination     { position: relative; padding-top: 2em; border-top: 1px solid $strk-light; 
+    a             { max-width: 48%; color: $base-txt; font-style: italic;
+      &.prev      { position: absolute; left: 0;
+        &:before  { content: ''; width: .55em; height: .55em;margin-right: .5em; display: inline-block; border-top: 1px solid $base-txt; border-left: 1px solid $base-txt; @include transform(rotate(-45deg)); @include transition(border-color .2s); }
+      }
+      &.next      { position: absolute; right: 0;
+        &:after   { content: ''; width: .55em; height: .55em;margin-left: .5em; display: inline-block; border-top: 1px solid $base-txt; border-right: 1px solid $base-txt; @include transform(rotate(45deg)); @include transition(border-color .2s); }
+      }
+      &:hover     { color: $base-hl;
+        &:before,
+        &:after   { border-color: $base-hl !important; }
+      }
+    }
+  }
 
 }
 
