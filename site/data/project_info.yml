@@ -1,7 +1,7 @@
 # Project Information
 name: 'Yoke'
 subhead: 'High-Availability PostgreSQL Cluster'
-summary: 'The coolest The Postgres failover solution designed to fit with the Nanobox workflow. Includes election-based auto-failover and consistent read/write access, even with a node offline.'
+summary: 'The Postgres failover solution designed to fit with the Nanobox workflow. Includes election-based auto-failover and consistent read/write access, even with a node offline.'
 
 # Full Docs - Are there full docs included in this site
 full_docs: true
@@ -13,7 +13,7 @@ downloads:
   - text: 'Linux 32bit'
     link: '#'
 
-# Talking Points - Just features to Highlight
+# Talking Points - Features to Highlight
 points:
   - title: 'Data Integrity'
     content: "Yoke's highest priority is preserving data integrity. Excluding acts of God, Yoke should never lose data."
