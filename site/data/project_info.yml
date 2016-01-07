@@ -1,6 +1,6 @@
 # Project Information
 name: 'Yoke'
-subhead: 'High-Availability PostgreSQL Cluster'
+subhead: 'High-Availability Redis Cluster'
 summary: 'The coolest The Postgres failover solution designed to fit with the Nanobox workflow. Includes election-based auto-failover and consistent read/write access, even with a node offline.'
 
 # Full Docs - Are there full docs included in this site

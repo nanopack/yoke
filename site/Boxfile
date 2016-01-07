@@ -1,4 +1,4 @@
 build:
-  engine: ../../../nanobox/nanobox-engine-middleman
+  engine: tylerflint/middleman
   exec:
     - 'mv build/yoke.html build/index.html'
